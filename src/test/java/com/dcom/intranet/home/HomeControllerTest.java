@@ -2,6 +2,7 @@ package com.dcom.intranet.home;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -24,6 +25,7 @@ class HomeControllerTest {
     void getHomeDashboardReturnsRecentMockDataWithoutUnusedFields() throws Exception {
         mockMvc.perform(get("/api/home"))
                 .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith("application/json"))
                 .andExpect(jsonPath("$.recentNotices", hasSize(5)))
                 .andExpect(jsonPath("$.recentArchives", hasSize(5)))
                 .andExpect(jsonPath("$.recentInfoPosts", hasSize(5)))
