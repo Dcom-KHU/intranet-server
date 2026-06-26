@@ -67,6 +67,32 @@ git diff -- docs/swagger/openapi.json
 
 아직 백엔드가 배포되지 않았거나 로컬 기능 확인만 필요한 단계라면 `docs/swagger/openapi.json` 파일을 전달하는 방식이 가장 단순합니다.
 
+## 프론트엔드가 openapi.json으로 Swagger 확인하는 방법
+
+프론트엔드가 `openapi.json` 파일만 받은 경우에는 Swagger Editor에서 확인할 수 있습니다.
+
+1. 브라우저에서 아래 주소를 엽니다.
+
+```text
+https://editor.swagger.io/
+```
+
+2. 상단 메뉴에서 `File` > `Import File`을 선택합니다.
+3. 전달받은 `openapi.json` 파일을 선택합니다.
+4. 오른쪽 Preview 영역에서 Swagger UI처럼 API 문서를 확인합니다.
+
+프론트엔드가 백엔드 서버를 직접 실행할 수 있는 경우에는 `openapi.json` 파일을 import하지 않아도 됩니다. 서버 실행 후 아래 주소로 바로 확인하면 됩니다.
+
+```text
+http://localhost:8080/swagger-ui/index.html
+```
+
+주의할 점은 `openapi.json` 자체가 API 응답 데이터는 아니라는 것입니다. `openapi.json`은 API 문서이고, 실제 데이터는 프론트가 아래 API를 호출했을 때 백엔드가 응답으로 내려줍니다.
+
+```http
+GET /api/home
+```
+
 ## Home API
 
 프론트에서 연결할 엔드포인트:
