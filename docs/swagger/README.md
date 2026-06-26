@@ -77,10 +77,31 @@ GET /api/home
 
 응답 최상위 필드:
 
-- `recentNotices`
-- `recentArchives`
-- `recentInfoPosts`
-- `recentPhotoAlbums`
+- `success`
+- `status`
+- `message`
+- `data`
+
+성공 응답의 홈 화면 데이터는 `data` 안에 들어갑니다.
+
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "요청에 성공했습니다.",
+  "data": {
+    "recentNotices": [],
+    "recentArchives": [],
+    "recentInfoPosts": [],
+    "recentPhotoAlbums": []
+  }
+}
+```
+
+명세에 포함된 응답 상태:
+
+- `200`: 요청 성공
+- `401`: 인증 필요
 
 응답에서 제외한 필드:
 
