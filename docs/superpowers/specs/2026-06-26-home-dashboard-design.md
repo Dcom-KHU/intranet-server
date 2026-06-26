@@ -79,12 +79,11 @@ Uses `exam_mock` instead of `exam_archives_mock` because the home archive card m
   "id": 1,
   "subject": "오픈소스SW개발방법및도구",
   "professor": "이성원",
-  "semester": "2024-1",
   "author": {
     "studentNumber": "20230001",
     "name": "하성준"
   },
-  "date": "2026-05-25"
+  "date": "2026.05.25"
 }
 ```
 
@@ -127,7 +126,7 @@ Add a small Home feature package under `com.dcom.intranet.home`.
 - `HomeService`: builds the fixed home dashboard response.
 - `HomeDashboardResponse`: top-level response DTO.
 - `NoticeSummaryResponse`: notice card DTO.
-- `ArchiveSummaryResponse`: archive card DTO.
+- `ArchiveSummaryResponse`: archive card DTO, including writer information and excluding semester.
 - `AuthorResponse`: reusable author DTO for archives and info posts.
 - `InfoPostSummaryResponse`: information board card DTO.
 - `PhotoAlbumSummaryResponse`: photo album card DTO.
@@ -159,6 +158,8 @@ The controller test should verify:
 - `recentPhotoAlbums` exists and has 5 items.
 - `recentArchives[0].author.name` exists.
 - `recentArchives[0].author.studentNumber` exists.
+- `recentArchives[0].semester` does not exist.
+- `recentArchives[0].date` uses the `yyyy.MM.dd` mock-data format.
 - `recentAnnouncements` does not exist.
 - `mainMenu` does not exist.
 - `userId` does not exist.
