@@ -86,7 +86,7 @@ public class EmailVerificationService {
         return new EmailVerificationVerifyResponse(
                 emailChangeToken,
                 "이메일 변경 인증이 완료되었습니다.",
-            verification.getEmail()
+                verification.getEmail()
         );
     }
 
