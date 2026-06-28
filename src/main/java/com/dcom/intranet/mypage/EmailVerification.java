@@ -87,6 +87,18 @@ public class EmailVerification {
         this.verified = true;
     }
 
+    public boolean belongsTo(String loginId) {
+        return this.loginId.equals(loginId);
+    }
+
+    public boolean canChangeEmail() {
+        return verified && !used;
+    }
+
+    public void markUsed() {
+        this.used = true;
+    }
+
     public Long getId() {
         return id;
     }

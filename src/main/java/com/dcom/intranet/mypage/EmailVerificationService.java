@@ -86,8 +86,26 @@ public class EmailVerificationService {
         return new EmailVerificationVerifyResponse(
                 emailChangeToken,
                 "이메일 변경 인증이 완료되었습니다.",
-                verification.getEmail()
+            verification.getEmail()
         );
+    }
+
+    @Transactional
+    public EmailVerification consumeEmailChangeToken(String loginId, String emailChangeToken) {
+        EmailVerification verification = emailVerificationRepository.findByEmailChangeToken(emailChangeToken)
+                .filter(candidate -> candidate.belongsTo(loginId))
+                .filter(EmailVerification::canChangeEmail)
+                .orElseThrow(() -> new MyPageApiException(
+                        HttpStatus.BAD_REQUEST,
+                        "이메일 변경 토큰이 올바르지 않습니다."
+                ));
+
+        if (verification.isExpired(LocalDateTime.now())) {
+            throw new MyPageApiException(HttpStatus.GONE, "이메일 인증이 만료되었습니다.");
+        }
+
+        verification.markUsed();
+        return verification;
     }
 
     private String generateVerificationCode() {

@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -399,6 +400,204 @@ class MyPageControllerTest {
                 .andExpect(jsonPath("$.data").value(nullValue()));
     }
 
+    @Test
+    @DisplayName("Profile settings update changes name and phone number only")
+    void profileSettingsUpdateChangesNameAndPhoneNumberOnly() throws Exception {
+        User user = saveUser("settings1", UserStatus.APPROVED, UserRole.USER);
+        String originalEmail = user.getEmail();
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+
+        mockMvc.perform(patch("/api/users/me/settings")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "김수정",
+                                  "phoneNumber": "010-9999-8888"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.message").value(SUCCESS_MESSAGE))
+                .andExpect(jsonPath("$.data.name").value("김수정"))
+                .andExpect(jsonPath("$.data.studentId").value(studentIdFor("settings1")))
+                .andExpect(jsonPath("$.data.email").value(originalEmail))
+                .andExpect(jsonPath("$.data.phoneNumber").value("010-9999-8888"))
+                .andExpect(jsonPath("$.data.message").value("회원정보가 수정되었습니다."))
+                .andExpect(jsonPath("$.data.loginId").doesNotExist())
+                .andExpect(jsonPath("$.data.userId").doesNotExist());
+
+        User updatedUser = userRepository.findByLoginId("settings1").orElseThrow();
+        assertThat(updatedUser.getName()).isEqualTo("김수정");
+        assertThat(updatedUser.getPhoneNumber()).isEqualTo("010-9999-8888");
+        assertThat(updatedUser.getEmail()).isEqualTo(originalEmail);
+    }
+
+    @Test
+    @DisplayName("Profile settings update with verified emailChangeToken changes email")
+    void profileSettingsUpdateWithVerifiedEmailChangeTokenChangesEmail() throws Exception {
+        User user = saveUser("settings2", UserStatus.APPROVED, UserRole.USER);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+        String newEmail = "new-email-settings2@dcom.org";
+
+        String emailChangeToken = verifiedEmailChangeToken(token, user.getLoginId(), newEmail);
+
+        mockMvc.perform(patch("/api/users/me/settings")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "이메일수정",
+                                  "phoneNumber": "010-2222-3333",
+                                  "emailChangeToken": "%s"
+                                }
+                                """.formatted(emailChangeToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.name").value("이메일수정"))
+                .andExpect(jsonPath("$.data.studentId").value(studentIdFor("settings2")))
+                .andExpect(jsonPath("$.data.email").value(newEmail))
+                .andExpect(jsonPath("$.data.phoneNumber").value("010-2222-3333"))
+                .andExpect(jsonPath("$.data.message").value("회원정보가 수정되었습니다."));
+
+        User updatedUser = userRepository.findByLoginId("settings2").orElseThrow();
+        assertThat(updatedUser.getEmail()).isEqualTo(newEmail);
+        assertThat(emailVerificationRepository.findByEmailChangeToken(emailChangeToken).orElseThrow().isUsed()).isTrue();
+    }
+
+    @Test
+    @DisplayName("Profile settings update with invalid emailChangeToken returns 400 common envelope")
+    void profileSettingsUpdateWithInvalidEmailChangeTokenReturns400CommonEnvelope() throws Exception {
+        User user = saveUser("settings3", UserStatus.APPROVED, UserRole.USER);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+
+        mockMvc.perform(patch("/api/users/me/settings")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "토큰오류",
+                                  "phoneNumber": "010-3333-4444",
+                                  "emailChangeToken": "invalid-token"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("이메일 변경 토큰이 올바르지 않습니다."))
+                .andExpect(jsonPath("$.data").value(nullValue()));
+    }
+
+    @Test
+    @DisplayName("Profile settings update with expired emailChangeToken returns 410 common envelope")
+    void profileSettingsUpdateWithExpiredEmailChangeTokenReturns410CommonEnvelope() throws Exception {
+        User user = saveUser("settings4", UserStatus.APPROVED, UserRole.USER);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+        EmailVerification verification = EmailVerification.create(
+                user.getLoginId(),
+                "new-email-settings4@dcom.org",
+                "123456",
+                LocalDateTime.now().minusSeconds(1)
+        );
+        verification.verify("expired-email-change-token");
+        emailVerificationRepository.save(verification);
+
+        mockMvc.perform(patch("/api/users/me/settings")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "만료토큰",
+                                  "phoneNumber": "010-4444-5555",
+                                  "emailChangeToken": "expired-email-change-token"
+                                }
+                                """))
+                .andExpect(status().isGone())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value(410))
+                .andExpect(jsonPath("$.message").value("이메일 인증이 만료되었습니다."))
+                .andExpect(jsonPath("$.data").value(nullValue()));
+    }
+
+    @Test
+    @DisplayName("Profile settings update with email already taken after verification returns 409 common envelope")
+    void profileSettingsUpdateWithEmailAlreadyTakenAfterVerificationReturns409CommonEnvelope() throws Exception {
+        User user = saveUser("settings5", UserStatus.APPROVED, UserRole.USER);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+        String newEmail = "new-email-settings5@dcom.org";
+        String emailChangeToken = verifiedEmailChangeToken(token, user.getLoginId(), newEmail);
+        userRepository.save(new User(
+                "settings5owner",
+                "20995555",
+                "encoded-password",
+                "이메일소유자",
+                "010-5555-0000",
+                newEmail,
+                true,
+                UserStatus.APPROVED,
+                UserRole.USER
+        ));
+
+        mockMvc.perform(patch("/api/users/me/settings")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "중복이메일",
+                                  "phoneNumber": "010-5555-6666",
+                                  "emailChangeToken": "%s"
+                                }
+                                """.formatted(emailChangeToken)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.message").value("이미 사용 중인 이메일입니다."))
+                .andExpect(jsonPath("$.data").value(nullValue()));
+    }
+
+    @Test
+    @DisplayName("Profile settings update does not change loginId or studentId from request body")
+    void profileSettingsUpdateDoesNotChangeLoginIdOrStudentIdFromRequestBody() throws Exception {
+        User user = saveUser("settings6", UserStatus.APPROVED, UserRole.USER);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+
+        mockMvc.perform(patch("/api/users/me/settings")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "loginId": "changed-login",
+                                  "studentId": "99999999",
+                                  "name": "불변필드",
+                                  "phoneNumber": "010-6666-7777"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.studentId").value(studentIdFor("settings6")));
+
+        User updatedUser = userRepository.findByLoginId("settings6").orElseThrow();
+        assertThat(updatedUser.getLoginId()).isEqualTo("settings6");
+        assertThat(updatedUser.getStudentId()).isEqualTo(studentIdFor("settings6"));
+    }
+
+    @Test
+    @DisplayName("Profile settings update without token returns 401 common envelope")
+    void profileSettingsUpdateWithoutTokenReturns401CommonEnvelope() throws Exception {
+        mockMvc.perform(patch("/api/users/me/settings")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "인증없음",
+                                  "phoneNumber": "010-7777-8888"
+                                }
+                                """))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.message").value(UNAUTHORIZED_MESSAGE))
+                .andExpect(jsonPath("$.data").value(nullValue()));
+    }
+
     private User saveUser(String loginId, UserStatus status, UserRole role) {
         User user = new User(
                 loginId,
@@ -437,6 +636,24 @@ class MyPageControllerTest {
                 .orElseThrow();
     }
 
+    private String verifiedEmailChangeToken(String token, String loginId, String newEmail) throws Exception {
+        requestEmailVerification(token, newEmail);
+        String verificationCode = latestVerification(loginId, newEmail).getVerificationCode();
+
+        mockMvc.perform(post("/api/users/me/email/verification/verify")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "newEmail": "%s",
+                                  "verificationCode": "%s"
+                                }
+                                """.formatted(newEmail, verificationCode)))
+                .andExpect(status().isOk());
+
+        return latestVerification(loginId, newEmail).getEmailChangeToken();
+    }
+
     private String studentIdFor(String loginId) {
         return switch (loginId) {
             case "member1" -> "20240001";
@@ -453,6 +670,12 @@ class MyPageControllerTest {
             case "emailVerify2" -> "20240018";
             case "emailVerify3" -> "20240019";
             case "emailVerify4" -> "20240020";
+            case "settings1" -> "20240006";
+            case "settings2" -> "20240007";
+            case "settings3" -> "20240008";
+            case "settings4" -> "20240009";
+            case "settings5" -> "20240010";
+            case "settings6" -> "20240011";
             default -> "20249999";
         };
     }
