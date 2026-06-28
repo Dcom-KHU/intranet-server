@@ -1,6 +1,7 @@
 package com.dcom.intranet.mypage;
 
 import com.dcom.intranet.mypage.dto.EmailVerificationSendResponse;
+import com.dcom.intranet.mypage.dto.EmailVerificationVerifyResponse;
 import com.dcom.intranet.user.UserRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -8,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Service
 public class EmailVerificationService {
@@ -53,6 +55,38 @@ public class EmailVerificationService {
         return new EmailVerificationSendResponse(
                 "이메일 변경 인증 코드가 생성되었습니다.",
                 EXPIRES_IN_SECONDS
+        );
+    }
+
+    @Transactional
+    public EmailVerificationVerifyResponse verifyEmailChangeCode(
+            String loginId,
+            String newEmail,
+            String verificationCode
+    ) {
+        EmailVerification verification = emailVerificationRepository
+                .findTopByLoginIdAndEmailOrderByCreatedAtDesc(loginId, newEmail)
+                .orElseThrow(() -> new MyPageApiException(
+                        HttpStatus.BAD_REQUEST,
+                        "이메일 인증 요청을 찾을 수 없습니다."
+                ));
+
+        LocalDateTime now = LocalDateTime.now();
+        if (verification.isExpired(now)) {
+            throw new MyPageApiException(HttpStatus.GONE, "이메일 인증이 만료되었습니다.");
+        }
+
+        if (!verification.matchesCode(verificationCode)) {
+            throw new MyPageApiException(HttpStatus.BAD_REQUEST, "인증 코드가 올바르지 않습니다.");
+        }
+
+        String emailChangeToken = UUID.randomUUID().toString();
+        verification.verify(emailChangeToken);
+
+        return new EmailVerificationVerifyResponse(
+                emailChangeToken,
+                "이메일 변경 인증이 완료되었습니다.",
+                verification.getEmail()
         );
     }
 
