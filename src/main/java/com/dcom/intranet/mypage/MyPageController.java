@@ -6,6 +6,10 @@ import com.dcom.intranet.mypage.dto.ConflictApiResponse;
 import com.dcom.intranet.mypage.dto.EmailVerificationSendApiResponse;
 import com.dcom.intranet.mypage.dto.EmailVerificationSendRequest;
 import com.dcom.intranet.mypage.dto.EmailVerificationSendResponse;
+import com.dcom.intranet.mypage.dto.EmailVerificationVerifyApiResponse;
+import com.dcom.intranet.mypage.dto.EmailVerificationVerifyRequest;
+import com.dcom.intranet.mypage.dto.EmailVerificationVerifyResponse;
+import com.dcom.intranet.mypage.dto.GoneApiResponse;
 import com.dcom.intranet.mypage.dto.MyProfileApiResponse;
 import com.dcom.intranet.mypage.dto.MyProfileResponse;
 import com.dcom.intranet.mypage.dto.TooManyRequestsApiResponse;
@@ -94,6 +98,45 @@ public class MyPageController {
     ) {
         EmailVerificationSendResponse response =
                 emailVerificationService.sendEmailChangeVerification(authentication.getName(), request.newEmail());
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(
+            summary = "이메일 변경 인증 확인",
+            description = "새 이메일과 인증 코드를 검증하고 회원정보 수정에서 사용할 이메일 변경 토큰을 발급한다.",
+            responses = {
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "200",
+                            description = "이메일 변경 인증 성공",
+                            content = @Content(schema = @Schema(implementation = EmailVerificationVerifyApiResponse.class))
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "400",
+                            description = "요청값 오류 또는 인증 코드 불일치",
+                            content = @Content(schema = @Schema(implementation = BadRequestApiResponse.class))
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "401",
+                            description = "인증 실패",
+                            content = @Content(schema = @Schema(implementation = UnauthorizedApiResponse.class))
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "410",
+                            description = "인증 코드 만료",
+                            content = @Content(schema = @Schema(implementation = GoneApiResponse.class))
+                    )
+            }
+    )
+    @PostMapping("/me/email/verification/verify")
+    public ResponseEntity<ApiResponse<EmailVerificationVerifyResponse>> verifyEmailVerification(
+            Authentication authentication,
+            @Valid @RequestBody EmailVerificationVerifyRequest request
+    ) {
+        EmailVerificationVerifyResponse response = emailVerificationService.verifyEmailChangeCode(
+                authentication.getName(),
+                request.newEmail(),
+                request.verificationCode()
+        );
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 }

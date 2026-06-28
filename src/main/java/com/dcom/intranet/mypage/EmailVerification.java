@@ -74,6 +74,19 @@ public class EmailVerification {
         return !used && expiresAt.isAfter(now);
     }
 
+    public boolean isExpired(LocalDateTime now) {
+        return !expiresAt.isAfter(now);
+    }
+
+    public boolean matchesCode(String verificationCode) {
+        return this.verificationCode.equals(verificationCode);
+    }
+
+    public void verify(String emailChangeToken) {
+        this.emailChangeToken = emailChangeToken;
+        this.verified = true;
+    }
+
     public Long getId() {
         return id;
     }
