@@ -12,10 +12,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDateTime;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -35,8 +40,12 @@ class MyPageControllerTest {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private EmailVerificationRepository emailVerificationRepository;
+
     @BeforeEach
     void setUp() {
+        emailVerificationRepository.deleteAll();
         userRepository.deleteAll();
     }
 
@@ -145,6 +154,125 @@ class MyPageControllerTest {
                 .andExpect(jsonPath("$.data.studentId").value(studentIdFor("admin1")));
     }
 
+    @Test
+    @DisplayName("Email verification send returns 200 and stores verification code")
+    void emailVerificationSendReturns200AndStoresVerificationCode() throws Exception {
+        User user = saveUser("emailSend1", UserStatus.APPROVED, UserRole.USER);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+
+        mockMvc.perform(post("/api/users/me/email/verification/send")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "newEmail": "new-email-send1@dcom.org"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.message").value(SUCCESS_MESSAGE))
+                .andExpect(jsonPath("$.data.message").value("이메일 변경 인증 코드가 생성되었습니다."))
+                .andExpect(jsonPath("$.data.expiresIn").value(300))
+                .andExpect(jsonPath("$.data.verificationCode").doesNotExist());
+
+        EmailVerification verification = emailVerificationRepository
+                .findTopByLoginIdAndEmailOrderByCreatedAtDesc("emailSend1", "new-email-send1@dcom.org")
+                .orElseThrow();
+        assertThat(verification.getVerificationCode()).hasSize(6);
+        assertThat(verification.getExpiresAt()).isAfter(LocalDateTime.now());
+        assertThat(verification.isVerified()).isFalse();
+        assertThat(verification.isUsed()).isFalse();
+    }
+
+    @Test
+    @DisplayName("Email verification send with blank email returns 400 common envelope")
+    void emailVerificationSendWithBlankEmailReturns400CommonEnvelope() throws Exception {
+        User user = saveUser("emailSend2", UserStatus.APPROVED, UserRole.USER);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+
+        mockMvc.perform(post("/api/users/me/email/verification/send")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "newEmail": ""
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("요청값이 올바르지 않습니다."))
+                .andExpect(jsonPath("$.data").value(nullValue()));
+    }
+
+    @Test
+    @DisplayName("Email verification send with existing email returns 409 common envelope")
+    void emailVerificationSendWithExistingEmailReturns409CommonEnvelope() throws Exception {
+        User user = saveUser("emailSend3", UserStatus.APPROVED, UserRole.USER);
+        User otherUser = saveUser("emailOwner", UserStatus.APPROVED, UserRole.USER);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+
+        mockMvc.perform(post("/api/users/me/email/verification/send")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "newEmail": "%s"
+                                }
+                                """.formatted(otherUser.getEmail())))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.message").value("이미 사용 중인 이메일입니다."))
+                .andExpect(jsonPath("$.data").value(nullValue()));
+    }
+
+    @Test
+    @DisplayName("Email verification send with active request returns 429 common envelope")
+    void emailVerificationSendWithActiveRequestReturns429CommonEnvelope() throws Exception {
+        User user = saveUser("emailSend4", UserStatus.APPROVED, UserRole.USER);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+        String requestBody = """
+                {
+                  "newEmail": "new-email-send4@dcom.org"
+                }
+                """;
+
+        mockMvc.perform(post("/api/users/me/email/verification/send")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/users/me/email/verification/send")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value(429))
+                .andExpect(jsonPath("$.message").value("이미 진행 중인 이메일 인증 요청이 있습니다."))
+                .andExpect(jsonPath("$.data").value(nullValue()));
+    }
+
+    @Test
+    @DisplayName("Email verification send without token returns 401 common envelope")
+    void emailVerificationSendWithoutTokenReturns401CommonEnvelope() throws Exception {
+        mockMvc.perform(post("/api/users/me/email/verification/send")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "newEmail": "new-email-no-token@dcom.org"
+                                }
+                                """))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.message").value(UNAUTHORIZED_MESSAGE))
+                .andExpect(jsonPath("$.data").value(nullValue()));
+    }
+
     private User saveUser(String loginId, UserStatus status, UserRole role) {
         User user = new User(
                 loginId,
@@ -172,6 +300,11 @@ class MyPageControllerTest {
             case "member3" -> "20240003";
             case "member4" -> "20240004";
             case "admin1" -> "20240005";
+            case "emailSend1" -> "20240012";
+            case "emailSend2" -> "20240013";
+            case "emailSend3" -> "20240014";
+            case "emailSend4" -> "20240015";
+            case "emailOwner" -> "20240016";
             default -> "20249999";
         };
     }
