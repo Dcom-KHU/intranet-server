@@ -134,4 +134,13 @@ public class User {
     public LocalDateTime getLastLoginAt() {
         return lastLoginAt;
     }
+
+    public void updateProfile(String name, String phoneNumber) {
+        this.name = name;
+        this.phoneNumber = phoneNumber;
+    }
+
+    public void changeEmail(String email) {
+        this.email = email;
+    }
 }

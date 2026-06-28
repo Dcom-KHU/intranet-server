@@ -12,6 +12,9 @@ import com.dcom.intranet.mypage.dto.EmailVerificationVerifyResponse;
 import com.dcom.intranet.mypage.dto.GoneApiResponse;
 import com.dcom.intranet.mypage.dto.MyProfileApiResponse;
 import com.dcom.intranet.mypage.dto.MyProfileResponse;
+import com.dcom.intranet.mypage.dto.MyProfileUpdateApiResponse;
+import com.dcom.intranet.mypage.dto.MyProfileUpdateRequest;
+import com.dcom.intranet.mypage.dto.MyProfileUpdateResponse;
 import com.dcom.intranet.mypage.dto.TooManyRequestsApiResponse;
 import com.dcom.intranet.mypage.dto.UnauthorizedApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,6 +24,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -137,6 +141,46 @@ public class MyPageController {
                 request.newEmail(),
                 request.verificationCode()
         );
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(
+            summary = "회원정보 수정",
+            description = "인증된 사용자의 이름, 전화번호를 수정하고 검증된 이메일 변경 토큰이 있으면 이메일도 변경한다.",
+            responses = {
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "200",
+                            description = "회원정보 수정 성공",
+                            content = @Content(schema = @Schema(implementation = MyProfileUpdateApiResponse.class))
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "400",
+                            description = "요청값 오류 또는 이메일 변경 토큰 오류",
+                            content = @Content(schema = @Schema(implementation = BadRequestApiResponse.class))
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "401",
+                            description = "인증 실패",
+                            content = @Content(schema = @Schema(implementation = UnauthorizedApiResponse.class))
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "409",
+                            description = "이미 사용 중인 이메일",
+                            content = @Content(schema = @Schema(implementation = ConflictApiResponse.class))
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "410",
+                            description = "이메일 변경 토큰 만료",
+                            content = @Content(schema = @Schema(implementation = GoneApiResponse.class))
+                    )
+            }
+    )
+    @PatchMapping("/me/settings")
+    public ResponseEntity<ApiResponse<MyProfileUpdateResponse>> updateMyProfile(
+            Authentication authentication,
+            @Valid @RequestBody MyProfileUpdateRequest request
+    ) {
+        MyProfileUpdateResponse response = myPageService.updateMyProfile(authentication.getName(), request);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 }
