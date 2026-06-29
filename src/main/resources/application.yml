@@ -17,6 +17,22 @@ spring:
     show-sql: true
     open-in-view: false
 
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 250MB
+
+file:
+  upload-dir: ./uploads/archive
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+
 # JWT
 jwt:
   secret: dcom-intranet-server-jwt-secret-key-must-be-long-enough-for-256-bits-security

@@ -87,5 +87,11 @@ public class ArchiveRecord {
         this.semester = semester;
         this.examType = examType;
         this.content = content;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void removeFile(ArchiveFile file) {
+        files.remove(file);
+        file.setRecord(null);
     }
 }
