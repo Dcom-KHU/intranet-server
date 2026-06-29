@@ -3,6 +3,7 @@ package com.dcom.intranet.mypage;
 import com.dcom.intranet.mypage.dto.MyProfileResponse;
 import com.dcom.intranet.mypage.dto.MyProfileUpdateRequest;
 import com.dcom.intranet.mypage.dto.MyProfileUpdateResponse;
+import com.dcom.intranet.mypage.dto.MyWrittenPostListResponse;
 import com.dcom.intranet.mypage.dto.PasswordChangeRequest;
 import com.dcom.intranet.mypage.dto.PasswordChangeResponse;
 import com.dcom.intranet.user.User;
@@ -20,15 +21,18 @@ public class MyPageService {
     private final UserRepository userRepository;
     private final EmailVerificationService emailVerificationService;
     private final PasswordEncoder passwordEncoder;
+    private final MyWrittenPostReader myWrittenPostReader;
 
     public MyPageService(
             UserRepository userRepository,
             EmailVerificationService emailVerificationService,
-            PasswordEncoder passwordEncoder
+            PasswordEncoder passwordEncoder,
+            MyWrittenPostReader myWrittenPostReader
     ) {
         this.userRepository = userRepository;
         this.emailVerificationService = emailVerificationService;
         this.passwordEncoder = passwordEncoder;
+        this.myWrittenPostReader = myWrittenPostReader;
     }
 
     @Transactional(readOnly = true)
@@ -36,6 +40,13 @@ public class MyPageService {
         User user = userRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."));
         return MyProfileResponse.from(user);
+    }
+
+    @Transactional(readOnly = true)
+    public MyWrittenPostListResponse getMyPosts(String loginId, int page, int size, String type) {
+        User user = userRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."));
+        return myWrittenPostReader.read(user.getId(), page, size, type);
     }
 
     @Transactional
