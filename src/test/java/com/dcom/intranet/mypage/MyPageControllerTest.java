@@ -13,6 +13,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
@@ -31,6 +32,8 @@ class MyPageControllerTest {
 
     private static final String SUCCESS_MESSAGE = "요청이 성공적으로 처리되었습니다.";
     private static final String UNAUTHORIZED_MESSAGE = "인증이 필요합니다.";
+    private static final String CURRENT_PASSWORD = "current-password";
+    private static final String NEW_PASSWORD = "changed-password";
 
     @Autowired
     private MockMvc mockMvc;
@@ -43,6 +46,9 @@ class MyPageControllerTest {
 
     @Autowired
     private EmailVerificationRepository emailVerificationRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @BeforeEach
     void setUp() {
@@ -598,11 +604,125 @@ class MyPageControllerTest {
                 .andExpect(jsonPath("$.data").value(nullValue()));
     }
 
+    @Test
+    @DisplayName("Password change with correct current password returns 200 and stores encoded new password")
+    void passwordChangeWithCorrectCurrentPasswordReturns200AndStoresEncodedNewPassword() throws Exception {
+        User user = saveUser("password1", UserStatus.APPROVED, UserRole.USER);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+
+        mockMvc.perform(patch("/api/users/me/password")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "currentPassword": "%s",
+                                  "newPassword": "%s"
+                                }
+                                """.formatted(CURRENT_PASSWORD, NEW_PASSWORD)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.message").value(SUCCESS_MESSAGE))
+                .andExpect(jsonPath("$.data.message").value("비밀번호가 변경되었습니다."))
+                .andExpect(jsonPath("$.data.password").doesNotExist())
+                .andExpect(jsonPath("$.data.currentPassword").doesNotExist())
+                .andExpect(jsonPath("$.data.newPassword").doesNotExist());
+
+        User updatedUser = userRepository.findByLoginId("password1").orElseThrow();
+        assertThat(passwordEncoder.matches(NEW_PASSWORD, updatedUser.getPassword())).isTrue();
+        assertThat(passwordEncoder.matches(CURRENT_PASSWORD, updatedUser.getPassword())).isFalse();
+        assertThat(updatedUser.getPassword()).isNotEqualTo(NEW_PASSWORD);
+    }
+
+    @Test
+    @DisplayName("Password change with wrong current password returns 400 common envelope")
+    void passwordChangeWithWrongCurrentPasswordReturns400CommonEnvelope() throws Exception {
+        User user = saveUser("password2", UserStatus.APPROVED, UserRole.USER);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+
+        mockMvc.perform(patch("/api/users/me/password")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "currentPassword": "wrong-password",
+                                  "newPassword": "%s"
+                                }
+                                """.formatted(NEW_PASSWORD)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("현재 비밀번호가 올바르지 않습니다."))
+                .andExpect(jsonPath("$.data").value(nullValue()));
+    }
+
+    @Test
+    @DisplayName("Password change with blank current password returns 400 common envelope")
+    void passwordChangeWithBlankCurrentPasswordReturns400CommonEnvelope() throws Exception {
+        User user = saveUser("password3", UserStatus.APPROVED, UserRole.USER);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+
+        mockMvc.perform(patch("/api/users/me/password")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "currentPassword": "",
+                                  "newPassword": "%s"
+                                }
+                                """.formatted(NEW_PASSWORD)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("요청값이 올바르지 않습니다."))
+                .andExpect(jsonPath("$.data").value(nullValue()));
+    }
+
+    @Test
+    @DisplayName("Password change with blank new password returns 400 common envelope")
+    void passwordChangeWithBlankNewPasswordReturns400CommonEnvelope() throws Exception {
+        User user = saveUser("password4", UserStatus.APPROVED, UserRole.USER);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+
+        mockMvc.perform(patch("/api/users/me/password")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "currentPassword": "%s",
+                                  "newPassword": ""
+                                }
+                                """.formatted(CURRENT_PASSWORD)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("요청값이 올바르지 않습니다."))
+                .andExpect(jsonPath("$.data").value(nullValue()));
+    }
+
+    @Test
+    @DisplayName("Password change without token returns 401 common envelope")
+    void passwordChangeWithoutTokenReturns401CommonEnvelope() throws Exception {
+        mockMvc.perform(patch("/api/users/me/password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "currentPassword": "%s",
+                                  "newPassword": "%s"
+                                }
+                                """.formatted(CURRENT_PASSWORD, NEW_PASSWORD)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.message").value(UNAUTHORIZED_MESSAGE))
+                .andExpect(jsonPath("$.data").value(nullValue()));
+    }
+
     private User saveUser(String loginId, UserStatus status, UserRole role) {
         User user = new User(
                 loginId,
                 studentIdFor(loginId),
-                "encoded-password",
+                passwordEncoder.encode(CURRENT_PASSWORD),
                 "홍길동",
                 "010-1234-5678",
                 loginId + "@dcom.org",

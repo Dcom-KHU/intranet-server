@@ -143,4 +143,8 @@ public class User {
     public void changeEmail(String email) {
         this.email = email;
     }
+
+    public void changePassword(String encodedPassword) {
+        this.password = encodedPassword;
+    }
 }
