@@ -1,6 +1,9 @@
 package com.dcom.intranet.mypage;
 
 import com.dcom.intranet.jwt.JwtTokenProvider;
+import com.dcom.intranet.mypage.dto.MyWrittenPostListResponse;
+import com.dcom.intranet.mypage.dto.MyWrittenPostResponse;
+import com.dcom.intranet.mypage.dto.PageInfoResponse;
 import com.dcom.intranet.user.User;
 import com.dcom.intranet.user.UserRepository;
 import com.dcom.intranet.user.UserRole;
@@ -11,12 +14,16 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.nullValue;
@@ -50,8 +57,12 @@ class MyPageControllerTest {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private TestMyWrittenPostReader myWrittenPostReader;
+
     @BeforeEach
     void setUp() {
+        myWrittenPostReader.reset();
         emailVerificationRepository.deleteAll();
         userRepository.deleteAll();
     }
@@ -718,6 +729,116 @@ class MyPageControllerTest {
                 .andExpect(jsonPath("$.data").value(nullValue()));
     }
 
+    @Test
+    @DisplayName("My written posts list returns 200 common envelope and post list")
+    void myWrittenPostsListReturns200CommonEnvelopeAndPostList() throws Exception {
+        User user = saveUser("posts1", UserStatus.APPROVED, UserRole.USER);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+        myWrittenPostReader.givenResponse(new MyWrittenPostListResponse(
+                List.of(new MyWrittenPostResponse(
+                        11L,
+                        "오픈소스SW개발방법및도구",
+                        "ARCHIVE",
+                        LocalDateTime.of(2026, 5, 25, 10, 30)
+                )),
+                new PageInfoResponse(0, 10, 1, 1L)
+        ));
+
+        mockMvc.perform(get("/api/users/me/posts")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .param("page", "0")
+                        .param("size", "10")
+                        .param("type", "ARCHIVE"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.message").value(SUCCESS_MESSAGE))
+                .andExpect(jsonPath("$.data.postList[0].postId").value(11))
+                .andExpect(jsonPath("$.data.postList[0].title").value("오픈소스SW개발방법및도구"))
+                .andExpect(jsonPath("$.data.postList[0].type").value("ARCHIVE"))
+                .andExpect(jsonPath("$.data.postList[0].createdAt").value("2026-05-25T10:30:00"))
+                .andExpect(jsonPath("$.data.pageInfo.page").value(0))
+                .andExpect(jsonPath("$.data.pageInfo.size").value(10))
+                .andExpect(jsonPath("$.data.pageInfo.totalPages").value(1))
+                .andExpect(jsonPath("$.data.pageInfo.totalElements").value(1));
+
+        assertThat(myWrittenPostReader.lastUserId()).isEqualTo(user.getId());
+        assertThat(myWrittenPostReader.lastPage()).isEqualTo(0);
+        assertThat(myWrittenPostReader.lastSize()).isEqualTo(10);
+        assertThat(myWrittenPostReader.lastType()).isEqualTo("ARCHIVE");
+    }
+
+    @Test
+    @DisplayName("My written posts list without type uses all types and default paging")
+    void myWrittenPostsListWithoutTypeUsesAllTypesAndDefaultPaging() throws Exception {
+        User user = saveUser("posts2", UserStatus.APPROVED, UserRole.USER);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+
+        mockMvc.perform(get("/api/users/me/posts")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.message").value(SUCCESS_MESSAGE))
+                .andExpect(jsonPath("$.data.postList").isArray())
+                .andExpect(jsonPath("$.data.pageInfo.page").value(0))
+                .andExpect(jsonPath("$.data.pageInfo.size").value(10));
+
+        assertThat(myWrittenPostReader.lastUserId()).isEqualTo(user.getId());
+        assertThat(myWrittenPostReader.lastPage()).isEqualTo(0);
+        assertThat(myWrittenPostReader.lastSize()).isEqualTo(10);
+        assertThat(myWrittenPostReader.lastType()).isNull();
+    }
+
+    @Test
+    @DisplayName("My written posts list with no posts returns empty list")
+    void myWrittenPostsListWithNoPostsReturnsEmptyList() throws Exception {
+        User user = saveUser("posts3", UserStatus.APPROVED, UserRole.USER);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+        myWrittenPostReader.givenResponse(MyWrittenPostListResponse.empty(0, 10));
+
+        mockMvc.perform(get("/api/users/me/posts")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .param("page", "0")
+                        .param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.message").value(SUCCESS_MESSAGE))
+                .andExpect(jsonPath("$.data.postList").isArray())
+                .andExpect(jsonPath("$.data.postList").isEmpty())
+                .andExpect(jsonPath("$.data.pageInfo.page").value(0))
+                .andExpect(jsonPath("$.data.pageInfo.size").value(10))
+                .andExpect(jsonPath("$.data.pageInfo.totalPages").value(0))
+                .andExpect(jsonPath("$.data.pageInfo.totalElements").value(0));
+    }
+
+    @Test
+    @DisplayName("My written posts list without token returns 401 common envelope")
+    void myWrittenPostsListWithoutTokenReturns401CommonEnvelope() throws Exception {
+        mockMvc.perform(get("/api/users/me/posts"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.message").value(UNAUTHORIZED_MESSAGE))
+                .andExpect(jsonPath("$.data").value(nullValue()));
+    }
+
+    @Test
+    @DisplayName("My written posts list with PENDING user token returns 401 common envelope")
+    void myWrittenPostsListWithPendingUserTokenReturns401CommonEnvelope() throws Exception {
+        User user = saveUser("postsPending", UserStatus.PENDING, UserRole.USER);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+
+        mockMvc.perform(get("/api/users/me/posts")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.message").value(UNAUTHORIZED_MESSAGE))
+                .andExpect(jsonPath("$.data").value(nullValue()));
+    }
+
     private User saveUser(String loginId, UserStatus status, UserRole role) {
         User user = new User(
                 loginId,
@@ -772,6 +893,62 @@ class MyPageControllerTest {
                 .andExpect(status().isOk());
 
         return latestVerification(loginId, newEmail).getEmailChangeToken();
+    }
+
+    @TestConfiguration
+    static class MyWrittenPostReaderTestConfig {
+
+        @Bean
+        @Primary
+        TestMyWrittenPostReader testMyWrittenPostReader() {
+            return new TestMyWrittenPostReader();
+        }
+    }
+
+    static class TestMyWrittenPostReader implements MyWrittenPostReader {
+
+        private MyWrittenPostListResponse response = MyWrittenPostListResponse.empty(0, 10);
+        private Long lastUserId;
+        private int lastPage;
+        private int lastSize;
+        private String lastType;
+
+        @Override
+        public MyWrittenPostListResponse read(Long userId, int page, int size, String type) {
+            this.lastUserId = userId;
+            this.lastPage = page;
+            this.lastSize = size;
+            this.lastType = type;
+            return response;
+        }
+
+        void givenResponse(MyWrittenPostListResponse response) {
+            this.response = response;
+        }
+
+        void reset() {
+            this.response = MyWrittenPostListResponse.empty(0, 10);
+            this.lastUserId = null;
+            this.lastPage = -1;
+            this.lastSize = -1;
+            this.lastType = null;
+        }
+
+        Long lastUserId() {
+            return lastUserId;
+        }
+
+        int lastPage() {
+            return lastPage;
+        }
+
+        int lastSize() {
+            return lastSize;
+        }
+
+        String lastType() {
+            return lastType;
+        }
     }
 
     private String studentIdFor(String loginId) {

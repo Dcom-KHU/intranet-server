@@ -15,6 +15,8 @@ import com.dcom.intranet.mypage.dto.MyProfileResponse;
 import com.dcom.intranet.mypage.dto.MyProfileUpdateApiResponse;
 import com.dcom.intranet.mypage.dto.MyProfileUpdateRequest;
 import com.dcom.intranet.mypage.dto.MyProfileUpdateResponse;
+import com.dcom.intranet.mypage.dto.MyWrittenPostListApiResponse;
+import com.dcom.intranet.mypage.dto.MyWrittenPostListResponse;
 import com.dcom.intranet.mypage.dto.PasswordChangeApiResponse;
 import com.dcom.intranet.mypage.dto.PasswordChangeRequest;
 import com.dcom.intranet.mypage.dto.PasswordChangeResponse;
@@ -31,6 +33,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -64,6 +67,38 @@ public class MyPageController {
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<MyProfileResponse>> getMyProfile(Authentication authentication) {
         MyProfileResponse response = myPageService.getMyProfile(authentication.getName());
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(
+            summary = "내가 쓴 글 목록 조회",
+            description = "인증된 사용자가 본인이 작성한 정보 공유 게시글, 족보 글, 활동 사진 댓글 목록을 조회한다.",
+            responses = {
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "200",
+                            description = "내가 쓴 글 목록 조회 성공",
+                            content = @Content(schema = @Schema(implementation = MyWrittenPostListApiResponse.class))
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "401",
+                            description = "인증 실패",
+                            content = @Content(schema = @Schema(implementation = UnauthorizedApiResponse.class))
+                    )
+            }
+    )
+    @GetMapping("/me/posts")
+    public ResponseEntity<ApiResponse<MyWrittenPostListResponse>> getMyPosts(
+            Authentication authentication,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String type
+    ) {
+        MyWrittenPostListResponse response = myPageService.getMyPosts(
+                authentication.getName(),
+                page,
+                size,
+                type
+        );
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
