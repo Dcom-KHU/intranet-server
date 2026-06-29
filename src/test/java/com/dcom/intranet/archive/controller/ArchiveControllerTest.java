@@ -1,24 +1,40 @@
 package com.dcom.intranet.archive.controller;
 
 import com.dcom.intranet.archive.domain.*;
+import com.dcom.intranet.archive.dto.request.ArchiveCreateRequest;
+import com.dcom.intranet.archive.dto.request.ArchiveRecordCreateRequest;
+import com.dcom.intranet.archive.repository.ArchiveFileRepository;
+import com.dcom.intranet.archive.repository.ArchiveRecordRepository;
 import com.dcom.intranet.archive.repository.ArchiveRepository;
 import com.dcom.intranet.user.User;
 import com.dcom.intranet.user.UserRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.FileSystemUtils;
 
+import java.nio.file.Path;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 // Security 필터 때문에 401 뜨면 addFilters = false로 임시 우회
-@SpringBootTest
+@SpringBootTest(properties = {
+        "file.upload-dir=./build/test-uploads/archive"
+})
 @AutoConfigureMockMvc(addFilters = false)
 @Transactional
 class ArchiveControllerTest {
@@ -32,10 +48,34 @@ class ArchiveControllerTest {
     @Autowired
     UserRepository userRepository;
 
+    @Autowired
+    ArchiveFileRepository archiveFileRepository;
+
+    @Autowired
+    ArchiveRecordRepository archiveRecordRepository;
+
+    @Autowired
+    ObjectMapper objectMapper;
+
+    User user;
+
+    private static final Path TEST_UPLOAD_DIR = Path.of("./build/test-uploads/archive");
+
     @BeforeEach
     void setUp() {
-        archiveRepository.deleteAll();
-        userRepository.deleteAll();
+        archiveFileRepository.deleteAllInBatch();
+        archiveRecordRepository.deleteAllInBatch();
+        archiveRepository.deleteAllInBatch();
+        userRepository.deleteAllInBatch();
+
+        user = userRepository.save(
+                new User("TEST-" + System.nanoTime(), "test" + System.nanoTime() + "@test.com", "하성준", "USER")
+        );
+    }
+
+    @AfterEach
+    void tearDown() {
+        FileSystemUtils.deleteRecursively(TEST_UPLOAD_DIR.toFile());
     }
 
     @Test
@@ -199,5 +239,102 @@ class ArchiveControllerTest {
         mockMvc.perform(get("/api/archives/{archiveId}", 999L)
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void 메인화면_등록에서_과목명과_교수명이_없으면_400_에러를_반환한다() throws Exception {
+        // given
+        ArchiveRecordCreateRequest recordRequest = new ArchiveRecordCreateRequest();
+        recordRequest.setExamYear(2024);
+        recordRequest.setSemester(Semester.FIRST);
+        recordRequest.setExamType(ExamType.MIDTERM);
+        recordRequest.setContent("본문 내용");
+
+        ArchiveCreateRequest request = new ArchiveCreateRequest();
+        request.setRecords(List.of(recordRequest));
+
+        MockMultipartFile requestPart = new MockMultipartFile(
+                "request",
+                "",
+                "application/json",
+                objectMapper.writeValueAsBytes(request)
+        );
+
+        // when & then
+        MvcResult result = mockMvc.perform(multipart("/api/archives")
+                        .file(requestPart)
+                        .param("userId", String.valueOf(user.getId()))
+                        .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("archiveId가 없으면 subjectName과 professorName은 필수입니다."))
+                .andReturn();
+
+        System.out.println("\n===== 필수 입력값 누락 에러 응답 =====");
+        System.out.println(prettyJson(result.getResponse().getContentAsString()));
+    }
+
+    @Test
+    void 업로드된_파일이_서버_로컬_저장소에_저장된다() throws Exception {
+        // given
+        ArchiveRecordCreateRequest recordRequest = new ArchiveRecordCreateRequest();
+        recordRequest.setExamYear(2024);
+        recordRequest.setSemester(Semester.FIRST);
+        recordRequest.setExamType(ExamType.MIDTERM);
+        recordRequest.setContent("파일 저장 테스트");
+        recordRequest.setFileIndexes(List.of(0));
+
+        ArchiveCreateRequest request = new ArchiveCreateRequest();
+        request.setSubjectName("운영체제");
+        request.setProfessorName("김교수");
+        request.setRecords(List.of(recordRequest));
+
+        MockMultipartFile requestPart = new MockMultipartFile(
+                "request",
+                "",
+                "application/json",
+                objectMapper.writeValueAsBytes(request)
+        );
+
+        MockMultipartFile file = new MockMultipartFile(
+                "files",
+                "os-midterm.pdf",
+                "application/pdf",
+                "test file content".getBytes()
+        );
+
+        // when
+        MvcResult createResult = mockMvc.perform(multipart("/api/archives")
+                        .file(requestPart)
+                        .file(file)
+                        .param("userId", String.valueOf(user.getId()))
+                        .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        System.out.println("\n===== 파일 업로드 등록 응답 =====");
+        System.out.println(prettyJson(createResult.getResponse().getContentAsString()));
+
+        // then
+        Path uploadRoot = Path.of("./build/test-uploads/archive");
+
+        List<Path> savedFiles;
+        try (var paths = java.nio.file.Files.walk(uploadRoot)) {
+            savedFiles = paths
+                    .filter(java.nio.file.Files::isRegularFile)
+                    .toList();
+        }
+
+        System.out.println("\n===== 로컬 저장소에 저장된 파일 목록 =====");
+        savedFiles.forEach(path -> System.out.println(path.toAbsolutePath()));
+
+        assertThat(savedFiles).hasSize(1);
+        assertThat(savedFiles.get(0).getFileName().toString()).endsWith(".pdf");
+    }
+
+    private String prettyJson(String json) throws Exception {
+        Object jsonObject = objectMapper.readValue(json, Object.class);
+        return objectMapper.writerWithDefaultPrettyPrinter()
+                .writeValueAsString(jsonObject);
     }
 }

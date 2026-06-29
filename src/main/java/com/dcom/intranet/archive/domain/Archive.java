@@ -68,4 +68,16 @@ public class Archive {
     public void touch() {
         this.lastModifiedAt = LocalDateTime.now();
     }
+
+    // 삭제 로직
+    public void removeRecord(ArchiveRecord record) {
+        records.remove(record);
+        record.setArchive(null);
+        touch();
+    }
+
+    // 폴더 안에 족보 게시물 있는지 없는지 확인 여부
+    public boolean hasNoRecords() {
+        return records.isEmpty();
+    }
 }
