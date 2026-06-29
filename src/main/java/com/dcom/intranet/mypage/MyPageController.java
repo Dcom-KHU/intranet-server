@@ -15,6 +15,9 @@ import com.dcom.intranet.mypage.dto.MyProfileResponse;
 import com.dcom.intranet.mypage.dto.MyProfileUpdateApiResponse;
 import com.dcom.intranet.mypage.dto.MyProfileUpdateRequest;
 import com.dcom.intranet.mypage.dto.MyProfileUpdateResponse;
+import com.dcom.intranet.mypage.dto.PasswordChangeApiResponse;
+import com.dcom.intranet.mypage.dto.PasswordChangeRequest;
+import com.dcom.intranet.mypage.dto.PasswordChangeResponse;
 import com.dcom.intranet.mypage.dto.TooManyRequestsApiResponse;
 import com.dcom.intranet.mypage.dto.UnauthorizedApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -181,6 +184,36 @@ public class MyPageController {
             @Valid @RequestBody MyProfileUpdateRequest request
     ) {
         MyProfileUpdateResponse response = myPageService.updateMyProfile(authentication.getName(), request);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(
+            summary = "비밀번호 변경",
+            description = "인증된 사용자의 현재 비밀번호를 확인한 뒤 새 비밀번호로 변경한다.",
+            responses = {
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "200",
+                            description = "비밀번호 변경 성공",
+                            content = @Content(schema = @Schema(implementation = PasswordChangeApiResponse.class))
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "400",
+                            description = "요청값 오류 또는 현재 비밀번호 불일치",
+                            content = @Content(schema = @Schema(implementation = BadRequestApiResponse.class))
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "401",
+                            description = "인증 실패",
+                            content = @Content(schema = @Schema(implementation = UnauthorizedApiResponse.class))
+                    )
+            }
+    )
+    @PatchMapping("/me/password")
+    public ResponseEntity<ApiResponse<PasswordChangeResponse>> changePassword(
+            Authentication authentication,
+            @Valid @RequestBody PasswordChangeRequest request
+    ) {
+        PasswordChangeResponse response = myPageService.changePassword(authentication.getName(), request);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 }

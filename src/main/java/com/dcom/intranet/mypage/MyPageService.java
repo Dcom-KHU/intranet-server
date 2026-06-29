@@ -3,9 +3,12 @@ package com.dcom.intranet.mypage;
 import com.dcom.intranet.mypage.dto.MyProfileResponse;
 import com.dcom.intranet.mypage.dto.MyProfileUpdateRequest;
 import com.dcom.intranet.mypage.dto.MyProfileUpdateResponse;
+import com.dcom.intranet.mypage.dto.PasswordChangeRequest;
+import com.dcom.intranet.mypage.dto.PasswordChangeResponse;
 import com.dcom.intranet.user.User;
 import com.dcom.intranet.user.UserRepository;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -16,10 +19,16 @@ public class MyPageService {
 
     private final UserRepository userRepository;
     private final EmailVerificationService emailVerificationService;
+    private final PasswordEncoder passwordEncoder;
 
-    public MyPageService(UserRepository userRepository, EmailVerificationService emailVerificationService) {
+    public MyPageService(
+            UserRepository userRepository,
+            EmailVerificationService emailVerificationService,
+            PasswordEncoder passwordEncoder
+    ) {
         this.userRepository = userRepository;
         this.emailVerificationService = emailVerificationService;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Transactional(readOnly = true)
@@ -46,5 +55,18 @@ public class MyPageService {
         }
 
         return MyProfileUpdateResponse.from(user);
+    }
+
+    @Transactional
+    public PasswordChangeResponse changePassword(String loginId, PasswordChangeRequest request) {
+        User user = userRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."));
+
+        if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
+            throw new MyPageApiException(HttpStatus.BAD_REQUEST, "현재 비밀번호가 올바르지 않습니다.");
+        }
+
+        user.changePassword(passwordEncoder.encode(request.newPassword()));
+        return new PasswordChangeResponse("비밀번호가 변경되었습니다.");
     }
 }

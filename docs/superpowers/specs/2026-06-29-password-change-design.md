@@ -1,32 +1,32 @@
-# Password Change API Design
+# 비밀번호 변경 API 설계
 
-## Scope
+## 작업 범위
 
-Implement only the My Page password change API.
+이번 작업에서는 마이페이지의 비밀번호 변경 API만 구현한다.
 
-- Endpoint: `PATCH /api/users/me/password`
-- Auth: authenticated `USER` or `ADMIN`, matching the existing `/api/users/me/**` security rule
-- Request body: `currentPassword`, `newPassword`
-- Success data: `{ "message": "비밀번호가 변경되었습니다." }`
-- Status codes from the final API spec: `200`, `400`, `401`
+- 엔드포인트: `PATCH /api/users/me/password`
+- 인증: 기존 `/api/users/me/**` 보안 규칙과 동일하게 인증된 `USER` 또는 `ADMIN`
+- 요청 본문: `currentPassword`, `newPassword`
+- 성공 응답 데이터: `{ "message": "비밀번호가 변경되었습니다." }`
+- 최종 API 명세서 기준 상태코드: `200`, `400`, `401`
 
-Already completed My Page APIs stay out of scope:
+이미 완료된 아래 마이페이지 API는 이번 작업 범위에서 제외한다.
 
 - `GET /api/users/me`
 - `POST /api/users/me/email/verification/send`
 - `POST /api/users/me/email/verification/verify`
 - `PATCH /api/users/me/settings`
 
-Future My Page APIs, including withdrawal and post/comment lists, stay out of scope.
+회원탈퇴, 내가 쓴 글/댓글 목록 등 이후 마이페이지 API도 이번 작업 범위에서 제외한다.
 
-## Assumptions
+## 전제
 
-- The final API spec is the source of truth.
-- The PRD and `mypage_front` password-change screens explain intent, but do not add server fields beyond the final API spec.
-- The frontend handles new-password confirmation because the API spec explicitly notes that confirmation is handled on the frontend.
-- Server-side validation is limited to what is needed by the spec: required request fields, current password verification, and authentication.
-- Password hashing uses the existing Spring Security `PasswordEncoder` bean.
-- The existing common response envelope remains unchanged:
+- 최종 API 명세서를 최우선 기준으로 삼는다.
+- PRD와 `mypage_front`의 비밀번호 변경 화면은 기능 의도를 이해하는 참고 자료로만 사용한다.
+- 새 비밀번호 확인은 API 명세서에 “프론트에서” 처리한다고 되어 있으므로 서버 요청 필드에 추가하지 않는다.
+- 서버 검증은 명세서에 필요한 수준으로 제한한다: 필수 요청값 검증, 현재 비밀번호 확인, 인증 확인.
+- 비밀번호 해시는 기존 Spring Security `PasswordEncoder` 빈을 사용한다.
+- 기존 공통 응답 envelope 구조는 유지한다.
 
 ```json
 {
@@ -37,38 +37,38 @@ Future My Page APIs, including withdrawal and post/comment lists, stay out of sc
 }
 ```
 
-## Considered Approaches
+## 검토한 접근 방식
 
-### Recommended: Spec-minimal server validation
+### 추천안: API 명세서 기준의 최소 서버 검증
 
-The server accepts `currentPassword` and `newPassword`, rejects blank values with `400`, verifies the current password with `PasswordEncoder.matches`, stores the new password with `PasswordEncoder.encode`, and returns a message-only response.
+서버는 `currentPassword`와 `newPassword`를 받는다. 빈 값이면 `400`을 반환하고, `PasswordEncoder.matches`로 현재 비밀번호를 확인한다. 확인에 성공하면 `PasswordEncoder.encode`로 새 비밀번호를 해시해 저장하고, 메시지만 담은 응답을 반환한다.
 
-This matches the final API spec without adding password complexity rules that are not documented there.
+이 방식은 최종 API 명세서에 없는 비밀번호 복잡도 정책을 임의로 추가하지 않으면서 필요한 동작을 충족한다.
 
-### Alternative: Also enforce frontend password complexity
+### 대안: 프론트 화면의 비밀번호 복잡도 문구까지 서버에서 검증
 
-The password-change screen says the new password should combine lowercase English letters and numbers with at least 8 characters. Enforcing this on the backend would improve consistency with the current UI copy, but it would add behavior not defined by the final API spec.
+비밀번호 변경 화면에는 “8자리 이상의 영문 소문자, 숫자 조합” 문구가 있다. 이를 서버에서도 검증하면 현재 UI 문구와는 더 일관될 수 있다.
 
-This is not recommended for the current task.
+다만 최종 API 명세서에 정의되지 않은 동작을 추가하는 것이므로 이번 작업에서는 채택하지 않는다.
 
-### Alternative: Require `newPasswordConfirm` in the API
+### 대안: `newPasswordConfirm` 요청 필드 추가
 
-The PRD and screen include new-password confirmation. Adding the field would mirror the UI, but the final API spec says the request only contains `currentPassword` and `newPassword`, and notes that confirmation is handled by the frontend.
+PRD와 화면에는 새 비밀번호 확인 입력이 있다. 하지만 최종 API 명세서의 요청값은 `currentPassword`, `newPassword`뿐이고, 새 비밀번호 확인은 프론트에서 처리한다고 적혀 있다.
 
-This is not recommended.
+따라서 이번 작업에서는 `newPasswordConfirm`을 API 요청 필드로 추가하지 않는다.
 
-## API Behavior
+## API 동작
 
-### Success: `200`
+### 성공: `200`
 
-When an approved authenticated user sends the correct current password and a non-blank new password:
+승인된 인증 사용자가 올바른 현재 비밀번호와 비어 있지 않은 새 비밀번호를 보내면 다음처럼 처리한다.
 
-- The stored password is replaced with a BCrypt hash of `newPassword`.
-- The response uses the common success envelope.
-- The response `data` object contains only a message.
-- The raw new password is never returned.
+- 저장된 비밀번호를 `newPassword`의 BCrypt 해시로 교체한다.
+- 기존 공통 성공 응답 envelope를 사용한다.
+- 응답 `data` 객체에는 메시지만 포함한다.
+- 원문 새 비밀번호는 응답에 절대 포함하지 않는다.
 
-Expected response shape:
+예상 응답 구조:
 
 ```json
 {
@@ -81,15 +81,15 @@ Expected response shape:
 }
 ```
 
-### Validation failure: `400`
+### 유효성 검증 실패: `400`
 
-Return the existing bad-request common envelope when:
+아래 경우 기존 bad request 공통 응답 envelope를 반환한다.
 
-- `currentPassword` is blank or missing.
-- `newPassword` is blank or missing.
-- `currentPassword` does not match the stored password hash.
+- `currentPassword`가 비어 있거나 누락된 경우
+- `newPassword`가 비어 있거나 누락된 경우
+- `currentPassword`가 저장된 비밀번호 해시와 일치하지 않는 경우
 
-Blank-field validation should use the existing `MethodArgumentNotValidException` path and message:
+빈 필드 검증은 기존 `MethodArgumentNotValidException` 처리 경로와 메시지를 사용한다.
 
 ```json
 {
@@ -100,7 +100,7 @@ Blank-field validation should use the existing `MethodArgumentNotValidException`
 }
 ```
 
-Wrong current password should use `MyPageApiException` with:
+현재 비밀번호가 틀린 경우에는 `MyPageApiException`을 사용하고 아래 메시지를 반환한다.
 
 ```json
 {
@@ -111,11 +111,11 @@ Wrong current password should use `MyPageApiException` with:
 }
 ```
 
-### Authentication failure: `401`
+### 인증 실패: `401`
 
-Missing token, invalid token, and non-approved users continue to be handled by the existing Spring Security/JWT path.
+토큰이 없거나, 토큰이 유효하지 않거나, 승인되지 않은 사용자 상태인 경우에는 기존 Spring Security/JWT 처리 경로를 그대로 사용한다.
 
-Expected response shape:
+예상 응답 구조:
 
 ```json
 {
@@ -126,75 +126,75 @@ Expected response shape:
 }
 ```
 
-## Code Design
+## 코드 설계
 
-Add the smallest set of production changes that follows the existing My Page pattern.
+기존 마이페이지 패턴을 따르면서 필요한 최소 변경만 추가한다.
 
-- Add `PasswordChangeRequest` under `src/main/java/com/dcom/intranet/mypage/dto/`.
-  - Record fields: `currentPassword`, `newPassword`
-  - Validation: `@NotBlank` on both fields
-  - Swagger schema examples only
-- Add `PasswordChangeResponse`.
-  - Record field: `message`
-  - Static factory is optional; direct construction is enough.
-- Add `PasswordChangeApiResponse`.
-  - Same wrapper style as `MyProfileUpdateApiResponse`
-  - `data` type is `PasswordChangeResponse`
-- Extend `MyPageService`.
-  - Inject `PasswordEncoder`.
-  - Add `changePassword(String loginId, PasswordChangeRequest request)`.
-  - Load the user by login ID as current methods do.
-  - If the user is missing, throw `ResponseStatusException(HttpStatus.UNAUTHORIZED, "인증이 필요합니다.")`.
-  - If `PasswordEncoder.matches` fails, throw `MyPageApiException(HttpStatus.BAD_REQUEST, "현재 비밀번호가 올바르지 않습니다.")`.
-  - Encode and store the new password.
-- Extend `User`.
-  - Add one domain method: `changePassword(String encodedPassword)`.
-  - Do not expose new password data.
-- Extend `MyPageController`.
-  - Add `@PatchMapping("/me/password")`.
-  - Return `ResponseEntity<ApiResponse<PasswordChangeResponse>>`.
-  - Add Swagger responses for `200`, `400`, and `401`.
+- `src/main/java/com/dcom/intranet/mypage/dto/` 아래에 `PasswordChangeRequest`를 추가한다.
+  - record 필드: `currentPassword`, `newPassword`
+  - 검증: 두 필드 모두 `@NotBlank`
+  - Swagger schema 예시만 추가
+- `PasswordChangeResponse`를 추가한다.
+  - record 필드: `message`
+  - 정적 팩토리는 필수는 아니며 직접 생성해도 충분하다.
+- `PasswordChangeApiResponse`를 추가한다.
+  - `MyProfileUpdateApiResponse`와 같은 wrapper 스타일을 따른다.
+  - `data` 타입은 `PasswordChangeResponse`로 둔다.
+- `MyPageService`를 확장한다.
+  - `PasswordEncoder`를 주입한다.
+  - `changePassword(String loginId, PasswordChangeRequest request)`를 추가한다.
+  - 기존 메서드들과 동일하게 login ID로 사용자를 조회한다.
+  - 사용자가 없으면 `ResponseStatusException(HttpStatus.UNAUTHORIZED, "인증이 필요합니다.")`를 던진다.
+  - `PasswordEncoder.matches`가 실패하면 `MyPageApiException(HttpStatus.BAD_REQUEST, "현재 비밀번호가 올바르지 않습니다.")`를 던진다.
+  - 새 비밀번호를 encode한 뒤 저장한다.
+- `User`를 확장한다.
+  - 도메인 메서드 `changePassword(String encodedPassword)` 하나만 추가한다.
+  - 새 비밀번호 관련 데이터는 외부로 노출하지 않는다.
+- `MyPageController`를 확장한다.
+  - `@PatchMapping("/me/password")`를 추가한다.
+  - 반환 타입은 `ResponseEntity<ApiResponse<PasswordChangeResponse>>`로 둔다.
+  - Swagger 응답은 `200`, `400`, `401`을 모두 명시한다.
 
-No new service or abstraction is needed.
+새 서비스나 추가 추상화는 만들지 않는다.
 
-## Testing Design
+## 테스트 설계
 
-Use the existing `MyPageControllerTest` style with `@SpringBootTest`, `MockMvc`, JWT tokens, and repository assertions.
+기존 `MyPageControllerTest`의 방식을 그대로 따른다. 즉, `@SpringBootTest`, `MockMvc`, JWT 토큰, repository assertion을 사용한다.
 
-Test first, in this order:
+테스트는 반드시 먼저 작성하고 아래 순서로 진행한다.
 
-1. Successful password change returns `200`, common success envelope, and message data.
-2. Successful password change stores an encoded password that matches the new password and no longer matches the old password.
-3. Wrong current password returns `400` common envelope with `현재 비밀번호가 올바르지 않습니다.`.
-4. Blank `currentPassword` returns `400` common envelope with `요청값이 올바르지 않습니다.`.
-5. Blank `newPassword` returns `400` common envelope with `요청값이 올바르지 않습니다.`.
-6. Missing token returns `401` common envelope with `인증이 필요합니다.`.
+1. 비밀번호 변경 성공 시 `200`, 공통 성공 envelope, 메시지 데이터가 반환된다.
+2. 비밀번호 변경 성공 후 저장된 비밀번호는 새 비밀번호와 매칭되고 기존 비밀번호와는 매칭되지 않는다.
+3. 현재 비밀번호가 틀리면 `400` 공통 envelope와 `현재 비밀번호가 올바르지 않습니다.` 메시지가 반환된다.
+4. `currentPassword`가 비어 있으면 `400` 공통 envelope와 `요청값이 올바르지 않습니다.` 메시지가 반환된다.
+5. `newPassword`가 비어 있으면 `400` 공통 envelope와 `요청값이 올바르지 않습니다.` 메시지가 반환된다.
+6. 토큰이 없으면 `401` 공통 envelope와 `인증이 필요합니다.` 메시지가 반환된다.
 
-The existing `saveUser` helper should be adjusted to store a BCrypt-encoded default password so existing tests continue to work while password-change tests exercise real password verification.
+기존 `saveUser` 테스트 helper는 기본 비밀번호를 BCrypt로 encode해 저장하도록 조정한다. 그래야 기존 테스트는 계속 동작하면서 비밀번호 변경 테스트는 실제 비밀번호 검증을 사용할 수 있다.
 
 ## Swagger/OpenAPI
 
-The controller annotations must make Swagger Editor show:
+컨트롤러 어노테이션은 Swagger Editor에서 아래 구조가 명확히 보이도록 작성한다.
 
-- `200` response with `success`, `status`, `message`, and `data.message`
-- `400` failure response with nullable `data`
-- `401` failure response with nullable `data`
+- `200` 응답: `success`, `status`, `message`, `data.message`
+- `400` 실패 응답: nullable `data`
+- `401` 실패 응답: nullable `data`
 
-After implementation, regenerate or update `docs/openapi.json` using the same project workflow already used for the previous My Page APIs.
+구현 후에는 기존 마이페이지 API 작업에서 사용한 방식과 동일하게 `docs/openapi.json`을 재생성하거나 갱신한다.
 
-## Out Of Scope
+## 제외 범위
 
-- Password reset through email
-- Password confirmation request field
-- Password complexity policy beyond non-blank validation
-- Forced logout or token revocation after password change
-- Email notification after password change
-- Any My Page APIs other than password change
+- 이메일을 통한 비밀번호 재설정
+- 비밀번호 확인 요청 필드
+- non-blank 검증을 넘어서는 비밀번호 복잡도 정책
+- 비밀번호 변경 후 강제 로그아웃 또는 토큰 폐기
+- 비밀번호 변경 알림 메일
+- 비밀번호 변경 외의 다른 마이페이지 API
 
-## Success Criteria
+## 성공 기준
 
-- All password-change tests are written before production code and are observed failing for the expected missing-feature reason.
-- The implementation passes the password-change tests.
-- Existing My Page tests still pass.
-- All response envelopes follow `ApiResponse<T>`.
-- Swagger response schema clearly shows the success `data` object and all spec-defined status codes.
+- 비밀번호 변경 테스트를 production code보다 먼저 작성하고, 기능 미구현으로 인해 기대한 방식으로 실패하는 것을 확인한다.
+- 구현 후 비밀번호 변경 테스트가 통과한다.
+- 기존 마이페이지 테스트가 계속 통과한다.
+- 모든 응답 envelope는 `ApiResponse<T>` 구조를 따른다.
+- Swagger 응답 schema에서 성공 `data` 객체와 명세서에 정의된 모든 상태코드가 명확히 보인다.
