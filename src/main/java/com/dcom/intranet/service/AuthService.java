@@ -92,6 +92,13 @@ public class AuthService {
 
     }
 
+    /// 로그인 상태 확인
+    public MeResponse me(String loginId){
+        User user = userRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
+        return MeResponse.from(user);
+    }
+
 
 
 
