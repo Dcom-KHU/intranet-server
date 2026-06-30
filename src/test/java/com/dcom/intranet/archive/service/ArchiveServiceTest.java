@@ -2,6 +2,8 @@ package com.dcom.intranet.archive.service;
 
 import com.dcom.intranet.archive.domain.*;
 import com.dcom.intranet.archive.dto.response.*;
+import com.dcom.intranet.archive.repository.ArchiveFileRepository;
+import com.dcom.intranet.archive.repository.ArchiveRecordRepository;
 import com.dcom.intranet.archive.repository.ArchiveRepository;
 import com.dcom.intranet.user.User;
 import com.dcom.intranet.user.UserRepository;
@@ -26,12 +28,20 @@ class ArchiveServiceTest {
     ArchiveRepository archiveRepository;
 
     @Autowired
+    ArchiveRecordRepository archiveRecordRepository;
+
+    @Autowired
+    ArchiveFileRepository archiveFileRepository;
+
+    @Autowired
     UserRepository userRepository;
 
     @BeforeEach
     void setUp() {
-        archiveRepository.deleteAll();
-        userRepository.deleteAll();
+        archiveFileRepository.deleteAllInBatch();
+        archiveRecordRepository.deleteAllInBatch();
+        archiveRepository.deleteAllInBatch();
+        userRepository.deleteAllInBatch();
     }
 
     @Test
@@ -116,8 +126,10 @@ class ArchiveServiceTest {
     @Test
     void 아카이브_상세_조회를_한다() throws InterruptedException {
         // given
+        long now = System.nanoTime();
+
         User user = userRepository.save(
-                new User("23", "test@test.com", "하성준", "USER")
+                new User("23-" + now, "test" + now + "@test.com", "하성준", "USER")
         );
 
         Archive archive = new Archive("오픈소스SW개발방법및도구", "이성원");

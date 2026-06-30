@@ -106,7 +106,9 @@ public class ArchiveService {
             List<MultipartFile> files,
             Long userId
     ) {
-        List<MultipartFile> safeFiles = files == null ? List.of() : files;
+        List<MultipartFile> requestFiles = files == null
+                ? List.of()
+                : files;
 
         User author = userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(
@@ -122,7 +124,11 @@ public class ArchiveService {
         List<ArchiveRecord> createdRecords = new ArrayList<>();
 
         for (ArchiveRecordCreateRequest recordRequest : request.getRecords()) {
-            validateRecordRequest(recordRequest, safeFiles);
+            List<Integer> fileIndexes = resolveFileIndexes(recordRequest);
+
+            validateFileIndexes(fileIndexes, requestFiles);
+
+            validateRecordHasContentOrFiles(recordRequest, fileIndexes);
 
             ArchiveRecord record = new ArchiveRecord(
                     author,
@@ -132,14 +138,8 @@ public class ArchiveService {
                     recordRequest.getContent()
             );
 
-            List<Integer> fileIndexes = resolveFileIndexes(
-                    recordRequest,
-                    request.getRecords().size(),
-                    safeFiles
-            );
-
             for (Integer fileIndex : fileIndexes) {
-                MultipartFile multipartFile = safeFiles.get(fileIndex);
+                MultipartFile multipartFile = requestFiles.get(fileIndex);
 
                 ArchiveFileStorageService.StoredFile storedFile =
                         archiveFileStorageService.store(multipartFile);
@@ -157,10 +157,7 @@ public class ArchiveService {
             }
 
             archive.addRecord(record);
-
-            // 핵심: Record를 명시적으로 저장
             archiveRecordRepository.save(record);
-
             createdRecords.add(record);
         }
 
@@ -208,53 +205,15 @@ public class ArchiveService {
                 ));
     }
 
-    private void validateRecordRequest(
-            ArchiveRecordCreateRequest recordRequest,
-            List<MultipartFile> files
-    ) {
-        List<Integer> fileIndexes = recordRequest.getFileIndexes();
-
-        boolean hasContent = recordRequest.getContent() != null
-                && !recordRequest.getContent().isBlank();
-
-        boolean hasFiles = fileIndexes != null && !fileIndexes.isEmpty();
-
-        if (!hasContent && !hasFiles && files.isEmpty()) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "본문 내용 또는 파일 중 하나는 필요합니다."
-            );
+    private List<Integer> resolveFileIndexes(ArchiveRecordCreateRequest recordRequest) {
+        if (recordRequest.getFileIndexes() == null || recordRequest.getFileIndexes().isEmpty()) {
+            return List.of();
         }
 
-        if (fileIndexes != null) {
-            for (Integer fileIndex : fileIndexes) {
-                if (fileIndex == null || fileIndex < 0 || fileIndex >= files.size()) {
-                    throw new ResponseStatusException(
-                            HttpStatus.BAD_REQUEST,
-                            "파일 인덱스가 올바르지 않습니다."
-                    );
-                }
-            }
-        }
-    }
-
-    private List<Integer> resolveFileIndexes(
-            ArchiveRecordCreateRequest recordRequest,
-            int recordCount,
-            List<MultipartFile> files
-    ) {
-        if (recordRequest.getFileIndexes() != null && !recordRequest.getFileIndexes().isEmpty()) {
-            return recordRequest.getFileIndexes();
-        }
-
-        // 단일 족보 등록이고 fileIndexes가 없으면 전체 파일을 해당 record에 연결
-        if (recordCount == 1 && !files.isEmpty()) {
-            return java.util.stream.IntStream.range(0, files.size())
-                    .boxed()
-                    .toList();
-        }
-
-        return List.of();
+        return recordRequest.getFileIndexes()
+                .stream()
+                .distinct()
+                .toList();
     }
 
     @Transactional
@@ -457,5 +416,56 @@ public class ArchiveService {
                 file.getOriginalFileName(),
                 file.getContentType()
         );
+    }
+
+    private void validateFileIndexes(
+            List<Integer> fileIndexes,
+            List<MultipartFile> files
+    ) {
+        if (fileIndexes == null || fileIndexes.isEmpty()) {
+            return;
+        }
+
+        if (files == null || files.isEmpty()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "fileIndexes가 존재하지만 업로드된 파일이 없습니다."
+            );
+        }
+
+        for (Integer fileIndex : fileIndexes) {
+            if (fileIndex == null || fileIndex < 0 || fileIndex >= files.size()) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "fileIndexes 값이 업로드된 파일 범위를 벗어났습니다."
+                );
+            }
+
+            MultipartFile file = files.get(fileIndex);
+
+            if (file == null || file.isEmpty()) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "fileIndexes가 가리키는 파일이 비어 있습니다."
+                );
+            }
+        }
+    }
+
+    private void validateRecordHasContentOrFiles(
+            ArchiveRecordCreateRequest recordRequest,
+            List<Integer> fileIndexes
+    ) {
+        boolean hasContent = recordRequest.getContent() != null
+                && !recordRequest.getContent().isBlank();
+
+        boolean hasFiles = fileIndexes != null && !fileIndexes.isEmpty();
+
+        if (!hasContent && !hasFiles) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "본문 내용 또는 파일 중 하나는 필요합니다."
+            );
+        }
     }
 }

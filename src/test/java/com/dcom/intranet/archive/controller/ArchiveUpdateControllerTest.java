@@ -5,6 +5,8 @@ import com.dcom.intranet.archive.domain.Semester;
 import com.dcom.intranet.archive.dto.request.ArchiveCreateRequest;
 import com.dcom.intranet.archive.dto.request.ArchiveRecordCreateRequest;
 import com.dcom.intranet.archive.dto.request.ArchiveUpdateRequest;
+import com.dcom.intranet.archive.repository.ArchiveFileRepository;
+import com.dcom.intranet.archive.repository.ArchiveRecordRepository;
 import com.dcom.intranet.archive.repository.ArchiveRepository;
 import com.dcom.intranet.user.User;
 import com.dcom.intranet.user.UserRepository;
@@ -52,6 +54,12 @@ class ArchiveUpdateControllerTest {
     ArchiveRepository archiveRepository;
 
     @Autowired
+    ArchiveRecordRepository archiveRecordRepository;
+
+    @Autowired
+    ArchiveFileRepository archiveFileRepository;
+
+    @Autowired
     UserRepository userRepository;
 
     User owner;
@@ -59,16 +67,31 @@ class ArchiveUpdateControllerTest {
 
     @BeforeEach
     void setUp() {
-        archiveRepository.deleteAll();
-        userRepository.deleteAll();
+        archiveFileRepository.deleteAllInBatch();
+        archiveRecordRepository.deleteAllInBatch();
+        archiveRepository.deleteAllInBatch();
+        userRepository.deleteAllInBatch();
+
         FileSystemUtils.deleteRecursively(TEST_UPLOAD_DIR.toFile());
 
+        String suffix = String.valueOf(System.nanoTime() % 1_000_000_000L);
+
         owner = userRepository.save(
-                new User("20240001", "owner@test.com", "작성자", "USER")
+                new User(
+                        "01" + suffix,
+                        "owner" + suffix + "@test.com",
+                        "작성자",
+                        "USER"
+                )
         );
 
         otherUser = userRepository.save(
-                new User("20240002", "other@test.com", "다른유저", "USER")
+                new User(
+                        "02" + suffix,
+                        "other" + suffix + "@test.com",
+                        "다른유저",
+                        "USER"
+                )
         );
     }
 
@@ -105,8 +128,11 @@ class ArchiveUpdateControllerTest {
                             return request;
                         }))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.recordId").value(created.recordId()))
-                .andExpect(jsonPath("$.updatedAt").exists())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.message").value("족보가 수정되었습니다."))
+                .andExpect(jsonPath("$.data.recordId").value(created.recordId()))
+                .andExpect(jsonPath("$.data.updatedAt").exists())
                 .andReturn();
 
         System.out.println("\n===== 수정 응답 =====");
@@ -116,11 +142,13 @@ class ArchiveUpdateControllerTest {
         MvcResult detailResult = mockMvc.perform(get("/api/archives/{archiveId}", created.archiveId())
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.records[0].examYear").value(2025))
-                .andExpect(jsonPath("$.records[0].semester").value("SECOND"))
-                .andExpect(jsonPath("$.records[0].examType").value("FINAL"))
-                .andExpect(jsonPath("$.records[0].content").value("수정된 기말고사 족보 내용입니다."))
-                .andExpect(jsonPath("$.records[0].files", hasSize(2)))
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data.records[0].examYear").value(2025))
+                .andExpect(jsonPath("$.data.records[0].semester").value("SECOND"))
+                .andExpect(jsonPath("$.data.records[0].examType").value("FINAL"))
+                .andExpect(jsonPath("$.data.records[0].content").value("수정된 기말고사 족보 내용입니다."))
+                .andExpect(jsonPath("$.data.records[0].files", hasSize(2)))
                 .andReturn();
 
         System.out.println("\n===== 수정 후 상세 조회 =====");
@@ -137,7 +165,7 @@ class ArchiveUpdateControllerTest {
                 .andReturn();
 
         JsonNode beforeJson = objectMapper.readTree(beforeDetail.getResponse().getContentAsString());
-        JsonNode files = beforeJson.get("records").get(0).get("files");
+        JsonNode files = beforeJson.get("data").get("records").get(0).get("files");
 
         Long deleteFileId = files.get(0).get("fileId").asLong();
         String deletedFileUrl = files.get(0).get("fileUrl").asText();
@@ -173,6 +201,8 @@ class ArchiveUpdateControllerTest {
                             return request;
                         }))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value(200))
                 .andReturn();
 
         System.out.println("\n===== 파일 삭제 + 추가 수정 응답 =====");
@@ -182,15 +212,16 @@ class ArchiveUpdateControllerTest {
         MvcResult afterDetail = mockMvc.perform(get("/api/archives/{archiveId}", created.archiveId())
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.records[0].files", hasSize(2)))
-                .andExpect(jsonPath("$.records[0].files[0].originalFileName").value("B-file.pdf"))
-                .andExpect(jsonPath("$.records[0].files[1].originalFileName").value("C-new-file.pdf"))
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data.records[0].files", hasSize(2)))
+                .andExpect(jsonPath("$.data.records[0].files[0].originalFileName").value("B-file.pdf"))
+                .andExpect(jsonPath("$.data.records[0].files[1].originalFileName").value("C-new-file.pdf"))
                 .andReturn();
 
         System.out.println("\n===== 파일 수정 후 상세 조회 =====");
         System.out.println(prettyJson(afterDetail.getResponse().getContentAsString()));
 
-        // 로컬 저장소에서도 삭제 대상 파일이 없어졌는지 확인
         assertThat(Files.exists(Path.of(deletedFileUrl))).isFalse();
 
         List<Path> savedFiles;
@@ -232,6 +263,9 @@ class ArchiveUpdateControllerTest {
                             return request;
                         }))
                 .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value(403))
+                .andExpect(jsonPath("$.message").value("작성자 또는 관리자만 수정/삭제할 수 있습니다."))
                 .andReturn();
 
         System.out.println("\n===== 권한 없는 수정 에러 응답 =====");
@@ -248,7 +282,7 @@ class ArchiveUpdateControllerTest {
                 .andReturn();
 
         JsonNode beforeJson = objectMapper.readTree(beforeDetail.getResponse().getContentAsString());
-        JsonNode files = beforeJson.get("records").get(0).get("files");
+        JsonNode files = beforeJson.get("data").get("records").get(0).get("files");
 
         Long fileId1 = files.get(0).get("fileId").asLong();
         Long fileId2 = files.get(1).get("fileId").asLong();
@@ -276,6 +310,7 @@ class ArchiveUpdateControllerTest {
                             return request;
                         }))
                 .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.status").value(400))
                 .andReturn();
 
@@ -299,8 +334,8 @@ class ArchiveUpdateControllerTest {
         MockMultipartFile requestPart = new MockMultipartFile(
                 "request",
                 "",
-                "application/json",
-                objectMapper.writeValueAsBytes(createRequest)
+                MediaType.TEXT_PLAIN_VALUE,
+                objectMapper.writeValueAsString(createRequest).getBytes()
         );
 
         MockMultipartFile fileA = new MockMultipartFile(
@@ -327,8 +362,8 @@ class ArchiveUpdateControllerTest {
                 .andReturn();
 
         JsonNode createJson = objectMapper.readTree(createResult.getResponse().getContentAsString());
-        Long archiveId = createJson.get("archiveId").asLong();
-        Long recordId = createJson.get("recordIds").get(0).asLong();
+        Long archiveId = createJson.get("data").get("archiveId").asLong();
+        Long recordId = createJson.get("data").get("recordIds").get(0).asLong();
 
         return new CreatedArchive(archiveId, recordId);
     }
@@ -337,8 +372,8 @@ class ArchiveUpdateControllerTest {
         return new MockMultipartFile(
                 "request",
                 "",
-                "application/json",
-                objectMapper.writeValueAsBytes(request)
+                MediaType.TEXT_PLAIN_VALUE,
+                objectMapper.writeValueAsString(request).getBytes()
         );
     }
 
