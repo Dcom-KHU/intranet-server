@@ -17,6 +17,9 @@ import com.dcom.intranet.mypage.dto.MyProfileUpdateRequest;
 import com.dcom.intranet.mypage.dto.MyProfileUpdateResponse;
 import com.dcom.intranet.mypage.dto.MyWrittenPostListApiResponse;
 import com.dcom.intranet.mypage.dto.MyWrittenPostListResponse;
+import com.dcom.intranet.mypage.dto.MyWrittenPostTargetApiResponse;
+import com.dcom.intranet.mypage.dto.MyWrittenPostTargetResponse;
+import com.dcom.intranet.mypage.dto.NotFoundApiResponse;
 import com.dcom.intranet.mypage.dto.PasswordChangeApiResponse;
 import com.dcom.intranet.mypage.dto.PasswordChangeRequest;
 import com.dcom.intranet.mypage.dto.PasswordChangeResponse;
@@ -30,6 +33,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -97,6 +101,41 @@ public class MyPageController {
                 authentication.getName(),
                 page,
                 size,
+                type
+        );
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(
+            summary = "내가 쓴 글 상세 이동",
+            description = "인증된 사용자가 본인이 작성한 글을 선택하면 상세 페이지 이동 대상 정보를 반환한다.",
+            responses = {
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "200",
+                            description = "내가 쓴 글 상세 이동 대상 조회 성공",
+                            content = @Content(schema = @Schema(implementation = MyWrittenPostTargetApiResponse.class))
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "401",
+                            description = "인증 실패",
+                            content = @Content(schema = @Schema(implementation = UnauthorizedApiResponse.class))
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "404",
+                            description = "작성한 글 없음",
+                            content = @Content(schema = @Schema(implementation = NotFoundApiResponse.class))
+                    )
+            }
+    )
+    @GetMapping("/me/posts/{postId}")
+    public ResponseEntity<ApiResponse<MyWrittenPostTargetResponse>> getMyPostTarget(
+            Authentication authentication,
+            @PathVariable Long postId,
+            @RequestParam String type
+    ) {
+        MyWrittenPostTargetResponse response = myPageService.getMyPostTarget(
+                authentication.getName(),
+                postId,
                 type
         );
         return ResponseEntity.ok(ApiResponse.success(response));
