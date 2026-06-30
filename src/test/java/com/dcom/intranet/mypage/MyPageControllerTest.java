@@ -3,6 +3,7 @@ package com.dcom.intranet.mypage;
 import com.dcom.intranet.jwt.JwtTokenProvider;
 import com.dcom.intranet.mypage.dto.MyWrittenPostListResponse;
 import com.dcom.intranet.mypage.dto.MyWrittenPostResponse;
+import com.dcom.intranet.mypage.dto.MyWrittenPostTargetResponse;
 import com.dcom.intranet.mypage.dto.PageInfoResponse;
 import com.dcom.intranet.user.User;
 import com.dcom.intranet.user.UserRepository;
@@ -839,6 +840,114 @@ class MyPageControllerTest {
                 .andExpect(jsonPath("$.data").value(nullValue()));
     }
 
+    @Test
+    @DisplayName("My written post detail target returns info-posts route target")
+    void myWrittenPostDetailTargetReturnsInfoPostsRouteTarget() throws Exception {
+        User user = saveUser("postTargetInfo", UserStatus.APPROVED, UserRole.USER);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+        myWrittenPostReader.givenTargetResponse(new MyWrittenPostTargetResponse("info-posts", 21L));
+
+        mockMvc.perform(get("/api/users/me/posts/21")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .param("type", "info-posts"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.message").value(SUCCESS_MESSAGE))
+                .andExpect(jsonPath("$.data.targetType").value("info-posts"))
+                .andExpect(jsonPath("$.data.targetId").value(21));
+
+        assertThat(myWrittenPostReader.lastUserId()).isEqualTo(user.getId());
+        assertThat(myWrittenPostReader.lastPostId()).isEqualTo(21L);
+        assertThat(myWrittenPostReader.lastType()).isEqualTo("info-posts");
+    }
+
+    @Test
+    @DisplayName("My written post detail target returns archives route target")
+    void myWrittenPostDetailTargetReturnsArchivesRouteTarget() throws Exception {
+        User user = saveUser("postTargetArchive", UserStatus.APPROVED, UserRole.USER);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+        myWrittenPostReader.givenTargetResponse(new MyWrittenPostTargetResponse("archives", 22L));
+
+        mockMvc.perform(get("/api/users/me/posts/22")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .param("type", "archives"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.targetType").value("archives"))
+                .andExpect(jsonPath("$.data.targetId").value(22));
+
+        assertThat(myWrittenPostReader.lastUserId()).isEqualTo(user.getId());
+        assertThat(myWrittenPostReader.lastPostId()).isEqualTo(22L);
+        assertThat(myWrittenPostReader.lastType()).isEqualTo("archives");
+    }
+
+    @Test
+    @DisplayName("My written post detail target returns photo-posts route target")
+    void myWrittenPostDetailTargetReturnsPhotoPostsRouteTarget() throws Exception {
+        User user = saveUser("postTargetPhoto", UserStatus.APPROVED, UserRole.USER);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+        myWrittenPostReader.givenTargetResponse(new MyWrittenPostTargetResponse("photo-posts", 23L));
+
+        mockMvc.perform(get("/api/users/me/posts/23")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .param("type", "photo-posts"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.targetType").value("photo-posts"))
+                .andExpect(jsonPath("$.data.targetId").value(23));
+
+        assertThat(myWrittenPostReader.lastUserId()).isEqualTo(user.getId());
+        assertThat(myWrittenPostReader.lastPostId()).isEqualTo(23L);
+        assertThat(myWrittenPostReader.lastType()).isEqualTo("photo-posts");
+    }
+
+    @Test
+    @DisplayName("My written post detail target returns notices route target for admin")
+    void myWrittenPostDetailTargetReturnsNoticesRouteTargetForAdmin() throws Exception {
+        User admin = saveUser("postTargetNotice", UserStatus.APPROVED, UserRole.ADMIN);
+        String token = jwtTokenProvider.createAccessToken(admin.getLoginId(), admin.getRole().name());
+        myWrittenPostReader.givenTargetResponse(new MyWrittenPostTargetResponse("notices", 24L));
+
+        mockMvc.perform(get("/api/users/me/posts/24")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .param("type", "notices"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.targetType").value("notices"))
+                .andExpect(jsonPath("$.data.targetId").value(24));
+
+        assertThat(myWrittenPostReader.lastUserId()).isEqualTo(admin.getId());
+        assertThat(myWrittenPostReader.lastPostId()).isEqualTo(24L);
+        assertThat(myWrittenPostReader.lastType()).isEqualTo("notices");
+    }
+
+    @Test
+    @DisplayName("My written post detail target without token returns 401 common envelope")
+    void myWrittenPostDetailTargetWithoutTokenReturns401CommonEnvelope() throws Exception {
+        mockMvc.perform(get("/api/users/me/posts/21")
+                        .param("type", "info-posts"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.message").value(UNAUTHORIZED_MESSAGE))
+                .andExpect(jsonPath("$.data").value(nullValue()));
+    }
+
+    @Test
+    @DisplayName("My written post detail target not found returns 404 common envelope")
+    void myWrittenPostDetailTargetNotFoundReturns404CommonEnvelope() throws Exception {
+        User user = saveUser("postTargetMissing", UserStatus.APPROVED, UserRole.USER);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+        myWrittenPostReader.givenTargetNotFound();
+
+        mockMvc.perform(get("/api/users/me/posts/999")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .param("type", "info-posts"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.message").value("작성한 글을 찾을 수 없습니다."))
+                .andExpect(jsonPath("$.data").value(nullValue()));
+    }
+
     private User saveUser(String loginId, UserStatus status, UserRole role) {
         User user = new User(
                 loginId,
@@ -908,7 +1017,10 @@ class MyPageControllerTest {
     static class TestMyWrittenPostReader implements MyWrittenPostReader {
 
         private MyWrittenPostListResponse response = MyWrittenPostListResponse.empty(0, 10);
+        private MyWrittenPostTargetResponse targetResponse = new MyWrittenPostTargetResponse("info-posts", 1L);
+        private boolean targetNotFound;
         private Long lastUserId;
+        private Long lastPostId;
         private int lastPage;
         private int lastSize;
         private String lastType;
@@ -922,13 +1034,36 @@ class MyPageControllerTest {
             return response;
         }
 
+        @Override
+        public MyWrittenPostTargetResponse readTarget(Long userId, Long postId, String type) {
+            this.lastUserId = userId;
+            this.lastPostId = postId;
+            this.lastType = type;
+            if (targetNotFound) {
+                throw new MyPageApiException(org.springframework.http.HttpStatus.NOT_FOUND, "작성한 글을 찾을 수 없습니다.");
+            }
+            return targetResponse;
+        }
+
         void givenResponse(MyWrittenPostListResponse response) {
             this.response = response;
         }
 
+        void givenTargetResponse(MyWrittenPostTargetResponse targetResponse) {
+            this.targetResponse = targetResponse;
+            this.targetNotFound = false;
+        }
+
+        void givenTargetNotFound() {
+            this.targetNotFound = true;
+        }
+
         void reset() {
             this.response = MyWrittenPostListResponse.empty(0, 10);
+            this.targetResponse = new MyWrittenPostTargetResponse("info-posts", 1L);
+            this.targetNotFound = false;
             this.lastUserId = null;
+            this.lastPostId = null;
             this.lastPage = -1;
             this.lastSize = -1;
             this.lastType = null;
@@ -936,6 +1071,10 @@ class MyPageControllerTest {
 
         Long lastUserId() {
             return lastUserId;
+        }
+
+        Long lastPostId() {
+            return lastPostId;
         }
 
         int lastPage() {
@@ -973,6 +1112,11 @@ class MyPageControllerTest {
             case "settings4" -> "20240009";
             case "settings5" -> "20240010";
             case "settings6" -> "20240011";
+            case "postTargetInfo" -> "20240101";
+            case "postTargetArchive" -> "20240102";
+            case "postTargetPhoto" -> "20240103";
+            case "postTargetNotice" -> "20240104";
+            case "postTargetMissing" -> "20240105";
             default -> "20249999";
         };
     }
