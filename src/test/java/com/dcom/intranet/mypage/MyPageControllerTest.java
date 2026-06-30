@@ -1,6 +1,7 @@
 package com.dcom.intranet.mypage;
 
 import com.dcom.intranet.jwt.JwtTokenProvider;
+import com.dcom.intranet.mypage.dto.MyWrittenPostDeleteResponse;
 import com.dcom.intranet.mypage.dto.MyWrittenPostListResponse;
 import com.dcom.intranet.mypage.dto.MyWrittenPostResponse;
 import com.dcom.intranet.mypage.dto.MyWrittenPostTargetResponse;
@@ -28,6 +29,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.nullValue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -948,6 +950,124 @@ class MyPageControllerTest {
                 .andExpect(jsonPath("$.data").value(nullValue()));
     }
 
+    @Test
+    @DisplayName("My written post delete returns 200 common envelope and message")
+    void myWrittenPostDeleteReturns200CommonEnvelopeAndMessage() throws Exception {
+        User user = saveUser("postDeleteInfo", UserStatus.APPROVED, UserRole.USER);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+        myWrittenPostReader.givenDeleteResponse(new MyWrittenPostDeleteResponse("작성한 글이 삭제되었습니다."));
+
+        mockMvc.perform(delete("/api/users/me/posts/31")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .param("type", "info-posts"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.message").value(SUCCESS_MESSAGE))
+                .andExpect(jsonPath("$.data.message").value("작성한 글이 삭제되었습니다."));
+
+        assertThat(myWrittenPostReader.lastUserId()).isEqualTo(user.getId());
+        assertThat(myWrittenPostReader.lastPostId()).isEqualTo(31L);
+        assertThat(myWrittenPostReader.lastType()).isEqualTo("info-posts");
+    }
+
+    @Test
+    @DisplayName("My written post delete passes archives type")
+    void myWrittenPostDeletePassesArchivesType() throws Exception {
+        User user = saveUser("postDeleteArchive", UserStatus.APPROVED, UserRole.USER);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+
+        mockMvc.perform(delete("/api/users/me/posts/32")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .param("type", "archives"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.message").value("작성한 글이 삭제되었습니다."));
+
+        assertThat(myWrittenPostReader.lastUserId()).isEqualTo(user.getId());
+        assertThat(myWrittenPostReader.lastPostId()).isEqualTo(32L);
+        assertThat(myWrittenPostReader.lastType()).isEqualTo("archives");
+    }
+
+    @Test
+    @DisplayName("My written post delete passes photo-posts type")
+    void myWrittenPostDeletePassesPhotoPostsType() throws Exception {
+        User user = saveUser("postDeletePhoto", UserStatus.APPROVED, UserRole.USER);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+
+        mockMvc.perform(delete("/api/users/me/posts/33")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .param("type", "photo-posts"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.message").value("작성한 글이 삭제되었습니다."));
+
+        assertThat(myWrittenPostReader.lastUserId()).isEqualTo(user.getId());
+        assertThat(myWrittenPostReader.lastPostId()).isEqualTo(33L);
+        assertThat(myWrittenPostReader.lastType()).isEqualTo("photo-posts");
+    }
+
+    @Test
+    @DisplayName("My written post delete passes notices type for admin")
+    void myWrittenPostDeletePassesNoticesTypeForAdmin() throws Exception {
+        User admin = saveUser("postDeleteNotice", UserStatus.APPROVED, UserRole.ADMIN);
+        String token = jwtTokenProvider.createAccessToken(admin.getLoginId(), admin.getRole().name());
+
+        mockMvc.perform(delete("/api/users/me/posts/34")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .param("type", "notices"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.message").value("작성한 글이 삭제되었습니다."));
+
+        assertThat(myWrittenPostReader.lastUserId()).isEqualTo(admin.getId());
+        assertThat(myWrittenPostReader.lastPostId()).isEqualTo(34L);
+        assertThat(myWrittenPostReader.lastType()).isEqualTo("notices");
+    }
+
+    @Test
+    @DisplayName("My written post delete without token returns 401 common envelope")
+    void myWrittenPostDeleteWithoutTokenReturns401CommonEnvelope() throws Exception {
+        mockMvc.perform(delete("/api/users/me/posts/31")
+                        .param("type", "info-posts"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.message").value(UNAUTHORIZED_MESSAGE))
+                .andExpect(jsonPath("$.data").value(nullValue()));
+    }
+
+    @Test
+    @DisplayName("My written post delete forbidden returns 403 common envelope")
+    void myWrittenPostDeleteForbiddenReturns403CommonEnvelope() throws Exception {
+        User user = saveUser("postDeleteForbidden", UserStatus.APPROVED, UserRole.USER);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+        myWrittenPostReader.givenDeleteForbidden();
+
+        mockMvc.perform(delete("/api/users/me/posts/35")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .param("type", "info-posts"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value(403))
+                .andExpect(jsonPath("$.message").value("삭제 권한이 없습니다."))
+                .andExpect(jsonPath("$.data").value(nullValue()));
+    }
+
+    @Test
+    @DisplayName("My written post delete not found returns 404 common envelope")
+    void myWrittenPostDeleteNotFoundReturns404CommonEnvelope() throws Exception {
+        User user = saveUser("postDeleteMissing", UserStatus.APPROVED, UserRole.USER);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+        myWrittenPostReader.givenDeleteNotFound();
+
+        mockMvc.perform(delete("/api/users/me/posts/999")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .param("type", "info-posts"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.message").value("작성한 글을 찾을 수 없습니다."))
+                .andExpect(jsonPath("$.data").value(nullValue()));
+    }
+
     private User saveUser(String loginId, UserStatus status, UserRole role) {
         User user = new User(
                 loginId,
@@ -1018,7 +1138,10 @@ class MyPageControllerTest {
 
         private MyWrittenPostListResponse response = MyWrittenPostListResponse.empty(0, 10);
         private MyWrittenPostTargetResponse targetResponse = new MyWrittenPostTargetResponse("info-posts", 1L);
+        private MyWrittenPostDeleteResponse deleteResponse = new MyWrittenPostDeleteResponse("작성한 글이 삭제되었습니다.");
         private boolean targetNotFound;
+        private boolean deleteForbidden;
+        private boolean deleteNotFound;
         private Long lastUserId;
         private Long lastPostId;
         private int lastPage;
@@ -1045,6 +1168,20 @@ class MyPageControllerTest {
             return targetResponse;
         }
 
+        @Override
+        public MyWrittenPostDeleteResponse delete(Long userId, Long postId, String type) {
+            this.lastUserId = userId;
+            this.lastPostId = postId;
+            this.lastType = type;
+            if (deleteForbidden) {
+                throw new MyPageApiException(org.springframework.http.HttpStatus.FORBIDDEN, "삭제 권한이 없습니다.");
+            }
+            if (deleteNotFound) {
+                throw new MyPageApiException(org.springframework.http.HttpStatus.NOT_FOUND, "작성한 글을 찾을 수 없습니다.");
+            }
+            return deleteResponse;
+        }
+
         void givenResponse(MyWrittenPostListResponse response) {
             this.response = response;
         }
@@ -1058,10 +1195,29 @@ class MyPageControllerTest {
             this.targetNotFound = true;
         }
 
+        void givenDeleteResponse(MyWrittenPostDeleteResponse deleteResponse) {
+            this.deleteResponse = deleteResponse;
+            this.deleteForbidden = false;
+            this.deleteNotFound = false;
+        }
+
+        void givenDeleteForbidden() {
+            this.deleteForbidden = true;
+            this.deleteNotFound = false;
+        }
+
+        void givenDeleteNotFound() {
+            this.deleteForbidden = false;
+            this.deleteNotFound = true;
+        }
+
         void reset() {
             this.response = MyWrittenPostListResponse.empty(0, 10);
             this.targetResponse = new MyWrittenPostTargetResponse("info-posts", 1L);
+            this.deleteResponse = new MyWrittenPostDeleteResponse("작성한 글이 삭제되었습니다.");
             this.targetNotFound = false;
+            this.deleteForbidden = false;
+            this.deleteNotFound = false;
             this.lastUserId = null;
             this.lastPostId = null;
             this.lastPage = -1;
@@ -1117,6 +1273,12 @@ class MyPageControllerTest {
             case "postTargetPhoto" -> "20240103";
             case "postTargetNotice" -> "20240104";
             case "postTargetMissing" -> "20240105";
+            case "postDeleteInfo" -> "20240111";
+            case "postDeleteArchive" -> "20240112";
+            case "postDeletePhoto" -> "20240113";
+            case "postDeleteNotice" -> "20240114";
+            case "postDeleteForbidden" -> "20240115";
+            case "postDeleteMissing" -> "20240116";
             default -> "20249999";
         };
     }

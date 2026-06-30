@@ -9,12 +9,15 @@ import com.dcom.intranet.mypage.dto.EmailVerificationSendResponse;
 import com.dcom.intranet.mypage.dto.EmailVerificationVerifyApiResponse;
 import com.dcom.intranet.mypage.dto.EmailVerificationVerifyRequest;
 import com.dcom.intranet.mypage.dto.EmailVerificationVerifyResponse;
+import com.dcom.intranet.mypage.dto.ForbiddenApiResponse;
 import com.dcom.intranet.mypage.dto.GoneApiResponse;
 import com.dcom.intranet.mypage.dto.MyProfileApiResponse;
 import com.dcom.intranet.mypage.dto.MyProfileResponse;
 import com.dcom.intranet.mypage.dto.MyProfileUpdateApiResponse;
 import com.dcom.intranet.mypage.dto.MyProfileUpdateRequest;
 import com.dcom.intranet.mypage.dto.MyProfileUpdateResponse;
+import com.dcom.intranet.mypage.dto.MyWrittenPostDeleteApiResponse;
+import com.dcom.intranet.mypage.dto.MyWrittenPostDeleteResponse;
 import com.dcom.intranet.mypage.dto.MyWrittenPostListApiResponse;
 import com.dcom.intranet.mypage.dto.MyWrittenPostListResponse;
 import com.dcom.intranet.mypage.dto.MyWrittenPostTargetApiResponse;
@@ -31,6 +34,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -134,6 +138,46 @@ public class MyPageController {
             @RequestParam String type
     ) {
         MyWrittenPostTargetResponse response = myPageService.getMyPostTarget(
+                authentication.getName(),
+                postId,
+                type
+        );
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(
+            summary = "내가 쓴 글 삭제",
+            description = "인증된 사용자가 본인이 작성한 글을 삭제한다.",
+            responses = {
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "200",
+                            description = "내가 쓴 글 삭제 성공",
+                            content = @Content(schema = @Schema(implementation = MyWrittenPostDeleteApiResponse.class))
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "401",
+                            description = "인증 실패",
+                            content = @Content(schema = @Schema(implementation = UnauthorizedApiResponse.class))
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "403",
+                            description = "삭제 권한 없음",
+                            content = @Content(schema = @Schema(implementation = ForbiddenApiResponse.class))
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "404",
+                            description = "작성한 글 없음",
+                            content = @Content(schema = @Schema(implementation = NotFoundApiResponse.class))
+                    )
+            }
+    )
+    @DeleteMapping("/me/posts/{postId}")
+    public ResponseEntity<ApiResponse<MyWrittenPostDeleteResponse>> deleteMyPost(
+            Authentication authentication,
+            @PathVariable Long postId,
+            @RequestParam String type
+    ) {
+        MyWrittenPostDeleteResponse response = myPageService.deleteMyPost(
                 authentication.getName(),
                 postId,
                 type
