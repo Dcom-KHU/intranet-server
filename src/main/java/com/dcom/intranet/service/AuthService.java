@@ -18,6 +18,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final EmailService emailService;
 
 
     /// 회원가입
@@ -32,6 +33,11 @@ public class AuthService {
         }
         if (userRepository.existsByLoginId(request.getEmail())){
             throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
+        }
+
+        /// 이메일 인증안됐으면 예외처리
+        if(!emailService.isEmailVerified(request.getEmail())){
+            throw new IllegalArgumentException("이메일 인증이 완료되지 않았습니다.");
         }
 
         /// 비밀번호 암호화
