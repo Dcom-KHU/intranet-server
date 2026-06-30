@@ -3,6 +3,7 @@ package com.dcom.intranet.mypage;
 import com.dcom.intranet.mypage.dto.MyProfileResponse;
 import com.dcom.intranet.mypage.dto.MyProfileUpdateRequest;
 import com.dcom.intranet.mypage.dto.MyProfileUpdateResponse;
+import com.dcom.intranet.mypage.dto.MyWrittenPostDeleteResponse;
 import com.dcom.intranet.mypage.dto.MyWrittenPostListResponse;
 import com.dcom.intranet.mypage.dto.MyWrittenPostTargetResponse;
 import com.dcom.intranet.mypage.dto.PasswordChangeRequest;
@@ -55,6 +56,13 @@ public class MyPageService {
         User user = userRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."));
         return myWrittenPostReader.readTarget(user.getId(), postId, type);
+    }
+
+    @Transactional
+    public MyWrittenPostDeleteResponse deleteMyPost(String loginId, Long postId, String type) {
+        User user = userRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."));
+        return myWrittenPostReader.delete(user.getId(), postId, type);
     }
 
     @Transactional
