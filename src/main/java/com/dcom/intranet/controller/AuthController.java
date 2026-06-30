@@ -8,6 +8,7 @@ import lombok.Value;
 import org.apache.coyote.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -39,4 +40,12 @@ public class AuthController {
         LoginResponse response = authService.login(request);
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/me")
+    public ResponseEntity<MeResponse> me(@AuthenticationPrincipal String loginId){
+        MeResponse response = authService.me(loginId);
+        return ResponseEntity.ok(response);
+    }
+    /// UsernamePasswordAuthenticationToken의 첫번째 인자가 principal인데 그게 로그인 아이디임.
+    /// 토큰에 아이디를 넣어놓았기 때문에 요청한 사람이 누구인지 자동으로 알아내는 로직임.
 }
