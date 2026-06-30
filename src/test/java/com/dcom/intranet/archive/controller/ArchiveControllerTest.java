@@ -8,6 +8,7 @@ import com.dcom.intranet.archive.repository.ArchiveRecordRepository;
 import com.dcom.intranet.archive.repository.ArchiveRepository;
 import com.dcom.intranet.user.User;
 import com.dcom.intranet.user.UserRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,15 +30,15 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
-// Security 필터 때문에 401 뜨면 addFilters = false로 임시 우회
 @SpringBootTest(properties = {
         "file.upload-dir=./build/test-uploads/archive"
 })
 @AutoConfigureMockMvc(addFilters = false)
 @Transactional
 class ArchiveControllerTest {
+
+    private static final Path TEST_UPLOAD_DIR = Path.of("./build/test-uploads/archive");
 
     @Autowired
     MockMvc mockMvc;
@@ -46,20 +47,18 @@ class ArchiveControllerTest {
     ArchiveRepository archiveRepository;
 
     @Autowired
-    UserRepository userRepository;
+    ArchiveRecordRepository archiveRecordRepository;
 
     @Autowired
     ArchiveFileRepository archiveFileRepository;
 
     @Autowired
-    ArchiveRecordRepository archiveRecordRepository;
+    UserRepository userRepository;
 
     @Autowired
     ObjectMapper objectMapper;
 
     User user;
-
-    private static final Path TEST_UPLOAD_DIR = Path.of("./build/test-uploads/archive");
 
     @BeforeEach
     void setUp() {
@@ -68,8 +67,12 @@ class ArchiveControllerTest {
         archiveRepository.deleteAllInBatch();
         userRepository.deleteAllInBatch();
 
+        FileSystemUtils.deleteRecursively(TEST_UPLOAD_DIR.toFile());
+
+        long now = System.nanoTime();
+
         user = userRepository.save(
-                new User("TEST-" + System.nanoTime(), "test" + System.nanoTime() + "@test.com", "하성준", "USER")
+                new User("TEST-" + now, "test" + now + "@test.com", "하성준", "USER")
         );
     }
 
@@ -95,14 +98,16 @@ class ArchiveControllerTest {
                         .param("size", "10")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content", hasSize(2)))
-                .andExpect(jsonPath("$.content[0].subjectName").value("운영체제"))
-                .andExpect(jsonPath("$.content[0].professorName").value("이교수"))
-                .andExpect(jsonPath("$.content[1].subjectName").value("자료구조"))
-                .andExpect(jsonPath("$.content[1].professorName").value("김교수"))
-                .andExpect(jsonPath("$.page").value(0))
-                .andExpect(jsonPath("$.size").value(10))
-                .andExpect(jsonPath("$.totalElements").value(2));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data.content", hasSize(2)))
+                .andExpect(jsonPath("$.data.content[0].subjectName").value("운영체제"))
+                .andExpect(jsonPath("$.data.content[0].professorName").value("이교수"))
+                .andExpect(jsonPath("$.data.content[1].subjectName").value("자료구조"))
+                .andExpect(jsonPath("$.data.content[1].professorName").value("김교수"))
+                .andExpect(jsonPath("$.data.page").value(0))
+                .andExpect(jsonPath("$.data.size").value(10))
+                .andExpect(jsonPath("$.data.totalElements").value(2));
     }
 
     @Test
@@ -112,10 +117,12 @@ class ArchiveControllerTest {
                         .param("size", "10")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content", hasSize(0)))
-                .andExpect(jsonPath("$.page").value(0))
-                .andExpect(jsonPath("$.size").value(10))
-                .andExpect(jsonPath("$.totalElements").value(0));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data.content", hasSize(0)))
+                .andExpect(jsonPath("$.data.page").value(0))
+                .andExpect(jsonPath("$.data.size").value(10))
+                .andExpect(jsonPath("$.data.totalElements").value(0));
     }
 
     @Test
@@ -136,14 +143,16 @@ class ArchiveControllerTest {
                         .param("size", "10")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content", hasSize(2)))
-                .andExpect(jsonPath("$.content[0].subjectName").value("자료구조"))
-                .andExpect(jsonPath("$.content[0].professorName").value("A교수"))
-                .andExpect(jsonPath("$.content[1].subjectName").value("자료구조"))
-                .andExpect(jsonPath("$.content[1].professorName").value("B교수"))
-                .andExpect(jsonPath("$.page").value(0))
-                .andExpect(jsonPath("$.size").value(10))
-                .andExpect(jsonPath("$.totalElements").value(2));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data.content", hasSize(2)))
+                .andExpect(jsonPath("$.data.content[0].subjectName").value("자료구조"))
+                .andExpect(jsonPath("$.data.content[0].professorName").value("A교수"))
+                .andExpect(jsonPath("$.data.content[1].subjectName").value("자료구조"))
+                .andExpect(jsonPath("$.data.content[1].professorName").value("B교수"))
+                .andExpect(jsonPath("$.data.page").value(0))
+                .andExpect(jsonPath("$.data.size").value(10))
+                .andExpect(jsonPath("$.data.totalElements").value(2));
     }
 
     @Test
@@ -164,14 +173,16 @@ class ArchiveControllerTest {
                         .param("size", "10")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content", hasSize(2)))
-                .andExpect(jsonPath("$.content[0].subjectName").value("A과목"))
-                .andExpect(jsonPath("$.content[0].professorName").value("김교수"))
-                .andExpect(jsonPath("$.content[1].subjectName").value("B과목"))
-                .andExpect(jsonPath("$.content[1].professorName").value("김교수"))
-                .andExpect(jsonPath("$.page").value(0))
-                .andExpect(jsonPath("$.size").value(10))
-                .andExpect(jsonPath("$.totalElements").value(2));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data.content", hasSize(2)))
+                .andExpect(jsonPath("$.data.content[0].subjectName").value("A과목"))
+                .andExpect(jsonPath("$.data.content[0].professorName").value("김교수"))
+                .andExpect(jsonPath("$.data.content[1].subjectName").value("B과목"))
+                .andExpect(jsonPath("$.data.content[1].professorName").value("김교수"))
+                .andExpect(jsonPath("$.data.page").value(0))
+                .andExpect(jsonPath("$.data.size").value(10))
+                .andExpect(jsonPath("$.data.totalElements").value(2));
     }
 
     @Test
@@ -180,16 +191,15 @@ class ArchiveControllerTest {
                         .param("page", "0")
                         .param("size", "10")
                         .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("subjectName 또는 professorName 중 하나는 필요합니다."));
     }
 
     @Test
     void 아카이브_상세_조회를_한다() throws Exception {
         // given
-        User user = userRepository.save(
-                new User("23", "test@test.com", "하성준", "USER")
-        );
-
         Archive archive = new Archive("오픈소스SW개발방법및도구", "이성원");
 
         ArchiveRecord record = new ArchiveRecord(
@@ -218,19 +228,21 @@ class ArchiveControllerTest {
         mockMvc.perform(get("/api/archives/{archiveId}", savedArchive.getId())
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.archiveId").value(savedArchive.getId()))
-                .andExpect(jsonPath("$.subjectName").value("오픈소스SW개발방법및도구"))
-                .andExpect(jsonPath("$.professorName").value("이성원"))
-                .andExpect(jsonPath("$.records", hasSize(1)))
-                .andExpect(jsonPath("$.records[0].examYear").value(2024))
-                .andExpect(jsonPath("$.records[0].semester").value("FIRST"))
-                .andExpect(jsonPath("$.records[0].examType").value("MIDTERM"))
-                .andExpect(jsonPath("$.records[0].content").value("2024년 중간 족보입니다."))
-                .andExpect(jsonPath("$.records[0].author.nickname").value("하성준"))
-                .andExpect(jsonPath("$.records[0].files", hasSize(1)))
-                .andExpect(jsonPath("$.records[0].files[0].originalFileName")
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data.archiveId").value(savedArchive.getId()))
+                .andExpect(jsonPath("$.data.subjectName").value("오픈소스SW개발방법및도구"))
+                .andExpect(jsonPath("$.data.professorName").value("이성원"))
+                .andExpect(jsonPath("$.data.records", hasSize(1)))
+                .andExpect(jsonPath("$.data.records[0].examYear").value(2024))
+                .andExpect(jsonPath("$.data.records[0].semester").value("FIRST"))
+                .andExpect(jsonPath("$.data.records[0].examType").value("MIDTERM"))
+                .andExpect(jsonPath("$.data.records[0].content").value("2024년 중간 족보입니다."))
+                .andExpect(jsonPath("$.data.records[0].author.nickname").value("하성준"))
+                .andExpect(jsonPath("$.data.records[0].files", hasSize(1)))
+                .andExpect(jsonPath("$.data.records[0].files[0].originalFileName")
                         .value("24-1 오픈소스 중간.pdf"))
-                .andExpect(jsonPath("$.records[0].files[0].fileUrl")
+                .andExpect(jsonPath("$.data.records[0].files[0].fileUrl")
                         .value("https://example.com/new.pdf"));
     }
 
@@ -238,7 +250,9 @@ class ArchiveControllerTest {
     void 존재하지_않는_아카이브를_조회하면_404가_발생한다() throws Exception {
         mockMvc.perform(get("/api/archives/{archiveId}", 999L)
                         .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value(404));
     }
 
     @Test
@@ -266,6 +280,7 @@ class ArchiveControllerTest {
                         .param("userId", String.valueOf(user.getId()))
                         .contentType(MediaType.MULTIPART_FORM_DATA))
                 .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.message").value("archiveId가 없으면 subjectName과 professorName은 필수입니다."))
                 .andReturn();
@@ -310,6 +325,11 @@ class ArchiveControllerTest {
                         .param("userId", String.valueOf(user.getId()))
                         .contentType(MediaType.MULTIPART_FORM_DATA))
                 .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value(201))
+                .andExpect(jsonPath("$.data.archiveId").exists())
+                .andExpect(jsonPath("$.data.recordIds", hasSize(1)))
+                .andExpect(jsonPath("$.data.createdAt").exists())
                 .andReturn();
 
         System.out.println("\n===== 파일 업로드 등록 응답 =====");
