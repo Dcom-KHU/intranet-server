@@ -1,5 +1,7 @@
 HELP.md
-.gradle
+
+### Gradle ###
+.gradle/
 build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
@@ -10,7 +12,7 @@ build/
 .classpath
 .factorypath
 .project
-.settings
+.settings/
 .springBeans
 .sts4-cache
 bin/
@@ -18,7 +20,7 @@ bin/
 !**/src/test/**/bin/
 
 ### IntelliJ IDEA ###
-.idea
+.idea/
 *.iws
 *.iml
 *.ipr
@@ -38,3 +40,15 @@ out/
 
 ### Mac ###
 .DS_Store
+
+### Security / Local Config ###
+.env
+application-local.yml
+application-local.properties
+application.yml
+application.properties
+src/main/resources/application.yml
+src/main/resources/application.properties
+
+### Upload Files ###
+uploads/
