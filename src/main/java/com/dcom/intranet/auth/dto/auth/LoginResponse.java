@@ -24,6 +24,7 @@ public class LoginResponse {
                 .userId(user.getId())
                 .role(user.getRole())
                 .status(user.getStatus())
+                .requirePasswordChange(requirePasswordChange)
                 .build();
     }
 }

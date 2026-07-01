@@ -1,5 +1,6 @@
-package com.dcom.intranet.home;
+package com.dcom.intranet.home.controller;
 
+import com.dcom.intranet.home.service.HomeService;
 import com.dcom.intranet.home.dto.HomeDashboardApiResponse;
 import com.dcom.intranet.home.dto.HomeErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
