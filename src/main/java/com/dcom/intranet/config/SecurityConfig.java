@@ -38,6 +38,7 @@ public class SecurityConfig {
                                 "/api/auth/email/**",
                                 "/api/auth/password/**",
                                 "/api/auth/refresh",
+                                "/api/auth/logout",
                                 "/h2-console/**",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**"
