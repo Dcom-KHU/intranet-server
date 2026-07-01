@@ -823,14 +823,14 @@ class MyPageControllerTest {
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .param("page", "0")
                         .param("size", "10")
-                        .param("type", "ARCHIVE"))
+                        .param("type", "archives"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.message").value(SUCCESS_MESSAGE))
                 .andExpect(jsonPath("$.data.postList[0].postId").value(11))
                 .andExpect(jsonPath("$.data.postList[0].title").value("오픈소스SW개발방법및도구"))
-                .andExpect(jsonPath("$.data.postList[0].type").value("ARCHIVE"))
+                .andExpect(jsonPath("$.data.postList[0].type").value("archives"))
                 .andExpect(jsonPath("$.data.postList[0].createdAt").value("2026-05-25T10:30:00"))
                 .andExpect(jsonPath("$.data.pageInfo.page").value(0))
                 .andExpect(jsonPath("$.data.pageInfo.size").value(10))
@@ -840,7 +840,7 @@ class MyPageControllerTest {
         assertThat(myWrittenPostReader.lastUserId()).isEqualTo(user.getId());
         assertThat(myWrittenPostReader.lastPage()).isEqualTo(0);
         assertThat(myWrittenPostReader.lastSize()).isEqualTo(10);
-        assertThat(myWrittenPostReader.lastType()).isEqualTo("ARCHIVE");
+        assertThat(myWrittenPostReader.lastType()).isEqualTo("archives");
     }
 
     @Test
@@ -935,13 +935,13 @@ class MyPageControllerTest {
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .param("page", "0")
                         .param("size", "10")
-                        .param("type", "INFO_POST"))
+                        .param("type", "info-posts"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.message").value(SUCCESS_MESSAGE))
                 .andExpect(jsonPath("$.data.commentList[0].commentId").value(101))
-                .andExpect(jsonPath("$.data.commentList[0].type").value("INFO_POST"))
+                .andExpect(jsonPath("$.data.commentList[0].type").value("info-posts"))
                 .andExpect(jsonPath("$.data.commentList[0].targetId").value(12))
                 .andExpect(jsonPath("$.data.commentList[0].targetTitle").value("React 참고 자료 모음"))
                 .andExpect(jsonPath("$.data.commentList[0].content").value("좋은 자료 감사합니다."))
@@ -954,7 +954,7 @@ class MyPageControllerTest {
         assertThat(myWrittenCommentReader.lastUserId()).isEqualTo(user.getId());
         assertThat(myWrittenCommentReader.lastPage()).isEqualTo(0);
         assertThat(myWrittenCommentReader.lastSize()).isEqualTo(10);
-        assertThat(myWrittenCommentReader.lastType()).isEqualTo("INFO_POST");
+        assertThat(myWrittenCommentReader.lastType()).isEqualTo("info-posts");
     }
 
     @Test
@@ -990,7 +990,7 @@ class MyPageControllerTest {
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .param("page", "0")
                         .param("size", "10")
-                        .param("type", "PHOTO_ALBUM"))
+                        .param("type", "photo-posts"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.status").value(200))
@@ -1002,7 +1002,7 @@ class MyPageControllerTest {
                 .andExpect(jsonPath("$.data.pageInfo.totalPages").value(0))
                 .andExpect(jsonPath("$.data.pageInfo.totalElements").value(0));
 
-        assertThat(myWrittenCommentReader.lastType()).isEqualTo("PHOTO_ALBUM");
+        assertThat(myWrittenCommentReader.lastType()).isEqualTo("photo-posts");
     }
 
     @Test
