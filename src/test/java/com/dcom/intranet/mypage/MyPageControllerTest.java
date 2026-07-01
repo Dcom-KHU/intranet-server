@@ -1,8 +1,10 @@
 package com.dcom.intranet.mypage;
 
 import com.dcom.intranet.jwt.JwtTokenProvider;
+import com.dcom.intranet.mypage.dto.MyWrittenCommentDeleteResponse;
 import com.dcom.intranet.mypage.dto.MyWrittenCommentListResponse;
 import com.dcom.intranet.mypage.dto.MyWrittenCommentResponse;
+import com.dcom.intranet.mypage.dto.MyWrittenCommentTargetResponse;
 import com.dcom.intranet.mypage.dto.MyWrittenPostDeleteResponse;
 import com.dcom.intranet.mypage.dto.MyWrittenPostListResponse;
 import com.dcom.intranet.mypage.dto.MyWrittenPostResponse;
@@ -1032,6 +1034,168 @@ class MyPageControllerTest {
     }
 
     @Test
+    @DisplayName("My written comment detail target returns info-posts route target")
+    void myWrittenCommentDetailTargetReturnsInfoPostsRouteTarget() throws Exception {
+        User user = saveUser("commentTargetInfo", UserStatus.APPROVED, UserRole.USER);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+        myWrittenCommentReader.givenTargetResponse(new MyWrittenCommentTargetResponse("INFO_POST", 12L, 101L));
+
+        mockMvc.perform(get("/api/users/me/comments/101")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .param("type", "INFO_POST"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.message").value(SUCCESS_MESSAGE))
+                .andExpect(jsonPath("$.data.targetType").value("info-posts"))
+                .andExpect(jsonPath("$.data.targetId").value(12))
+                .andExpect(jsonPath("$.data.commentId").value(101));
+
+        assertThat(myWrittenCommentReader.lastUserId()).isEqualTo(user.getId());
+        assertThat(myWrittenCommentReader.lastCommentId()).isEqualTo(101L);
+        assertThat(myWrittenCommentReader.lastType()).isEqualTo("info-posts");
+    }
+
+    @Test
+    @DisplayName("My written comment detail target returns photo-posts route target")
+    void myWrittenCommentDetailTargetReturnsPhotoPostsRouteTarget() throws Exception {
+        User user = saveUser("commentTargetPhoto", UserStatus.APPROVED, UserRole.USER);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+        myWrittenCommentReader.givenTargetResponse(new MyWrittenCommentTargetResponse("PHOTO_ALBUM", 13L, 102L));
+
+        mockMvc.perform(get("/api/users/me/comments/102")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .param("type", "PHOTO_ALBUM"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.message").value(SUCCESS_MESSAGE))
+                .andExpect(jsonPath("$.data.targetType").value("photo-posts"))
+                .andExpect(jsonPath("$.data.targetId").value(13))
+                .andExpect(jsonPath("$.data.commentId").value(102));
+
+        assertThat(myWrittenCommentReader.lastUserId()).isEqualTo(user.getId());
+        assertThat(myWrittenCommentReader.lastCommentId()).isEqualTo(102L);
+        assertThat(myWrittenCommentReader.lastType()).isEqualTo("photo-posts");
+    }
+
+    @Test
+    @DisplayName("My written comment detail target without token returns 401 common envelope")
+    void myWrittenCommentDetailTargetWithoutTokenReturns401CommonEnvelope() throws Exception {
+        mockMvc.perform(get("/api/users/me/comments/101")
+                        .param("type", "info-posts"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.message").value(UNAUTHORIZED_MESSAGE))
+                .andExpect(jsonPath("$.data").value(nullValue()));
+    }
+
+    @Test
+    @DisplayName("My written comment detail target not found returns 404 common envelope")
+    void myWrittenCommentDetailTargetNotFoundReturns404CommonEnvelope() throws Exception {
+        User user = saveUser("commentTargetMissing", UserStatus.APPROVED, UserRole.USER);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+        myWrittenCommentReader.givenTargetNotFound();
+
+        mockMvc.perform(get("/api/users/me/comments/999")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .param("type", "info-posts"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.message").value("작성한 댓글을 찾을 수 없습니다."))
+                .andExpect(jsonPath("$.data").value(nullValue()));
+    }
+
+    @Test
+    @DisplayName("My written comment delete returns 200 common envelope and message")
+    void myWrittenCommentDeleteReturns200CommonEnvelopeAndMessage() throws Exception {
+        User user = saveUser("commentDeleteInfo", UserStatus.APPROVED, UserRole.USER);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+        myWrittenCommentReader.givenDeleteResponse(new MyWrittenCommentDeleteResponse("작성한 댓글이 삭제되었습니다."));
+
+        mockMvc.perform(delete("/api/users/me/comments/201")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .param("type", "INFO_POST"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.message").value(SUCCESS_MESSAGE))
+                .andExpect(jsonPath("$.data.message").value("작성한 댓글이 삭제되었습니다."));
+
+        assertThat(myWrittenCommentReader.lastUserId()).isEqualTo(user.getId());
+        assertThat(myWrittenCommentReader.lastCommentId()).isEqualTo(201L);
+        assertThat(myWrittenCommentReader.lastType()).isEqualTo("info-posts");
+    }
+
+    @Test
+    @DisplayName("My written comment delete passes photo-posts type")
+    void myWrittenCommentDeletePassesPhotoPostsType() throws Exception {
+        User user = saveUser("commentDeletePhoto", UserStatus.APPROVED, UserRole.USER);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+
+        mockMvc.perform(delete("/api/users/me/comments/202")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .param("type", "PHOTO_ALBUM"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.message").value(SUCCESS_MESSAGE))
+                .andExpect(jsonPath("$.data.message").value("작성한 댓글이 삭제되었습니다."));
+
+        assertThat(myWrittenCommentReader.lastUserId()).isEqualTo(user.getId());
+        assertThat(myWrittenCommentReader.lastCommentId()).isEqualTo(202L);
+        assertThat(myWrittenCommentReader.lastType()).isEqualTo("photo-posts");
+    }
+
+    @Test
+    @DisplayName("My written comment delete without token returns 401 common envelope")
+    void myWrittenCommentDeleteWithoutTokenReturns401CommonEnvelope() throws Exception {
+        mockMvc.perform(delete("/api/users/me/comments/201")
+                        .param("type", "info-posts"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.message").value(UNAUTHORIZED_MESSAGE))
+                .andExpect(jsonPath("$.data").value(nullValue()));
+    }
+
+    @Test
+    @DisplayName("My written comment delete forbidden returns 403 common envelope")
+    void myWrittenCommentDeleteForbiddenReturns403CommonEnvelope() throws Exception {
+        User user = saveUser("commentDeleteForbidden", UserStatus.APPROVED, UserRole.USER);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+        myWrittenCommentReader.givenDeleteForbidden();
+
+        mockMvc.perform(delete("/api/users/me/comments/203")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .param("type", "info-posts"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value(403))
+                .andExpect(jsonPath("$.message").value("삭제 권한이 없습니다."))
+                .andExpect(jsonPath("$.data").value(nullValue()));
+    }
+
+    @Test
+    @DisplayName("My written comment delete not found returns 404 common envelope")
+    void myWrittenCommentDeleteNotFoundReturns404CommonEnvelope() throws Exception {
+        User user = saveUser("commentDeleteMissing", UserStatus.APPROVED, UserRole.USER);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+        myWrittenCommentReader.givenDeleteNotFound();
+
+        mockMvc.perform(delete("/api/users/me/comments/999")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .param("type", "info-posts"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.message").value("작성한 댓글을 찾을 수 없습니다."))
+                .andExpect(jsonPath("$.data").value(nullValue()));
+    }
+
+    @Test
     @DisplayName("My written post detail target returns info-posts route target")
     void myWrittenPostDetailTargetReturnsInfoPostsRouteTarget() throws Exception {
         User user = saveUser("postTargetInfo", UserStatus.APPROVED, UserRole.USER);
@@ -1448,7 +1612,13 @@ class MyPageControllerTest {
     static class TestMyWrittenCommentReader implements MyWrittenCommentReader {
 
         private MyWrittenCommentListResponse response = MyWrittenCommentListResponse.empty(0, 10);
+        private MyWrittenCommentTargetResponse targetResponse = new MyWrittenCommentTargetResponse("info-posts", 1L, 1L);
+        private MyWrittenCommentDeleteResponse deleteResponse = new MyWrittenCommentDeleteResponse("작성한 댓글이 삭제되었습니다.");
+        private boolean targetNotFound;
+        private boolean deleteForbidden;
+        private boolean deleteNotFound;
         private Long lastUserId;
+        private Long lastCommentId;
         private int lastPage;
         private int lastSize;
         private String lastType;
@@ -1462,13 +1632,69 @@ class MyPageControllerTest {
             return response;
         }
 
+        @Override
+        public MyWrittenCommentTargetResponse readTarget(Long userId, Long commentId, String type) {
+            this.lastUserId = userId;
+            this.lastCommentId = commentId;
+            this.lastType = type;
+            if (targetNotFound) {
+                throw new MyPageApiException(org.springframework.http.HttpStatus.NOT_FOUND, "작성한 댓글을 찾을 수 없습니다.");
+            }
+            return targetResponse;
+        }
+
+        @Override
+        public MyWrittenCommentDeleteResponse delete(Long userId, Long commentId, String type) {
+            this.lastUserId = userId;
+            this.lastCommentId = commentId;
+            this.lastType = type;
+            if (deleteForbidden) {
+                throw new MyPageApiException(org.springframework.http.HttpStatus.FORBIDDEN, "삭제 권한이 없습니다.");
+            }
+            if (deleteNotFound) {
+                throw new MyPageApiException(org.springframework.http.HttpStatus.NOT_FOUND, "작성한 댓글을 찾을 수 없습니다.");
+            }
+            return deleteResponse;
+        }
+
         void givenResponse(MyWrittenCommentListResponse response) {
             this.response = response;
         }
 
+        void givenTargetResponse(MyWrittenCommentTargetResponse targetResponse) {
+            this.targetResponse = targetResponse;
+            this.targetNotFound = false;
+        }
+
+        void givenTargetNotFound() {
+            this.targetNotFound = true;
+        }
+
+        void givenDeleteResponse(MyWrittenCommentDeleteResponse deleteResponse) {
+            this.deleteResponse = deleteResponse;
+            this.deleteForbidden = false;
+            this.deleteNotFound = false;
+        }
+
+        void givenDeleteForbidden() {
+            this.deleteForbidden = true;
+            this.deleteNotFound = false;
+        }
+
+        void givenDeleteNotFound() {
+            this.deleteForbidden = false;
+            this.deleteNotFound = true;
+        }
+
         void reset() {
             this.response = MyWrittenCommentListResponse.empty(0, 10);
+            this.targetResponse = new MyWrittenCommentTargetResponse("info-posts", 1L, 1L);
+            this.deleteResponse = new MyWrittenCommentDeleteResponse("작성한 댓글이 삭제되었습니다.");
+            this.targetNotFound = false;
+            this.deleteForbidden = false;
+            this.deleteNotFound = false;
             this.lastUserId = null;
+            this.lastCommentId = null;
             this.lastPage = -1;
             this.lastSize = -1;
             this.lastType = null;
@@ -1476,6 +1702,10 @@ class MyPageControllerTest {
 
         Long lastUserId() {
             return lastUserId;
+        }
+
+        Long lastCommentId() {
+            return lastCommentId;
         }
 
         int lastPage() {
@@ -1531,6 +1761,13 @@ class MyPageControllerTest {
             case "comments2" -> "20240122";
             case "comments3" -> "20240123";
             case "commentsPending" -> "20240124";
+            case "commentTargetInfo" -> "20240125";
+            case "commentTargetPhoto" -> "20240126";
+            case "commentTargetMissing" -> "20240127";
+            case "commentDeleteInfo" -> "20240128";
+            case "commentDeletePhoto" -> "20240129";
+            case "commentDeleteForbidden" -> "20240130";
+            case "commentDeleteMissing" -> "20240131";
             default -> "20249999";
         };
     }

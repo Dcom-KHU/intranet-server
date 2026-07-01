@@ -4,7 +4,9 @@ import com.dcom.intranet.mypage.dto.MyProfileResponse;
 import com.dcom.intranet.mypage.dto.MyProfileUpdateRequest;
 import com.dcom.intranet.mypage.dto.MyProfileUpdateResponse;
 import com.dcom.intranet.mypage.dto.MemberWithdrawResponse;
+import com.dcom.intranet.mypage.dto.MyWrittenCommentDeleteResponse;
 import com.dcom.intranet.mypage.dto.MyWrittenCommentListResponse;
+import com.dcom.intranet.mypage.dto.MyWrittenCommentTargetResponse;
 import com.dcom.intranet.mypage.dto.MyWrittenPostDeleteResponse;
 import com.dcom.intranet.mypage.dto.MyWrittenPostListResponse;
 import com.dcom.intranet.mypage.dto.MyWrittenPostTargetResponse;
@@ -63,6 +65,20 @@ public class MyPageService {
         User user = userRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."));
         return myWrittenCommentReader.read(user.getId(), page, size, MyPageRouteType.normalize(type));
+    }
+
+    @Transactional(readOnly = true)
+    public MyWrittenCommentTargetResponse getMyCommentTarget(String loginId, Long commentId, String type) {
+        User user = userRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."));
+        return myWrittenCommentReader.readTarget(user.getId(), commentId, MyPageRouteType.normalize(type));
+    }
+
+    @Transactional
+    public MyWrittenCommentDeleteResponse deleteMyComment(String loginId, Long commentId, String type) {
+        User user = userRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."));
+        return myWrittenCommentReader.delete(user.getId(), commentId, MyPageRouteType.normalize(type));
     }
 
     @Transactional(readOnly = true)
