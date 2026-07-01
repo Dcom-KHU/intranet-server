@@ -14,8 +14,10 @@ public class LoginResponse {
     private Long userId;
     private UserRole role;
     private UserStatus status;
+    private boolean requirePasswordChange;
 
-    public static LoginResponse of(User user, String accsessToken, String refreshToken){
+    public static LoginResponse of(User user, String accsessToken, String refreshToken,
+                                   boolean requirePasswordChange){
         return LoginResponse.builder()
                 .accsessToken(accsessToken)
                 .refreshToken(refreshToken)

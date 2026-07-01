@@ -86,4 +86,23 @@ public class AuthController {
         Map<String, String> response = Map.of("message", "로그아웃 되었습니다.");
         return ResponseEntity.ok(response);
     }
+
+    /// 임시 비밀번호 발송
+    @PostMapping("/password/reset/send")
+    public ResponseEntity<Map<String, Object>> sendTempPassword(@Valid @RequestBody EmailSendRequest request){
+        authService.sendTempPassword(request.getEmail());
+
+        Map<String, Object> response = Map.of("message", "임시 비밀번호가 발송되었습니다.", "expiresIn", 1800);
+        return ResponseEntity.ok(response);
+    }
+
+    /// 비밀번호 재설정
+    @PostMapping("/password")
+    public ResponseEntity<Map<String,String>> resetPassword(
+            @AuthenticationPrincipal String loginId, @Valid @RequestBody PasswordResetRequest request){
+        authService.resetPassword(loginId, request.getNewPassword());
+        Map<String,String> response = Map.of("message", "비밀번호가 변경되었습니다.");
+        return ResponseEntity.ok(response);
+    }
+
 }
