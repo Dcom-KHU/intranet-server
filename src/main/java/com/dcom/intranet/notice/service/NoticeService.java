@@ -8,6 +8,7 @@ import com.dcom.intranet.notice.dto.NoticeDetailResponse;
 import com.dcom.intranet.notice.dto.NoticeListResponse;
 import com.dcom.intranet.notice.dto.NoticeUpdateResponse;
 import com.dcom.intranet.notice.repository.NoticeRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -18,13 +19,10 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDateTime;
 
 @Service
+@RequiredArgsConstructor
 public class NoticeService {
 
     private final NoticeRepository noticeRepository;
-
-    public NoticeService(NoticeRepository noticeRepository) {
-        this.noticeRepository = noticeRepository;
-    }
 
     @Transactional(readOnly = true)
     public NoticeListResponse getNoticeList(Pageable pageable) {
@@ -52,6 +50,7 @@ public class NoticeService {
         Notice notice = new Notice(
                 request.title(),
                 request.content(),
+                // TODO: JWT에서 로그인한 관리자 ID 주입 필요
                 null,
                 LocalDateTime.now(),
                 request.toNoticeFiles()
@@ -82,6 +81,6 @@ public class NoticeService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
         noticeRepository.delete(notice);
-        return new NoticeDeleteResponse("Notice deleted successfully.");
+        return new NoticeDeleteResponse("공지사항이 삭제되었습니다.");
     }
 }
