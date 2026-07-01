@@ -1,62 +1,67 @@
 package com.dcom.intranet.jwt;
 
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
 
 @Component
+@RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private static final String AUTHORIZATION_HEADER = "Authorization";
-    private static final String BEARER_PREFIX = "Bearer ";
-
-    private final JwtTokenProvider jwtTokenProvider;
-
-    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider) {
-        this.jwtTokenProvider = jwtTokenProvider;
-    }
+    private  final JwtTokenProvider jwtTokenProvider;
 
     @Override
-    protected void doFilterInternal(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain filterChain
-    ) throws ServletException, IOException {
-        String token = resolveToken(request);
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain)
+            throws ServletException, IOException{
+        try {
+            /// 헤더에서 토큰 꺼내기
+            String token = resolveToken(request);
 
-        if (token != null && jwtTokenProvider.validateToken(token)) {
-            String loginId = jwtTokenProvider.getLoginId(token);
-            String role = jwtTokenProvider.getRole(token);
+            /// 토큰이 유효하면 인증 정보 세팅
+            if (token != null && jwtTokenProvider.validateToken(token)) {
+                String loginId = jwtTokenProvider.getLoginId(token);
+                String role = jwtTokenProvider.getRole(token);
 
-            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                    loginId,
-                    null,
-                    List.of(new SimpleGrantedAuthority(role))
-            );
-
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+                /// 스프링 시큐리티에 인증된 사람이란 것을 알려주기
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                loginId, /// 누구인지
+                                null, /// 비번 -> 이미 검증되었으니까 필요 없다.
+                                List.of(new SimpleGrantedAuthority("ROLE_" + role)) /// 권한
+                        );
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            }
+        }catch (Exception e){
+            /// 토큰이 잘못되었거나 만료된경우 인증안된상태로 통과
+            /// 어차피 나중에 시큐리티가 401처리를 함
+            SecurityContextHolder.clearContext();
         }
-
+        /// 다음필터로 넘기기
         filterChain.doFilter(request, response);
+
     }
 
-    private String resolveToken(HttpServletRequest request) {
-        String authorization = request.getHeader(AUTHORIZATION_HEADER);
-
-        if (StringUtils.hasText(authorization) && authorization.startsWith(BEARER_PREFIX)) {
-            return authorization.substring(BEARER_PREFIX.length());
+    /// Authorization 헤더에서 Bearer토큰 추출
+    private String resolveToken(HttpServletRequest request){
+        String bearer = request.getHeader("Authorization");
+        if(bearer != null && bearer.startsWith("Bearer ")){
+            return bearer.substring(7);
+            /// 헤더에서 "Bearer "의 7개 잘라내고 그 뒤로부터 토큰을 읽는다.
         }
-
         return null;
     }
+
 }

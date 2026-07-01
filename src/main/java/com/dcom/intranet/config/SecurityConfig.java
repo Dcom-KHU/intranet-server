@@ -1,55 +1,65 @@
 package com.dcom.intranet.config;
 
 import com.dcom.intranet.jwt.JwtAuthenticationFilter;
-import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-@Configuration
+@Configuration /// 스프링 설정 클래스라고 알리는 애노테이션
+@RequiredArgsConstructor
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
-        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
+    @Bean /// 비밀번호 암호화 인코더 (BCrypt 인코더를 스프링 빈으로 등록 -> 어디서든 autowired나 생성자 주입받을 수 있음.)
+    public PasswordEncoder passwordEncoder(){
         return new BCryptPasswordEncoder();
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception{
         http
-                .csrf(AbstractHttpConfigurer::disable)
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.GET, "/api/notice", "/api/notice/*").hasAuthority("USER")
-                        .requestMatchers(HttpMethod.POST, "/api/notice").hasAuthority("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/notice/*").hasAuthority("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/notice/*").hasAuthority("ADMIN")
-                        .anyRequest().permitAll()
+                        // 인증 없이 접근 가능
+                        .requestMatchers(
+                                "/api/auth/signup",
+                                "/api/auth/login",
+                                "/api/auth/check-login-id",
+                                "/api/auth/email/**",
+                                "/api/auth/password/**",
+                                "/api/auth/refresh",
+                                "/api/auth/logout",
+                                "/h2-console/**",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**"
+                        ).permitAll()
+                        // ADMIN 전용
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/announcements").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/announcements/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/announcements/**").hasRole("ADMIN")
+                        // 나머지는 로그인 필요
+                        .anyRequest().authenticated()
                 )
-                .exceptionHandling(exception -> exception
-                        .authenticationEntryPoint((request, response, authException) ->
-                                response.sendError(HttpServletResponse.SC_UNAUTHORIZED))
-                        .accessDeniedHandler((request, response, accessDeniedException) ->
-                                response.sendError(HttpServletResponse.SC_FORBIDDEN))
-                )
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .headers(headers -> headers
-                        .frameOptions(frameOptions -> frameOptions.disable()))
-                .formLogin(AbstractHttpConfigurer::disable)
-                .httpBasic(AbstractHttpConfigurer::disable)
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                        .frameOptions(frameOptions -> frameOptions.disable())
+                )
+                .formLogin(form -> form.disable())
+                .httpBasic(basic -> basic.disable())
+
+                .addFilterBefore(jwtAuthenticationFilter,
+                        UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
