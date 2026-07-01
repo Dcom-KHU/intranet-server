@@ -1,4 +1,4 @@
-package com.dcom.intranet.home;
+package com.dcom.intranet.home.service;
 
 import com.dcom.intranet.home.dto.ArchiveSummaryResponse;
 import com.dcom.intranet.home.dto.AuthorResponse;
