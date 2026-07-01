@@ -339,7 +339,7 @@
           "my-page-controller"
         ],
         "summary": "내가 쓴 글 목록 조회",
-        "description": "인증된 사용자가 본인이 작성한 정보 공유 게시글, 족보 글, 활동 사진 댓글 목록을 조회한다.",
+        "description": "인증된 사용자가 본인이 작성한 정보 공유 게시글, 족보 글, 활동 사진 게시글 목록을 조회한다.",
         "operationId": "getMyPosts",
         "parameters": [
           {
@@ -365,6 +365,7 @@
           {
             "name": "type",
             "in": "query",
+            "description": "라우팅 타입: info-posts, archives, photo-posts",
             "required": false,
             "schema": {
               "type": "string"
@@ -427,6 +428,7 @@
           {
             "name": "type",
             "in": "query",
+            "description": "라우팅 타입: info-posts, photo-posts",
             "required": false,
             "schema": {
               "type": "string"
@@ -478,6 +480,7 @@
           {
             "name": "type",
             "in": "query",
+            "description": "라우팅 타입: info-posts, archives, photo-posts",
             "required": true,
             "schema": {
               "type": "string"
@@ -537,6 +540,7 @@
           {
             "name": "type",
             "in": "query",
+            "description": "라우팅 타입: info-posts, archives, photo-posts",
             "required": true,
             "schema": {
               "type": "string"
@@ -1224,8 +1228,8 @@
           },
           "type": {
             "type": "string",
-            "description": "댓글 작성 대상 유형",
-            "example": "INFO_POST"
+            "description": "댓글 작성 대상 라우팅 타입",
+            "example": "info-posts"
           },
           "targetId": {
             "type": "integer",
@@ -1361,8 +1365,8 @@
           },
           "type": {
             "type": "string",
-            "description": "게시글 유형",
-            "example": "ARCHIVE"
+            "description": "게시글 라우팅 타입",
+            "example": "archives"
           },
           "createdAt": {
             "type": "string",

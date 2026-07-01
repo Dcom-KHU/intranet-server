@@ -55,28 +55,28 @@ public class MyPageService {
     public MyWrittenPostListResponse getMyPosts(String loginId, int page, int size, String type) {
         User user = userRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."));
-        return myWrittenPostReader.read(user.getId(), page, size, type);
+        return myWrittenPostReader.read(user.getId(), page, size, MyPageRouteType.normalize(type));
     }
 
     @Transactional(readOnly = true)
     public MyWrittenCommentListResponse getMyComments(String loginId, int page, int size, String type) {
         User user = userRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."));
-        return myWrittenCommentReader.read(user.getId(), page, size, type);
+        return myWrittenCommentReader.read(user.getId(), page, size, MyPageRouteType.normalize(type));
     }
 
     @Transactional(readOnly = true)
     public MyWrittenPostTargetResponse getMyPostTarget(String loginId, Long postId, String type) {
         User user = userRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."));
-        return myWrittenPostReader.readTarget(user.getId(), postId, type);
+        return myWrittenPostReader.readTarget(user.getId(), postId, MyPageRouteType.normalize(type));
     }
 
     @Transactional
     public MyWrittenPostDeleteResponse deleteMyPost(String loginId, Long postId, String type) {
         User user = userRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."));
-        return myWrittenPostReader.delete(user.getId(), postId, type);
+        return myWrittenPostReader.delete(user.getId(), postId, MyPageRouteType.normalize(type));
     }
 
     @Transactional

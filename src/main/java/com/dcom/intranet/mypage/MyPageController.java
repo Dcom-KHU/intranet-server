@@ -33,6 +33,7 @@ import com.dcom.intranet.mypage.dto.PasswordChangeResponse;
 import com.dcom.intranet.mypage.dto.TooManyRequestsApiResponse;
 import com.dcom.intranet.mypage.dto.UnauthorizedApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
@@ -84,7 +85,7 @@ public class MyPageController {
 
     @Operation(
             summary = "내가 쓴 글 목록 조회",
-            description = "인증된 사용자가 본인이 작성한 정보 공유 게시글, 족보 글, 활동 사진 댓글 목록을 조회한다.",
+            description = "인증된 사용자가 본인이 작성한 정보 공유 게시글, 족보 글, 활동 사진 게시글 목록을 조회한다.",
             responses = {
                     @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
@@ -103,6 +104,7 @@ public class MyPageController {
             Authentication authentication,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
+            @Parameter(description = "라우팅 타입: info-posts, archives, photo-posts")
             @RequestParam(required = false) String type
     ) {
         MyWrittenPostListResponse response = myPageService.getMyPosts(
@@ -135,6 +137,7 @@ public class MyPageController {
             Authentication authentication,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
+            @Parameter(description = "라우팅 타입: info-posts, photo-posts")
             @RequestParam(required = false) String type
     ) {
         MyWrittenCommentListResponse response = myPageService.getMyComments(
@@ -171,6 +174,7 @@ public class MyPageController {
     public ResponseEntity<ApiResponse<MyWrittenPostTargetResponse>> getMyPostTarget(
             Authentication authentication,
             @PathVariable Long postId,
+            @Parameter(description = "라우팅 타입: info-posts, archives, photo-posts")
             @RequestParam String type
     ) {
         MyWrittenPostTargetResponse response = myPageService.getMyPostTarget(
@@ -211,6 +215,7 @@ public class MyPageController {
     public ResponseEntity<ApiResponse<MyWrittenPostDeleteResponse>> deleteMyPost(
             Authentication authentication,
             @PathVariable Long postId,
+            @Parameter(description = "라우팅 타입: info-posts, archives, photo-posts")
             @RequestParam String type
     ) {
         MyWrittenPostDeleteResponse response = myPageService.deleteMyPost(
