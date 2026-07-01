@@ -36,7 +36,10 @@ public class InfoPost {
     private User author;
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<InfoPostFile> files = new ArrayList<>();
+    private final List<InfoPostFile> files = new ArrayList<>();
+
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private final List<InfoComment> comments = new ArrayList<>();
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -80,5 +83,15 @@ public class InfoPost {
     @PreUpdate
     public void preUpdate() {
         this.updatedAt = LocalDateTime.now();
+    }
+
+    public void addComment(InfoComment comment) {
+        comments.add(comment);
+        comment.setPost(this);
+    }
+
+    public void removeComment(InfoComment comment) {
+        comments.remove(comment);
+        comment.setPost(null);
     }
 }

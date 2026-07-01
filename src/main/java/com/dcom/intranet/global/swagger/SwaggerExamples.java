@@ -166,4 +166,104 @@ public class SwaggerExamples {
           "data": null
         }
         """;
+
+    public static final String INFO_COMMENT_LIST_SUCCESS_200 = """
+        {
+          "success": true,
+          "status": 200,
+          "message": "요청이 성공적으로 처리되었습니다.",
+          "data": {
+            "comments": [
+              {
+                "commentId": 1,
+                "postId": 1,
+                "content": "좋은 정보 감사합니다!",
+                "authorId": 2,
+                "authorName": "카리나",
+                "createdAt": "2026-07-02T00:30:00",
+                "updatedAt": null
+              }
+            ]
+          }
+        }
+        """;
+
+    public static final String INFO_COMMENT_CREATE_SUCCESS_201 = """
+        {
+          "success": true,
+          "status": 201,
+          "message": "댓글이 작성되었습니다.",
+          "data": {
+            "commentId": 1,
+            "postId": 1,
+            "content": "좋은 정보 감사합니다!",
+            "authorId": 2,
+            "authorName": "카리나",
+            "createdAt": "2026-07-02T00:30:00",
+            "updatedAt": null
+          }
+        }
+        """;
+
+    public static final String INFO_COMMENT_UPDATE_SUCCESS_200 = """
+        {
+          "success": true,
+          "status": 200,
+          "message": "댓글이 수정되었습니다.",
+          "data": {
+            "commentId": 1,
+            "postId": 1,
+            "content": "수정된 댓글입니다.",
+            "authorId": 2,
+            "authorName": "카리나",
+            "createdAt": "2026-07-02T00:30:00",
+            "updatedAt": "2026-07-02T00:40:00"
+          }
+        }
+        """;
+
+    public static final String INFO_COMMENT_DELETE_SUCCESS_200 = """
+        {
+          "success": true,
+          "status": 200,
+          "message": "댓글이 삭제되었습니다.",
+          "data": null
+        }
+        """;
+
+    public static final String INFO_COMMENT_BAD_REQUEST_400 = """
+        {
+          "success": false,
+          "status": 400,
+          "message": "댓글 내용은 필수입니다.",
+          "data": null
+        }
+        """;
+
+    public static final String INFO_COMMENT_UPDATE_FORBIDDEN_403 = """
+        {
+          "success": false,
+          "status": 403,
+          "message": "작성자만 댓글을 수정할 수 있습니다.",
+          "data": null
+        }
+        """;
+
+    public static final String INFO_COMMENT_DELETE_FORBIDDEN_403 = """
+        {
+          "success": false,
+          "status": 403,
+          "message": "작성자 또는 관리자만 댓글을 삭제할 수 있습니다.",
+          "data": null
+        }
+        """;
+
+    public static final String INFO_COMMENT_NOT_FOUND_404 = """
+        {
+          "success": false,
+          "status": 404,
+          "message": "댓글을 찾을 수 없습니다.",
+          "data": null
+        }
+        """;
 }
