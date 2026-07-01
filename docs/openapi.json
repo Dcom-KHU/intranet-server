@@ -269,6 +269,38 @@
         }
       }
     },
+    "/api/users/me/withdraw": {
+      "patch": {
+        "tags": [
+          "my-page-controller"
+        ],
+        "summary": "회원 탈퇴",
+        "description": "인증된 사용자의 회원 상태를 WITHDRAWN으로 변경한다.",
+        "operationId": "withdraw",
+        "responses": {
+          "200": {
+            "description": "회원 탈퇴 성공",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberWithdrawApiResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 실패",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/users/me": {
       "get": {
         "tags": [
@@ -943,6 +975,59 @@
           }
         },
         "description": "비밀번호 변경 요청"
+      },
+      "MemberWithdrawApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "요청 성공 여부",
+            "example": true
+          },
+          "status": {
+            "type": "integer",
+            "description": "HTTP 상태 코드",
+            "format": "int32",
+            "example": 200
+          },
+          "message": {
+            "type": "string",
+            "description": "응답 메시지",
+            "example": "요청이 성공적으로 처리되었습니다."
+          },
+          "data": {
+            "$ref": "#/components/schemas/MemberWithdrawResponse"
+          }
+        },
+        "description": "회원 탈퇴 성공 응답"
+      },
+      "MemberWithdrawResponse": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "description": "회원 ID",
+            "format": "int64",
+            "example": 1
+          },
+          "status": {
+            "type": "string",
+            "description": "회원 상태",
+            "enum": [
+              "PENDING",
+              "APPROVED",
+              "WITHDRAWN"
+            ],
+            "example": "WITHDRAWN"
+          },
+          "withdrawnAt": {
+            "type": "string",
+            "description": "탈퇴 일시",
+            "format": "date-time",
+            "example": "2026-07-01T10:30:00"
+          }
+        },
+        "description": "회원 탈퇴 응답 데이터"
       },
       "MyProfileApiResponse": {
         "type": "object",
