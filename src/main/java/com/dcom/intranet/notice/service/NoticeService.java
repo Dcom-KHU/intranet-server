@@ -25,8 +25,12 @@ public class NoticeService {
     private final NoticeRepository noticeRepository;
 
     @Transactional(readOnly = true)
-    public NoticeListResponse getNoticeList(Pageable pageable) {
-        Page<NoticeListResponse.NoticeSummary> page = noticeRepository.findAll(pageable)
+    public NoticeListResponse getNoticeList(String title, Pageable pageable) {
+        Page<Notice> notices = title == null || title.isBlank()
+                ? noticeRepository.findAll(pageable)
+                : noticeRepository.findByTitleContaining(title, pageable);
+
+        Page<NoticeListResponse.NoticeSummary> page = notices
                 .map(notice -> new NoticeListResponse.NoticeSummary(
                         notice.getNoticeId(),
                         notice.getTitle(),
