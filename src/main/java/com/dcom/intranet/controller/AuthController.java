@@ -72,4 +72,18 @@ public class AuthController {
         /// 이렇게 Map of을 하면 간단한 것들은 그냥 DTO안만들고 바로 JSON만들어서 준다. 굳이 response 폴더를 만들 필요 없음
         return ResponseEntity.ok(response);
     }
+
+    /// 토큰 재발급
+    @PostMapping("/refresh")
+    public ResponseEntity<RefreshResponse> refresh(@Valid @RequestBody RefreshRequest request) {
+        RefreshResponse response = authService.refresh(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Map<String, String>> logout(@Valid @RequestBody RefreshRequest request){
+        authService.logout(request);
+        Map<String, String> response = Map.of("message", "로그아웃 되었습니다.");
+        return ResponseEntity.ok(response);
+    }
 }

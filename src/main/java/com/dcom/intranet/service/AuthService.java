@@ -1,9 +1,11 @@
 package com.dcom.intranet.service;
 
+import com.dcom.intranet.domain.RefreshToken;
 import com.dcom.intranet.domain.User;
 import com.dcom.intranet.domain.UserStatus;
 import com.dcom.intranet.dto.auth.*;
 import com.dcom.intranet.jwt.JwtTokenProvider;
+import com.dcom.intranet.repository.RefreshTokenRepository;
 import com.dcom.intranet.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -19,6 +21,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final EmailService emailService;
+    private final RefreshTokenRepository refreshTokenRepository;
 
 
     /// 회원가입
@@ -94,9 +97,16 @@ public class AuthService {
                 user.getLoginId(), user.getRole().name()
         );
 
+        /// Refresh Token DB에 저장
+        refreshTokenRepository.save(
+                new RefreshToken(refreshToken, user.getLoginId(), 1209600000L)
+        );
+
+
         return LoginResponse.of(user, accessToken, refreshToken);
 
     }
+
 
     /// 로그인 상태 확인
     public MeResponse me(String loginId){
@@ -104,6 +114,45 @@ public class AuthService {
                 .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
         return MeResponse.from(user);
     }
+
+    /// 토큰 재발급
+    @Transactional
+    public RefreshResponse refresh(RefreshRequest request){
+        /// DB에서 refreshToken 찾기
+        RefreshToken savedToken = refreshTokenRepository.findByToken(request.getRefreshToken())
+                .orElseThrow(()-> new IllegalArgumentException("유효하지 않은 RefreshToken입니다."));
+
+        /// 만료 확인
+        if(savedToken.isExpired()){
+            refreshTokenRepository.delete(savedToken);
+            throw new IllegalArgumentException("로그인이 만료되었습니다. 다시 로그인해주세요.");
+        }
+
+        /// 토큰에서 정보 추출
+        String loginId = jwtTokenProvider.getLoginId(request.getRefreshToken());
+        String role = jwtTokenProvider.getRole(request.getRefreshToken());
+
+        /// 새 토큰 발급
+        String newAccessToken = jwtTokenProvider.createAccessToken(loginId, role);
+        String newRefreshToken = jwtTokenProvider.createRefreshToken(loginId, role);
+
+
+        /// 기존 리프레시 토큰 삭제 + 새거 저장(Rotation)
+        refreshTokenRepository.delete(savedToken);
+        refreshTokenRepository.save(new RefreshToken(newRefreshToken, loginId, 1209600000L));
+
+        return RefreshResponse.of(newAccessToken, newRefreshToken, 1800);
+
+    }
+
+    @Transactional
+    public void logout(RefreshRequest request){
+        refreshTokenRepository.findByToken(request.getRefreshToken())
+                .ifPresent(refreshTokenRepository::delete);
+
+    }
+
+
 
 
 
