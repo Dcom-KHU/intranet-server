@@ -11,7 +11,7 @@ public class MyWrittenPostListApiResponse {
     @Schema(description = "HTTP 상태 코드", example = "200")
     public int status;
 
-    @Schema(description = "응답 메시지", example = "요청이 성공적으로 처리되었습니다.")
+    @Schema(description = "응답 메시지", example = "요청에 성공했습니다.")
     public String message;
 
     @Schema(description = "내가 쓴 글 목록 조회 결과")

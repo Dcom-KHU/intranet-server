@@ -11,7 +11,7 @@ public class MemberWithdrawApiResponse {
     @Schema(description = "HTTP 상태 코드", example = "200")
     public int status;
 
-    @Schema(description = "응답 메시지", example = "요청이 성공적으로 처리되었습니다.")
+    @Schema(description = "응답 메시지", example = "요청에 성공했습니다.")
     public String message;
 
     @Schema(description = "회원 탈퇴 결과")

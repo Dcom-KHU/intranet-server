@@ -42,7 +42,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 class MyPageControllerTest {
 
-    private static final String SUCCESS_MESSAGE = "요청이 성공적으로 처리되었습니다.";
+    private static final String SUCCESS_MESSAGE = "요청에 성공했습니다.";
     private static final String UNAUTHORIZED_MESSAGE = "인증이 필요합니다.";
     private static final String CURRENT_PASSWORD = "current-password";
     private static final String NEW_PASSWORD = "changed-password";
@@ -828,14 +828,14 @@ class MyPageControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.message").value(SUCCESS_MESSAGE))
-                .andExpect(jsonPath("$.data.postList[0].postId").value(11))
-                .andExpect(jsonPath("$.data.postList[0].title").value("오픈소스SW개발방법및도구"))
-                .andExpect(jsonPath("$.data.postList[0].type").value("archives"))
-                .andExpect(jsonPath("$.data.postList[0].createdAt").value("2026-05-25T10:30:00"))
-                .andExpect(jsonPath("$.data.pageInfo.page").value(0))
-                .andExpect(jsonPath("$.data.pageInfo.size").value(10))
-                .andExpect(jsonPath("$.data.pageInfo.totalPages").value(1))
-                .andExpect(jsonPath("$.data.pageInfo.totalElements").value(1));
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.posts[0].id").value(11))
+                .andExpect(jsonPath("$.data.posts[0].number").value(1))
+                .andExpect(jsonPath("$.data.posts[0].title").value("오픈소스SW개발방법및도구"))
+                .andExpect(jsonPath("$.data.posts[0].type").value("archives"))
+                .andExpect(jsonPath("$.data.posts[0].createdAt").value("2026-05-25T10:30:00"))
+                .andExpect(jsonPath("$.data.postList").doesNotExist())
+                .andExpect(jsonPath("$.data.pageInfo").doesNotExist());
 
         assertThat(myWrittenPostReader.lastUserId()).isEqualTo(user.getId());
         assertThat(myWrittenPostReader.lastPage()).isEqualTo(0);
@@ -855,9 +855,10 @@ class MyPageControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.message").value(SUCCESS_MESSAGE))
-                .andExpect(jsonPath("$.data.postList").isArray())
-                .andExpect(jsonPath("$.data.pageInfo.page").value(0))
-                .andExpect(jsonPath("$.data.pageInfo.size").value(10));
+                .andExpect(jsonPath("$.data.posts").isArray())
+                .andExpect(jsonPath("$.data.total").value(0))
+                .andExpect(jsonPath("$.data.postList").doesNotExist())
+                .andExpect(jsonPath("$.data.pageInfo").doesNotExist());
 
         assertThat(myWrittenPostReader.lastUserId()).isEqualTo(user.getId());
         assertThat(myWrittenPostReader.lastPage()).isEqualTo(0);
@@ -880,12 +881,11 @@ class MyPageControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.message").value(SUCCESS_MESSAGE))
-                .andExpect(jsonPath("$.data.postList").isArray())
-                .andExpect(jsonPath("$.data.postList").isEmpty())
-                .andExpect(jsonPath("$.data.pageInfo.page").value(0))
-                .andExpect(jsonPath("$.data.pageInfo.size").value(10))
-                .andExpect(jsonPath("$.data.pageInfo.totalPages").value(0))
-                .andExpect(jsonPath("$.data.pageInfo.totalElements").value(0));
+                .andExpect(jsonPath("$.data.total").value(0))
+                .andExpect(jsonPath("$.data.posts").isArray())
+                .andExpect(jsonPath("$.data.posts").isEmpty())
+                .andExpect(jsonPath("$.data.postList").doesNotExist())
+                .andExpect(jsonPath("$.data.pageInfo").doesNotExist());
     }
 
     @Test
@@ -940,16 +940,16 @@ class MyPageControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.message").value(SUCCESS_MESSAGE))
-                .andExpect(jsonPath("$.data.commentList[0].commentId").value(101))
-                .andExpect(jsonPath("$.data.commentList[0].type").value("info-posts"))
-                .andExpect(jsonPath("$.data.commentList[0].targetId").value(12))
-                .andExpect(jsonPath("$.data.commentList[0].targetTitle").value("React 참고 자료 모음"))
-                .andExpect(jsonPath("$.data.commentList[0].content").value("좋은 자료 감사합니다."))
-                .andExpect(jsonPath("$.data.commentList[0].createdAt").value("2026-06-01T13:00:00"))
-                .andExpect(jsonPath("$.data.pageInfo.page").value(0))
-                .andExpect(jsonPath("$.data.pageInfo.size").value(10))
-                .andExpect(jsonPath("$.data.pageInfo.totalPages").value(1))
-                .andExpect(jsonPath("$.data.pageInfo.totalElements").value(1));
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.comments[0].id").value(101))
+                .andExpect(jsonPath("$.data.comments[0].number").value(1))
+                .andExpect(jsonPath("$.data.comments[0].type").value("info-posts"))
+                .andExpect(jsonPath("$.data.comments[0].targetId").value(12))
+                .andExpect(jsonPath("$.data.comments[0].targetTitle").value("React 참고 자료 모음"))
+                .andExpect(jsonPath("$.data.comments[0].content").value("좋은 자료 감사합니다."))
+                .andExpect(jsonPath("$.data.comments[0].createdAt").value("2026-06-01T13:00:00"))
+                .andExpect(jsonPath("$.data.commentList").doesNotExist())
+                .andExpect(jsonPath("$.data.pageInfo").doesNotExist());
 
         assertThat(myWrittenCommentReader.lastUserId()).isEqualTo(user.getId());
         assertThat(myWrittenCommentReader.lastPage()).isEqualTo(0);
@@ -969,9 +969,10 @@ class MyPageControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.message").value(SUCCESS_MESSAGE))
-                .andExpect(jsonPath("$.data.commentList").isArray())
-                .andExpect(jsonPath("$.data.pageInfo.page").value(0))
-                .andExpect(jsonPath("$.data.pageInfo.size").value(10));
+                .andExpect(jsonPath("$.data.comments").isArray())
+                .andExpect(jsonPath("$.data.total").value(0))
+                .andExpect(jsonPath("$.data.commentList").doesNotExist())
+                .andExpect(jsonPath("$.data.pageInfo").doesNotExist());
 
         assertThat(myWrittenCommentReader.lastUserId()).isEqualTo(user.getId());
         assertThat(myWrittenCommentReader.lastPage()).isEqualTo(0);
@@ -995,12 +996,11 @@ class MyPageControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.message").value(SUCCESS_MESSAGE))
-                .andExpect(jsonPath("$.data.commentList").isArray())
-                .andExpect(jsonPath("$.data.commentList").isEmpty())
-                .andExpect(jsonPath("$.data.pageInfo.page").value(0))
-                .andExpect(jsonPath("$.data.pageInfo.size").value(10))
-                .andExpect(jsonPath("$.data.pageInfo.totalPages").value(0))
-                .andExpect(jsonPath("$.data.pageInfo.totalElements").value(0));
+                .andExpect(jsonPath("$.data.total").value(0))
+                .andExpect(jsonPath("$.data.comments").isArray())
+                .andExpect(jsonPath("$.data.comments").isEmpty())
+                .andExpect(jsonPath("$.data.commentList").doesNotExist())
+                .andExpect(jsonPath("$.data.pageInfo").doesNotExist());
 
         assertThat(myWrittenCommentReader.lastType()).isEqualTo("photo-posts");
     }
