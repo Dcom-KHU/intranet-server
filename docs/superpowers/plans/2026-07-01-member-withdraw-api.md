@@ -192,7 +192,7 @@ public record MemberWithdrawResponse(
         @Schema(description = "회원 상태", example = "WITHDRAWN")
         UserStatus status,
 
-        @Schema(description = "탈퇴 일시", example = "2026-07-01T10:30:00")
+        @Schema(description = "탈퇴 일시", example = "2026-07-01T10:30:00+09:00")
         LocalDateTime withdrawnAt
 ) {
     public static MemberWithdrawResponse from(User user) {
@@ -394,7 +394,7 @@ Add schemas:
       "type": "string",
       "format": "date-time",
       "description": "탈퇴 일시",
-      "example": "2026-07-01T10:30:00"
+      "example": "2026-07-01T10:30:00+09:00"
     }
   }
 }
@@ -451,4 +451,3 @@ git commit -m "feat: add member withdraw API"
 ```
 
 Expected: commit succeeds with only the member withdraw API implementation.
-

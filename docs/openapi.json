@@ -1024,7 +1024,7 @@
             "type": "string",
             "description": "탈퇴 일시",
             "format": "date-time",
-            "example": "2026-07-01T10:30:00"
+            "example": "2026-07-01T10:30:00+09:00"
           }
         },
         "description": "회원 탈퇴 응답 데이터"
