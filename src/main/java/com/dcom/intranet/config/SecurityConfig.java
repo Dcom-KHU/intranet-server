@@ -4,6 +4,7 @@ import com.dcom.intranet.jwt.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -45,6 +46,9 @@ public class SecurityConfig {
                         ).permitAll()
                         // ADMIN 전용
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/announcements").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/announcements/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/announcements/**").hasRole("ADMIN")
                         // 나머지는 로그인 필요
                         .anyRequest().authenticated()
                 )
