@@ -85,4 +85,33 @@ public class GlobalExceptionHandler {
                         "업로드 가능한 파일 크기를 초과했습니다."
                 ));
     }
+
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<CommonResponse<Void>> handleBadRequest(BadRequestException e) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(CommonResponse.fail(400, e.getMessage()));
+    }
+
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<CommonResponse<Void>> handleUnauthorized(UnauthorizedException e) {
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(CommonResponse.fail(401, e.getMessage()));
+    }
+
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<CommonResponse<Void>> handleConflict(ConflictException e) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(CommonResponse.fail(409, e.getMessage()));
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<CommonResponse<Void>> handleForbidden(IllegalStateException e) {
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(CommonResponse.fail(403, e.getMessage()));
+    }
+
 }
