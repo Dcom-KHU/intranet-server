@@ -75,7 +75,7 @@
   "data": {
     "userId": 1,
     "status": "WITHDRAWN",
-    "withdrawnAt": "2026-07-01T10:30:00"
+    "withdrawnAt": "2026-07-01T10:30:00+09:00"
   }
 }
 ```
