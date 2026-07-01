@@ -48,6 +48,12 @@ public class User {
 
     private LocalDateTime lastLoginAt;
 
+    @Column
+    private String tempPassword;
+
+    @Column
+    private LocalDateTime tempPasswordExpiresAt;
+
     @PrePersist
     /// JPA가 DB에 저장하기 직전에 호출하기때문에 저장지점의 정확한 시각을 보장함. (PrePersist)
     protected void onCreate() {
@@ -71,4 +77,31 @@ public class User {
     public void updateLastLoginAt() {
         this.lastLoginAt = LocalDateTime.now();
     }
+
+    /// 임시 비밀번호 설정
+    public void setTempPassword(String encodedTempPassword, int expirationMinutes){
+        this.tempPassword = encodedTempPassword;
+        this.tempPasswordExpiresAt = LocalDateTime.now().plusMinutes(expirationMinutes);
+    }
+
+    /// 임시 비밀번호 유효한지 확인
+    public boolean isTempPasswordValid(){
+        return tempPassword != null
+                && tempPasswordExpiresAt != null
+                && LocalDateTime.now().isBefore(tempPasswordExpiresAt);
+    }
+
+    /// 임시 비밀번호 초기화
+    public void clearTempPassword(){
+        this.tempPassword = null;
+        this.tempPasswordExpiresAt = null;
+    }
+
+    /// 비밀번호 변경
+    public void changePassword(String encodedNewPassword){
+        this.password = encodedNewPassword;
+        this.clearTempPassword();
+    }
+
+
 }

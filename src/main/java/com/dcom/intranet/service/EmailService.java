@@ -1,6 +1,7 @@
 package com.dcom.intranet.service;
 
 import com.dcom.intranet.domain.EmailVerification;
+import com.dcom.intranet.exception.BadRequestException;
 import com.dcom.intranet.repository.EmailVerificationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.mail.SimpleMailMessage;
@@ -46,19 +47,19 @@ public class EmailService {
         /// 가장 최근 요청 찾기
         EmailVerification verification = emailVerificationRepository
                 .findTopByEmailOrderByCreatedAtDesc(email)
-                .orElseThrow(() -> new IllegalArgumentException("인증 요청을 찾을 수 없습니다."));
+                .orElseThrow(() -> new BadRequestException("인증 요청을 찾을 수 없습니다."));
 
         /// 시간 만료시에
         if(verification.isExpired()){
-            throw new IllegalArgumentException("인증 코드가 만료되었습니다. 다시 요청해주세요.");
+            throw new BadRequestException("인증 코드가 만료되었습니다. 다시 요청해주세요.");
         }
         /// 이미 인증된 경우
         if(verification.isVertified()){
-            throw new IllegalArgumentException("이미 인증된 이메일입니다.");
+            throw new BadRequestException("이미 인증된 이메일입니다.");
         }
         /// 인증코드 비교
         if(!verification.getCode().equals(code)){
-            throw new IllegalArgumentException("인증 코드가 올바르지 않습니다.");
+            throw new BadRequestException("인증 코드가 올바르지 않습니다.");
         }
 
         verification.verify();
@@ -77,5 +78,17 @@ public class EmailService {
         Random random = new Random();
         int code = 100000 + random.nextInt(900000);
         return String.valueOf(code);
+    }
+
+    /// 임시 비밀번호 메일 발송
+    public void sendTempPasswordEmail(String email, String tempPassword, int expirationMinutes){
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(email);
+        message.setSubject("[D.com Intranet] 임시 비밀번호 안내");
+        message.setText("임시 비밀번호: " + tempPassword + "\n\n"
+        + expirationMinutes + "분 내로 로그인하여 비밀번호를 변경해주세요.\n"
+        + "로그인 후 반드시 비밀번호를 변경해주세요.");
+
+        mailSender.send(message);
     }
 }
