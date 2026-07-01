@@ -11,6 +11,8 @@ import com.dcom.intranet.mypage.dto.EmailVerificationVerifyRequest;
 import com.dcom.intranet.mypage.dto.EmailVerificationVerifyResponse;
 import com.dcom.intranet.mypage.dto.ForbiddenApiResponse;
 import com.dcom.intranet.mypage.dto.GoneApiResponse;
+import com.dcom.intranet.mypage.dto.MemberWithdrawApiResponse;
+import com.dcom.intranet.mypage.dto.MemberWithdrawResponse;
 import com.dcom.intranet.mypage.dto.MyProfileApiResponse;
 import com.dcom.intranet.mypage.dto.MyProfileResponse;
 import com.dcom.intranet.mypage.dto.MyProfileUpdateApiResponse;
@@ -332,6 +334,28 @@ public class MyPageController {
             @Valid @RequestBody PasswordChangeRequest request
     ) {
         PasswordChangeResponse response = myPageService.changePassword(authentication.getName(), request);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(
+            summary = "회원 탈퇴",
+            description = "인증된 사용자의 회원 상태를 WITHDRAWN으로 변경한다.",
+            responses = {
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "200",
+                            description = "회원 탈퇴 성공",
+                            content = @Content(schema = @Schema(implementation = MemberWithdrawApiResponse.class))
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "401",
+                            description = "인증 실패",
+                            content = @Content(schema = @Schema(implementation = UnauthorizedApiResponse.class))
+                    )
+            }
+    )
+    @PatchMapping("/me/withdraw")
+    public ResponseEntity<ApiResponse<MemberWithdrawResponse>> withdraw(Authentication authentication) {
+        MemberWithdrawResponse response = myPageService.withdraw(authentication.getName());
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 }

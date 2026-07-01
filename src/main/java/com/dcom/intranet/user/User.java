@@ -55,6 +55,9 @@ public class User {
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
 
+    @Column(name = "withdrawn_at")
+    private LocalDateTime withdrawnAt;
+
     protected User() {
     }
 
@@ -135,6 +138,10 @@ public class User {
         return lastLoginAt;
     }
 
+    public LocalDateTime getWithdrawnAt() {
+        return withdrawnAt;
+    }
+
     public void updateProfile(String name, String phoneNumber) {
         this.name = name;
         this.phoneNumber = phoneNumber;
@@ -146,5 +153,10 @@ public class User {
 
     public void changePassword(String encodedPassword) {
         this.password = encodedPassword;
+    }
+
+    public void withdraw(LocalDateTime withdrawnAt) {
+        this.status = UserStatus.WITHDRAWN;
+        this.withdrawnAt = withdrawnAt;
     }
 }

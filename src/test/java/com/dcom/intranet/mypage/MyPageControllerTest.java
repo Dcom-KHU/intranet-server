@@ -733,6 +733,72 @@ class MyPageControllerTest {
     }
 
     @Test
+    @DisplayName("Member withdraw returns 200 and stores WITHDRAWN status")
+    void memberWithdrawReturns200AndStoresWithdrawnStatus() throws Exception {
+        User user = saveUser("withdraw1", UserStatus.APPROVED, UserRole.USER);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+
+        mockMvc.perform(patch("/api/users/me/withdraw")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.message").value(SUCCESS_MESSAGE))
+                .andExpect(jsonPath("$.data.userId").value(user.getId()))
+                .andExpect(jsonPath("$.data.status").value("WITHDRAWN"))
+                .andExpect(jsonPath("$.data.withdrawnAt").isNotEmpty());
+
+        User withdrawnUser = userRepository.findByLoginId("withdraw1").orElseThrow();
+        assertThat(withdrawnUser.getStatus()).isEqualTo(UserStatus.WITHDRAWN);
+        assertThat(withdrawnUser.getWithdrawnAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("Member withdraw makes the same token unauthorized afterwards")
+    void memberWithdrawMakesSameTokenUnauthorizedAfterwards() throws Exception {
+        User user = saveUser("withdraw2", UserStatus.APPROVED, UserRole.USER);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+
+        mockMvc.perform(patch("/api/users/me/withdraw")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/users/me")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.message").value(UNAUTHORIZED_MESSAGE))
+                .andExpect(jsonPath("$.data").value(nullValue()));
+    }
+
+    @Test
+    @DisplayName("Member withdraw without token returns 401 common envelope")
+    void memberWithdrawWithoutTokenReturns401CommonEnvelope() throws Exception {
+        mockMvc.perform(patch("/api/users/me/withdraw"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.message").value(UNAUTHORIZED_MESSAGE))
+                .andExpect(jsonPath("$.data").value(nullValue()));
+    }
+
+    @Test
+    @DisplayName("Member withdraw with WITHDRAWN user token returns 401 common envelope")
+    void memberWithdrawWithWithdrawnUserTokenReturns401CommonEnvelope() throws Exception {
+        User user = saveUser("withdrawnUser", UserStatus.WITHDRAWN, UserRole.USER);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+
+        mockMvc.perform(patch("/api/users/me/withdraw")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.message").value(UNAUTHORIZED_MESSAGE))
+                .andExpect(jsonPath("$.data").value(nullValue()));
+    }
+
+    @Test
     @DisplayName("My written posts list returns 200 common envelope and post list")
     void myWrittenPostsListReturns200CommonEnvelopeAndPostList() throws Exception {
         User user = saveUser("posts1", UserStatus.APPROVED, UserRole.USER);
@@ -1268,6 +1334,9 @@ class MyPageControllerTest {
             case "settings4" -> "20240009";
             case "settings5" -> "20240010";
             case "settings6" -> "20240011";
+            case "withdraw1" -> "20240021";
+            case "withdraw2" -> "20240022";
+            case "withdrawnUser" -> "20240023";
             case "postTargetInfo" -> "20240101";
             case "postTargetArchive" -> "20240102";
             case "postTargetPhoto" -> "20240103";

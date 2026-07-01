@@ -3,6 +3,7 @@ package com.dcom.intranet.mypage;
 import com.dcom.intranet.mypage.dto.MyProfileResponse;
 import com.dcom.intranet.mypage.dto.MyProfileUpdateRequest;
 import com.dcom.intranet.mypage.dto.MyProfileUpdateResponse;
+import com.dcom.intranet.mypage.dto.MemberWithdrawResponse;
 import com.dcom.intranet.mypage.dto.MyWrittenPostDeleteResponse;
 import com.dcom.intranet.mypage.dto.MyWrittenPostListResponse;
 import com.dcom.intranet.mypage.dto.MyWrittenPostTargetResponse;
@@ -16,6 +17,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.time.LocalDateTime;
 
 @Service
 public class MyPageService {
@@ -95,5 +98,14 @@ public class MyPageService {
 
         user.changePassword(passwordEncoder.encode(request.newPassword()));
         return new PasswordChangeResponse("비밀번호가 변경되었습니다.");
+    }
+
+    @Transactional
+    public MemberWithdrawResponse withdraw(String loginId) {
+        User user = userRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."));
+
+        user.withdraw(LocalDateTime.now());
+        return MemberWithdrawResponse.from(user);
     }
 }
