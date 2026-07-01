@@ -1,6 +1,8 @@
 package com.dcom.intranet.mypage;
 
 import com.dcom.intranet.jwt.JwtTokenProvider;
+import com.dcom.intranet.mypage.dto.MyWrittenCommentListResponse;
+import com.dcom.intranet.mypage.dto.MyWrittenCommentResponse;
 import com.dcom.intranet.mypage.dto.MyWrittenPostDeleteResponse;
 import com.dcom.intranet.mypage.dto.MyWrittenPostListResponse;
 import com.dcom.intranet.mypage.dto.MyWrittenPostResponse;
@@ -63,9 +65,13 @@ class MyPageControllerTest {
     @Autowired
     private TestMyWrittenPostReader myWrittenPostReader;
 
+    @Autowired
+    private TestMyWrittenCommentReader myWrittenCommentReader;
+
     @BeforeEach
     void setUp() {
         myWrittenPostReader.reset();
+        myWrittenCommentReader.reset();
         emailVerificationRepository.deleteAll();
         userRepository.deleteAll();
     }
@@ -909,6 +915,123 @@ class MyPageControllerTest {
     }
 
     @Test
+    @DisplayName("My written comments list returns 200 common envelope and comment list")
+    void myWrittenCommentsListReturns200CommonEnvelopeAndCommentList() throws Exception {
+        User user = saveUser("comments1", UserStatus.APPROVED, UserRole.USER);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+        myWrittenCommentReader.givenResponse(new MyWrittenCommentListResponse(
+                List.of(new MyWrittenCommentResponse(
+                        101L,
+                        "INFO_POST",
+                        12L,
+                        "React 참고 자료 모음",
+                        "좋은 자료 감사합니다.",
+                        LocalDateTime.of(2026, 6, 1, 13, 0)
+                )),
+                new PageInfoResponse(0, 10, 1, 1L)
+        ));
+
+        mockMvc.perform(get("/api/users/me/comments")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .param("page", "0")
+                        .param("size", "10")
+                        .param("type", "INFO_POST"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.message").value(SUCCESS_MESSAGE))
+                .andExpect(jsonPath("$.data.commentList[0].commentId").value(101))
+                .andExpect(jsonPath("$.data.commentList[0].type").value("INFO_POST"))
+                .andExpect(jsonPath("$.data.commentList[0].targetId").value(12))
+                .andExpect(jsonPath("$.data.commentList[0].targetTitle").value("React 참고 자료 모음"))
+                .andExpect(jsonPath("$.data.commentList[0].content").value("좋은 자료 감사합니다."))
+                .andExpect(jsonPath("$.data.commentList[0].createdAt").value("2026-06-01T13:00:00"))
+                .andExpect(jsonPath("$.data.pageInfo.page").value(0))
+                .andExpect(jsonPath("$.data.pageInfo.size").value(10))
+                .andExpect(jsonPath("$.data.pageInfo.totalPages").value(1))
+                .andExpect(jsonPath("$.data.pageInfo.totalElements").value(1));
+
+        assertThat(myWrittenCommentReader.lastUserId()).isEqualTo(user.getId());
+        assertThat(myWrittenCommentReader.lastPage()).isEqualTo(0);
+        assertThat(myWrittenCommentReader.lastSize()).isEqualTo(10);
+        assertThat(myWrittenCommentReader.lastType()).isEqualTo("INFO_POST");
+    }
+
+    @Test
+    @DisplayName("My written comments list without type uses all types and default paging")
+    void myWrittenCommentsListWithoutTypeUsesAllTypesAndDefaultPaging() throws Exception {
+        User user = saveUser("comments2", UserStatus.APPROVED, UserRole.USER);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+
+        mockMvc.perform(get("/api/users/me/comments")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.message").value(SUCCESS_MESSAGE))
+                .andExpect(jsonPath("$.data.commentList").isArray())
+                .andExpect(jsonPath("$.data.pageInfo.page").value(0))
+                .andExpect(jsonPath("$.data.pageInfo.size").value(10));
+
+        assertThat(myWrittenCommentReader.lastUserId()).isEqualTo(user.getId());
+        assertThat(myWrittenCommentReader.lastPage()).isEqualTo(0);
+        assertThat(myWrittenCommentReader.lastSize()).isEqualTo(10);
+        assertThat(myWrittenCommentReader.lastType()).isNull();
+    }
+
+    @Test
+    @DisplayName("My written comments list with no comments returns empty list")
+    void myWrittenCommentsListWithNoCommentsReturnsEmptyList() throws Exception {
+        User user = saveUser("comments3", UserStatus.APPROVED, UserRole.USER);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+        myWrittenCommentReader.givenResponse(MyWrittenCommentListResponse.empty(0, 10));
+
+        mockMvc.perform(get("/api/users/me/comments")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .param("page", "0")
+                        .param("size", "10")
+                        .param("type", "PHOTO_ALBUM"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.message").value(SUCCESS_MESSAGE))
+                .andExpect(jsonPath("$.data.commentList").isArray())
+                .andExpect(jsonPath("$.data.commentList").isEmpty())
+                .andExpect(jsonPath("$.data.pageInfo.page").value(0))
+                .andExpect(jsonPath("$.data.pageInfo.size").value(10))
+                .andExpect(jsonPath("$.data.pageInfo.totalPages").value(0))
+                .andExpect(jsonPath("$.data.pageInfo.totalElements").value(0));
+
+        assertThat(myWrittenCommentReader.lastType()).isEqualTo("PHOTO_ALBUM");
+    }
+
+    @Test
+    @DisplayName("My written comments list without token returns 401 common envelope")
+    void myWrittenCommentsListWithoutTokenReturns401CommonEnvelope() throws Exception {
+        mockMvc.perform(get("/api/users/me/comments"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.message").value(UNAUTHORIZED_MESSAGE))
+                .andExpect(jsonPath("$.data").value(nullValue()));
+    }
+
+    @Test
+    @DisplayName("My written comments list with PENDING user token returns 401 common envelope")
+    void myWrittenCommentsListWithPendingUserTokenReturns401CommonEnvelope() throws Exception {
+        User user = saveUser("commentsPending", UserStatus.PENDING, UserRole.USER);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+
+        mockMvc.perform(get("/api/users/me/comments")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.message").value(UNAUTHORIZED_MESSAGE))
+                .andExpect(jsonPath("$.data").value(nullValue()));
+    }
+
+    @Test
     @DisplayName("My written post detail target returns info-posts route target")
     void myWrittenPostDetailTargetReturnsInfoPostsRouteTarget() throws Exception {
         User user = saveUser("postTargetInfo", UserStatus.APPROVED, UserRole.USER);
@@ -1312,6 +1435,62 @@ class MyPageControllerTest {
         }
     }
 
+    @TestConfiguration
+    static class MyWrittenCommentReaderTestConfig {
+
+        @Bean
+        @Primary
+        TestMyWrittenCommentReader testMyWrittenCommentReader() {
+            return new TestMyWrittenCommentReader();
+        }
+    }
+
+    static class TestMyWrittenCommentReader implements MyWrittenCommentReader {
+
+        private MyWrittenCommentListResponse response = MyWrittenCommentListResponse.empty(0, 10);
+        private Long lastUserId;
+        private int lastPage;
+        private int lastSize;
+        private String lastType;
+
+        @Override
+        public MyWrittenCommentListResponse read(Long userId, int page, int size, String type) {
+            this.lastUserId = userId;
+            this.lastPage = page;
+            this.lastSize = size;
+            this.lastType = type;
+            return response;
+        }
+
+        void givenResponse(MyWrittenCommentListResponse response) {
+            this.response = response;
+        }
+
+        void reset() {
+            this.response = MyWrittenCommentListResponse.empty(0, 10);
+            this.lastUserId = null;
+            this.lastPage = -1;
+            this.lastSize = -1;
+            this.lastType = null;
+        }
+
+        Long lastUserId() {
+            return lastUserId;
+        }
+
+        int lastPage() {
+            return lastPage;
+        }
+
+        int lastSize() {
+            return lastSize;
+        }
+
+        String lastType() {
+            return lastType;
+        }
+    }
+
     private String studentIdFor(String loginId) {
         return switch (loginId) {
             case "member1" -> "20240001";
@@ -1348,6 +1527,10 @@ class MyPageControllerTest {
             case "postDeleteNotice" -> "20240114";
             case "postDeleteForbidden" -> "20240115";
             case "postDeleteMissing" -> "20240116";
+            case "comments1" -> "20240121";
+            case "comments2" -> "20240122";
+            case "comments3" -> "20240123";
+            case "commentsPending" -> "20240124";
             default -> "20249999";
         };
     }

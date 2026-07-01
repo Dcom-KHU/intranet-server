@@ -4,6 +4,7 @@ import com.dcom.intranet.mypage.dto.MyProfileResponse;
 import com.dcom.intranet.mypage.dto.MyProfileUpdateRequest;
 import com.dcom.intranet.mypage.dto.MyProfileUpdateResponse;
 import com.dcom.intranet.mypage.dto.MemberWithdrawResponse;
+import com.dcom.intranet.mypage.dto.MyWrittenCommentListResponse;
 import com.dcom.intranet.mypage.dto.MyWrittenPostDeleteResponse;
 import com.dcom.intranet.mypage.dto.MyWrittenPostListResponse;
 import com.dcom.intranet.mypage.dto.MyWrittenPostTargetResponse;
@@ -27,17 +28,20 @@ public class MyPageService {
     private final EmailVerificationService emailVerificationService;
     private final PasswordEncoder passwordEncoder;
     private final MyWrittenPostReader myWrittenPostReader;
+    private final MyWrittenCommentReader myWrittenCommentReader;
 
     public MyPageService(
             UserRepository userRepository,
             EmailVerificationService emailVerificationService,
             PasswordEncoder passwordEncoder,
-            MyWrittenPostReader myWrittenPostReader
+            MyWrittenPostReader myWrittenPostReader,
+            MyWrittenCommentReader myWrittenCommentReader
     ) {
         this.userRepository = userRepository;
         this.emailVerificationService = emailVerificationService;
         this.passwordEncoder = passwordEncoder;
         this.myWrittenPostReader = myWrittenPostReader;
+        this.myWrittenCommentReader = myWrittenCommentReader;
     }
 
     @Transactional(readOnly = true)
@@ -52,6 +56,13 @@ public class MyPageService {
         User user = userRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."));
         return myWrittenPostReader.read(user.getId(), page, size, type);
+    }
+
+    @Transactional(readOnly = true)
+    public MyWrittenCommentListResponse getMyComments(String loginId, int page, int size, String type) {
+        User user = userRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."));
+        return myWrittenCommentReader.read(user.getId(), page, size, type);
     }
 
     @Transactional(readOnly = true)

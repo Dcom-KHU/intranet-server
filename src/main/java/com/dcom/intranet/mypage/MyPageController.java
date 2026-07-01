@@ -18,6 +18,8 @@ import com.dcom.intranet.mypage.dto.MyProfileResponse;
 import com.dcom.intranet.mypage.dto.MyProfileUpdateApiResponse;
 import com.dcom.intranet.mypage.dto.MyProfileUpdateRequest;
 import com.dcom.intranet.mypage.dto.MyProfileUpdateResponse;
+import com.dcom.intranet.mypage.dto.MyWrittenCommentListApiResponse;
+import com.dcom.intranet.mypage.dto.MyWrittenCommentListResponse;
 import com.dcom.intranet.mypage.dto.MyWrittenPostDeleteApiResponse;
 import com.dcom.intranet.mypage.dto.MyWrittenPostDeleteResponse;
 import com.dcom.intranet.mypage.dto.MyWrittenPostListApiResponse;
@@ -104,6 +106,38 @@ public class MyPageController {
             @RequestParam(required = false) String type
     ) {
         MyWrittenPostListResponse response = myPageService.getMyPosts(
+                authentication.getName(),
+                page,
+                size,
+                type
+        );
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(
+            summary = "내가 쓴 댓글 목록 조회",
+            description = "인증된 사용자가 본인이 작성한 정보 공유 게시글, 활동 사진 댓글 목록을 조회한다.",
+            responses = {
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "200",
+                            description = "내가 쓴 댓글 목록 조회 성공",
+                            content = @Content(schema = @Schema(implementation = MyWrittenCommentListApiResponse.class))
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "401",
+                            description = "인증 실패",
+                            content = @Content(schema = @Schema(implementation = UnauthorizedApiResponse.class))
+                    )
+            }
+    )
+    @GetMapping("/me/comments")
+    public ResponseEntity<ApiResponse<MyWrittenCommentListResponse>> getMyComments(
+            Authentication authentication,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String type
+    ) {
+        MyWrittenCommentListResponse response = myPageService.getMyComments(
                 authentication.getName(),
                 page,
                 size,
