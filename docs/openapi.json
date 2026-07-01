@@ -459,6 +459,138 @@
         }
       }
     },
+    "/api/users/me/comments/{commentId}": {
+      "get": {
+        "tags": [
+          "my-page-controller"
+        ],
+        "summary": "내가 쓴 댓글 상세 이동",
+        "description": "인증된 사용자가 본인이 작성한 댓글을 선택하면 원본 상세 페이지 이동 대상 정보를 반환한다.",
+        "operationId": "getMyCommentTarget",
+        "parameters": [
+          {
+            "name": "commentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "라우팅 타입: info-posts, photo-posts",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "내가 쓴 댓글 상세 이동 대상 조회 성공",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyWrittenCommentTargetApiResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 실패",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedApiResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "작성한 댓글 없음",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundApiResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "my-page-controller"
+        ],
+        "summary": "내가 쓴 댓글 삭제",
+        "description": "인증된 사용자가 본인이 작성한 댓글을 삭제한다.",
+        "operationId": "deleteMyComment",
+        "parameters": [
+          {
+            "name": "commentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "라우팅 타입: info-posts, photo-posts",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "내가 쓴 댓글 삭제 성공",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyWrittenCommentDeleteApiResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 실패",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedApiResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "삭제 권한 없음",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenApiResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "작성한 댓글 없음",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/users/me/posts/{postId}": {
       "get": {
         "tags": [
@@ -1423,6 +1555,90 @@
           }
         },
         "description": "페이지 정보"
+      },
+      "MyWrittenCommentTargetApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "요청 성공 여부",
+            "example": true
+          },
+          "status": {
+            "type": "integer",
+            "description": "HTTP 상태 코드",
+            "format": "int32",
+            "example": 200
+          },
+          "message": {
+            "type": "string",
+            "description": "응답 메시지",
+            "example": "요청에 성공했습니다."
+          },
+          "data": {
+            "$ref": "#/components/schemas/MyWrittenCommentTargetResponse"
+          }
+        },
+        "description": "내가 쓴 댓글 상세 이동 성공 응답"
+      },
+      "MyWrittenCommentTargetResponse": {
+        "type": "object",
+        "properties": {
+          "targetType": {
+            "type": "string",
+            "description": "상세 페이지 이동 대상 URL segment",
+            "example": "info-posts"
+          },
+          "targetId": {
+            "type": "integer",
+            "description": "상세 페이지 이동 대상 ID",
+            "format": "int64",
+            "example": 12
+          },
+          "commentId": {
+            "type": "integer",
+            "description": "댓글 ID",
+            "format": "int64",
+            "example": 101
+          }
+        },
+        "description": "내가 쓴 댓글 상세 이동 응답 데이터"
+      },
+      "MyWrittenCommentDeleteApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "요청 성공 여부",
+            "example": true
+          },
+          "status": {
+            "type": "integer",
+            "description": "HTTP 상태 코드",
+            "format": "int32",
+            "example": 200
+          },
+          "message": {
+            "type": "string",
+            "description": "응답 메시지",
+            "example": "요청에 성공했습니다."
+          },
+          "data": {
+            "$ref": "#/components/schemas/MyWrittenCommentDeleteResponse"
+          }
+        },
+        "description": "내가 쓴 댓글 삭제 성공 응답"
+      },
+      "MyWrittenCommentDeleteResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "처리 메시지",
+            "example": "작성한 댓글이 삭제되었습니다."
+          }
+        },
+        "description": "내가 쓴 댓글 삭제 응답 데이터"
       }
     }
   }

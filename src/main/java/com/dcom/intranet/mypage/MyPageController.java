@@ -18,8 +18,12 @@ import com.dcom.intranet.mypage.dto.MyProfileResponse;
 import com.dcom.intranet.mypage.dto.MyProfileUpdateApiResponse;
 import com.dcom.intranet.mypage.dto.MyProfileUpdateRequest;
 import com.dcom.intranet.mypage.dto.MyProfileUpdateResponse;
+import com.dcom.intranet.mypage.dto.MyWrittenCommentDeleteApiResponse;
+import com.dcom.intranet.mypage.dto.MyWrittenCommentDeleteResponse;
 import com.dcom.intranet.mypage.dto.MyWrittenCommentListApiResponse;
 import com.dcom.intranet.mypage.dto.MyWrittenCommentListResponse;
+import com.dcom.intranet.mypage.dto.MyWrittenCommentTargetApiResponse;
+import com.dcom.intranet.mypage.dto.MyWrittenCommentTargetResponse;
 import com.dcom.intranet.mypage.dto.MyWrittenPostDeleteApiResponse;
 import com.dcom.intranet.mypage.dto.MyWrittenPostDeleteResponse;
 import com.dcom.intranet.mypage.dto.MyWrittenPostListApiResponse;
@@ -144,6 +148,83 @@ public class MyPageController {
                 authentication.getName(),
                 page,
                 size,
+                type
+        );
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(
+            summary = "내가 쓴 댓글 상세 이동",
+            description = "인증된 사용자가 본인이 작성한 댓글을 선택하면 원본 상세 페이지 이동 대상 정보를 반환한다.",
+            responses = {
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "200",
+                            description = "내가 쓴 댓글 상세 이동 대상 조회 성공",
+                            content = @Content(schema = @Schema(implementation = MyWrittenCommentTargetApiResponse.class))
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "401",
+                            description = "인증 실패",
+                            content = @Content(schema = @Schema(implementation = UnauthorizedApiResponse.class))
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "404",
+                            description = "작성한 댓글 없음",
+                            content = @Content(schema = @Schema(implementation = NotFoundApiResponse.class))
+                    )
+            }
+    )
+    @GetMapping("/me/comments/{commentId}")
+    public ResponseEntity<ApiResponse<MyWrittenCommentTargetResponse>> getMyCommentTarget(
+            Authentication authentication,
+            @PathVariable Long commentId,
+            @Parameter(description = "라우팅 타입: info-posts, photo-posts")
+            @RequestParam String type
+    ) {
+        MyWrittenCommentTargetResponse response = myPageService.getMyCommentTarget(
+                authentication.getName(),
+                commentId,
+                type
+        );
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(
+            summary = "내가 쓴 댓글 삭제",
+            description = "인증된 사용자가 본인이 작성한 댓글을 삭제한다.",
+            responses = {
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "200",
+                            description = "내가 쓴 댓글 삭제 성공",
+                            content = @Content(schema = @Schema(implementation = MyWrittenCommentDeleteApiResponse.class))
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "401",
+                            description = "인증 실패",
+                            content = @Content(schema = @Schema(implementation = UnauthorizedApiResponse.class))
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "403",
+                            description = "삭제 권한 없음",
+                            content = @Content(schema = @Schema(implementation = ForbiddenApiResponse.class))
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "404",
+                            description = "작성한 댓글 없음",
+                            content = @Content(schema = @Schema(implementation = NotFoundApiResponse.class))
+                    )
+            }
+    )
+    @DeleteMapping("/me/comments/{commentId}")
+    public ResponseEntity<ApiResponse<MyWrittenCommentDeleteResponse>> deleteMyComment(
+            Authentication authentication,
+            @PathVariable Long commentId,
+            @Parameter(description = "라우팅 타입: info-posts, photo-posts")
+            @RequestParam String type
+    ) {
+        MyWrittenCommentDeleteResponse response = myPageService.deleteMyComment(
+                authentication.getName(),
+                commentId,
                 type
         );
         return ResponseEntity.ok(ApiResponse.success(response));
