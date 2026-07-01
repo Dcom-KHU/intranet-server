@@ -11,7 +11,7 @@ public class ApiResponse<T> {
     @Schema(description = "HTTP 상태 코드", example = "200")
     private final int status;
 
-    @Schema(description = "응답 메시지", example = "요청이 성공적으로 처리되었습니다.")
+    @Schema(description = "응답 메시지", example = "요청에 성공했습니다.")
     private final String message;
 
     @Schema(description = "응답 데이터")
@@ -25,7 +25,7 @@ public class ApiResponse<T> {
     }
 
     public static <T> ApiResponse<T> success(T data) {
-        return new ApiResponse<>(true, 200, "요청이 성공적으로 처리되었습니다.", data);
+        return new ApiResponse<>(true, 200, "요청에 성공했습니다.", data);
     }
 
     public static ApiResponse<Void> failure(int status, String message) {
