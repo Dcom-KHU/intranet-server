@@ -2,6 +2,7 @@
 
 D.COM 인트라넷 리뉴얼 프로젝트의 Spring Boot 백엔드 레포지토리입니다.
 
+
 ## Project Overview
 
 D.COM 인트라넷 리뉴얼 프로젝트의 서버 애플리케이션입니다.
@@ -28,14 +29,15 @@ D.COM 인트라넷 리뉴얼 프로젝트의 서버 애플리케이션입니다.
 
 ## Branch Name
 
-* `feature/auth`
-* `feature/admin`
-* `feature/home`
-* `feature/mypage`
-* `feature/archive`
-* `feature/info-board`
-* `feature/announcement`
-* `feature/photo-album`
+Merge 현황
+* [x]`feature/auth`
+* [ ]`feature/admin`
+* [x]`feature/home`
+* [ ]`feature/mypage`
+* [x]`feature/archive`
+* [x]`feature/info-board`
+* [x]`feature/announcement`
+* [ ]`feature/photo-album`
 
 
 ## Development Rule
