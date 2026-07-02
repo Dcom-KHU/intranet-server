@@ -22,7 +22,7 @@ public class InfoPostCreateResponse {
         this.title = post.getTitle();
         this.content = post.getContent();
         this.authorId = post.getAuthor().getId();
-        this.authorName = post.getAuthor().getNickname();
+        this.authorName = post.getAuthor().getName();
         this.createdAt = post.getCreatedAt();
         this.files = post.getFiles()
                 .stream()

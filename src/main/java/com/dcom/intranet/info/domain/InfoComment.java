@@ -1,6 +1,6 @@
 package com.dcom.intranet.info.domain;
 
-import com.dcom.intranet.user.User;
+import com.dcom.intranet.auth.domain.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
