@@ -102,6 +102,9 @@ public class User {
         this.password = encodedNewPassword;
         this.clearTempPassword();
     }
+    public boolean isAdmin() {
+        return this.role == UserRole.ADMIN;
+    }
 
 
 }

@@ -21,7 +21,7 @@ public class InfoCommentResponse {
         this.postId = comment.getPost().getId();
         this.content = comment.getContent();
         this.authorId = comment.getAuthor().getId();
-        this.authorName = comment.getAuthor().getNickname();
+        this.authorName = comment.getAuthor().getName();
         this.createdAt = comment.getCreatedAt();
         this.updatedAt = comment.getUpdatedAt();
     }

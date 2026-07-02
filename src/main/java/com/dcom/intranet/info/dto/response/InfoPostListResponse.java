@@ -21,7 +21,7 @@ public class InfoPostListResponse {
         this.postId = post.getId();
         this.title = post.getTitle();
         this.authorId = post.getAuthor().getId();
-        this.authorName = post.getAuthor().getNickname();
+        this.authorName = post.getAuthor().getName();
         this.createdAt = post.getCreatedAt();
         this.hasFiles = !post.getFiles().isEmpty();
         this.fileCount = post.getFiles().size();
