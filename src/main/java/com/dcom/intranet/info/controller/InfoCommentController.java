@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Information Board Comment", description = "정보공유 게시판 댓글 API")
@@ -128,11 +129,11 @@ public class InfoCommentController {
 
             @Valid @RequestBody InfoCommentCreateRequest request,
 
-            @Parameter(description = "요청 사용자 ID. JWT 적용 전 임시 파라미터", example = "1")
-            @RequestParam Long userId
+            @Parameter(description = "요청 사용자 ID.", example = "1")
+            Authentication authentication
     ) {
         InfoCommentResponse response =
-                infoCommentService.createComment(postId, request, userId);
+                infoCommentService.createComment(postId, request, authentication.getName());
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(CommonResponse.success(
@@ -198,11 +199,11 @@ public class InfoCommentController {
 
             @Valid @RequestBody InfoCommentUpdateRequest request,
 
-            @Parameter(description = "요청 사용자 ID. JWT 적용 전 임시 파라미터", example = "1")
-            @RequestParam Long userId
+            @Parameter(description = "요청 사용자 ID.", example = "1")
+            Authentication authentication
     ) {
         InfoCommentResponse response =
-                infoCommentService.updateComment(postId, commentId, request, userId);
+                infoCommentService.updateComment(postId, commentId, request, authentication.getName());
 
         return ResponseEntity.ok(
                 CommonResponse.success(
@@ -259,10 +260,10 @@ public class InfoCommentController {
             @Parameter(description = "댓글 ID", example = "1")
             @PathVariable Long commentId,
 
-            @Parameter(description = "요청 사용자 ID. JWT 적용 전 임시 파라미터", example = "1")
-            @RequestParam Long userId
+            @Parameter(description = "요청 사용자 ID", example = "1")
+            Authentication authentication
     ) {
-        infoCommentService.deleteComment(postId, commentId, userId);
+        infoCommentService.deleteComment(postId, commentId, authentication.getName());
 
         return ResponseEntity.ok(
                 CommonResponse.success(

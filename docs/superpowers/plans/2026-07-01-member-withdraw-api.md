@@ -4,7 +4,7 @@
 
 **Goal:** 원클릭 방식의 `PATCH /api/users/me/withdraw` 회원 탈퇴 API를 구현한다.
 
-**Architecture:** Controller는 인증 사용자만 받아 공통 응답을 반환하고, Service는 login ID로 사용자를 조회해 `User.withdraw(LocalDateTime)`만 호출한다. `User` 엔티티가 `WITHDRAWN` 상태와 `withdrawnAt` 저장 책임을 가진다.
+**Architecture:** Controller는 인증 사용자만 받아 공통 응답을 반환하고, Service는 login ID로 사용자를 조회해 `User.withdraw(LocalDateTime)`만 호출한다. `User` 엔티티가 `WITHDRAWN` 상태와 `withdrawnAt` 저장 책ㄹ임을 가진다.
 
 **Tech Stack:** Java 21, Spring Boot 3.5.15, Spring MVC, Spring Security, Spring Data JPA, H2, JUnit 5, MockMvc, springdoc-openapi.
 
