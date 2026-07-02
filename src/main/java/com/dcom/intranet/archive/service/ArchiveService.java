@@ -104,13 +104,13 @@ public class ArchiveService {
     public ArchiveCreateResponse createArchive(
             ArchiveCreateRequest request,
             List<MultipartFile> files,
-            Long userId
+            String loginId
     ) {
         List<MultipartFile> requestFiles = files == null
                 ? List.of()
                 : files;
 
-        User author = userRepository.findById(userId)
+        User author = userRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
                         "사용자를 찾을 수 없습니다."
@@ -222,10 +222,10 @@ public class ArchiveService {
             Long recordId,
             ArchiveUpdateRequest request,
             List<MultipartFile> files,
-            Long userId
+            String loginId
     ) {
         ArchiveRecord record = findRecordInArchive(archiveId, recordId);
-        validateOwnerOrAdmin(record, userId);
+        validateOwnerOrAdmin(record, loginId);
 
         List<MultipartFile> safeFiles = files == null ? List.of() : files;
 
@@ -298,15 +298,16 @@ public class ArchiveService {
         return record;
     }
 
-    private void validateOwnerOrAdmin(ArchiveRecord record, Long userId) {
-        User user = userRepository.findById(userId)
+    private void validateOwnerOrAdmin(ArchiveRecord record, String loginId) {
+
+        User user = userRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
                         "사용자를 찾을 수 없습니다."
                 ));
 
         boolean isOwner = record.getAuthor().getId().equals(user.getId());
-        boolean isAdmin = "ADMIN".equals(user.getRole());
+        boolean isAdmin = user.getRole().name().equals("ADMIN");
 
         if (!isOwner && !isAdmin) {
             throw new ResponseStatusException(
@@ -357,9 +358,9 @@ public class ArchiveService {
     }
 
     @Transactional
-    public void deleteRecord(Long archiveId, Long recordId, Long userId) {
+    public void deleteRecord(Long archiveId, Long recordId, String loginId) {
         ArchiveRecord record = findRecordInArchive(archiveId, recordId);
-        validateOwnerOrAdmin(record, userId);
+        validateOwnerOrAdmin(record, loginId);
 
         Archive archive = record.getArchive();
 

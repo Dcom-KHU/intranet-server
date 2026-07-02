@@ -33,6 +33,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -263,12 +264,16 @@ public class ArchiveController {
             @RequestPart(value = "files", required = false) List<MultipartFile> files,
 
             @Parameter(description = "요청 사용자 ID. JWT 적용 전 임시 파라미터", example = "1")
-            @RequestParam Long userId
+            Authentication authentication
     ) {
         ArchiveCreateRequest request = parseCreateRequest(requestJson);
 
         ArchiveCreateResponse response =
-                archiveService.createArchive(request, files, userId);
+                archiveService.createArchive(
+                        request,
+                        files,
+                        authentication.getName()
+                );
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(
@@ -358,12 +363,19 @@ public class ArchiveController {
             @RequestPart(value = "files", required = false) List<MultipartFile> files,
 
             @Parameter(description = "요청 사용자 ID. JWT 적용 전 임시 파라미터", example = "1")
-            @RequestParam Long userId
+            Authentication authentication
+
     ) {
         ArchiveUpdateRequest request = parseUpdateRequest(requestJson);
 
         ArchiveUpdateResponse response =
-                archiveService.updateRecord(archiveId, recordId, request, files, userId);
+                archiveService.updateRecord(
+                        archiveId,
+                        recordId,
+                        request,
+                        files,
+                        authentication.getName()
+                );
 
         return ResponseEntity.ok(
                 CommonResponse.success(
@@ -416,9 +428,14 @@ public class ArchiveController {
             @PathVariable Long recordId,
 
             @Parameter(description = "요청 사용자 ID. JWT 적용 전 임시 파라미터", example = "1")
-            @RequestParam Long userId
+            Authentication authentication
+
     ) {
-        archiveService.deleteRecord(archiveId, recordId, userId);
+        archiveService.deleteRecord(
+                archiveId,
+                recordId,
+                authentication.getName()
+        );
 
         return ResponseEntity.ok(
                 CommonResponse.success(

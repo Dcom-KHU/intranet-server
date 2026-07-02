@@ -11,6 +11,7 @@ import com.dcom.intranet.auth.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -77,9 +78,9 @@ public class InfoPostService {
     public InfoPostCreateResponse createPost(
             InfoPostCreateRequest request,
             List<MultipartFile> files,
-            Long userId
+            String loginId
     ) {
-        User author = userRepository.findById(userId)
+        User author = userRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
                         "사용자를 찾을 수 없습니다."
@@ -125,11 +126,11 @@ public class InfoPostService {
             Long postId,
             InfoPostUpdateRequest request,
             List<MultipartFile> files,
-            Long userId
+            String loginId
     ) {
         InfoPost post = findPost(postId);
 
-        validateAuthor(post, userId);
+        validateAuthor(post, loginId);
 
         List<Long> deleteFileIds = request.getDeleteFileIds() == null
                 ? List.of()
@@ -202,10 +203,10 @@ public class InfoPostService {
     }
 
     @Transactional
-    public void deletePost(Long postId, Long userId) {
+    public void deletePost(Long postId, String loginId) {
         InfoPost post = findPost(postId);
 
-        validateAuthorOrAdmin(post, userId);
+        validateAuthorOrAdmin(post, loginId);
 
         List<InfoPostFile> filesToDelete = new ArrayList<>(post.getFiles());
 
@@ -217,8 +218,9 @@ public class InfoPostService {
     }
 
     // 작성자 검증
-    private void validateAuthor(InfoPost post, Long userId) {
-        User user = userRepository.findById(userId)
+    private void validateAuthor(InfoPost post, String loginId) {
+
+        User user = userRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
                         "사용자를 찾을 수 없습니다."
@@ -233,8 +235,9 @@ public class InfoPostService {
     }
 
     // 작성자 또는 관리자 확인
-    private void validateAuthorOrAdmin(InfoPost post, Long userId) {
-        User user = userRepository.findById(userId)
+    private void validateAuthorOrAdmin(InfoPost post, String loginId) {
+
+        User user = userRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
                         "사용자를 찾을 수 없습니다."
