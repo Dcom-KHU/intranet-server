@@ -25,11 +25,12 @@ spring:
       enabled: true
       path: /h2-console
 
+  # Mail (Auth 이메일 인증)
   mail:
     host: smtp.gmail.com
     port: 587
-    username: chanjong1007@gmail.com
-    password: pcwfqqxvakfhviys
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     properties:
       mail:
         smtp:
@@ -37,8 +38,18 @@ spring:
           starttls:
             enable: true
 
+  # 파일 업로드 (info-board)
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 100MB
+
 # JWT
 jwt:
-  secret: dcom-intranet-server-jwt-secret-key-must-be-long-enough-for-256-bits-security
+  secret: ${JWT_SECRET}
   access-token-validity: 1800000
   refresh-token-validity: 1209600000
+
+# 파일 업로드 경로 (info-board)
+file:
+  upload-dir: ./uploads/info
