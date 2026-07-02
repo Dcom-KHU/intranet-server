@@ -28,7 +28,7 @@ public class EmailVerification {
     private LocalDateTime expiresAt;
 
     @Column(nullable = false)
-    private boolean vertified;
+    private boolean verified;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -42,12 +42,12 @@ public class EmailVerification {
         this.email = email;
         this.code = code;
         this.expiresAt = LocalDateTime.now().plusMinutes(expirationMinutes);
-        this.vertified = false;
+        this.verified = false;
     }
 
     /// 인증완료처리
     public void verify(){
-        this.vertified = true;
+        this.verified = true;
     }
 
     /// 만료 여부 확인
