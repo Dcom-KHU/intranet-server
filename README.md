@@ -23,20 +23,20 @@ D.COM 인트라넷 리뉴얼 프로젝트의 서버 애플리케이션입니다.
 ## Branch Convention
 
 * `main`: 안정 버전
+* `develop`: feature 통합 및 개발
 * `feature/*`: 기능 개발
-* `fix/*`: 버그 수정
-* `docs/*`: 문서 수정
-* `chore/*`: 설정 및 기타 작업
 
-## Branch Name Examples
+## Branch Name
 
-* `feature/signup-api`
-* `feature/login-jwt`
-* `feature/email-verification`
-* `feature/jokbo-upload`
-* `fix/auth-error`
-* `docs/api-spec`
-* `chore/project-setup`
+* `feature/auth`
+* `feature/admin`
+* `feature/home`
+* `feature/mypage`
+* `feature/archive`
+* `feature/info-board`
+* `feature/announcement`
+* `feature/photo-album`
+
 
 ## Development Rule
 
@@ -46,7 +46,7 @@ D.COM 인트라넷 리뉴얼 프로젝트의 서버 애플리케이션입니다.
 4. 기능별 브랜치를 생성하여 작업합니다.
 5. 작업 완료 후 Pull Request를 생성합니다.
 6. Pull Request에는 관련 Issue 번호를 연결합니다.
-7. 확인 후 `main` 브랜치에 merge합니다.
+7. 확인 후 `develop` 브랜치에 merge합니다.
 
 ## Commit Message Convention
 

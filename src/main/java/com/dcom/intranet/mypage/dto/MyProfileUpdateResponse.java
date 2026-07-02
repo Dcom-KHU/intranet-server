@@ -1,6 +1,6 @@
 package com.dcom.intranet.mypage.dto;
 
-import com.dcom.intranet.user.User;
+import com.dcom.intranet.auth.domain.User;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "회원정보 수정 응답 데이터")

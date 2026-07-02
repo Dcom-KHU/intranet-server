@@ -1,7 +1,7 @@
 package com.dcom.intranet.mypage.dto;
 
-import com.dcom.intranet.user.User;
-import com.dcom.intranet.user.UserStatus;
+import com.dcom.intranet.auth.domain.User;
+import com.dcom.intranet.auth.domain.UserStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDateTime;

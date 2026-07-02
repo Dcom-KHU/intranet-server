@@ -2,7 +2,7 @@ package com.dcom.intranet.mypage;
 
 import com.dcom.intranet.mypage.dto.EmailVerificationSendResponse;
 import com.dcom.intranet.mypage.dto.EmailVerificationVerifyResponse;
-import com.dcom.intranet.user.UserRepository;
+import com.dcom.intranet.auth.repository.UserRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
