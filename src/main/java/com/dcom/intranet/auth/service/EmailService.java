@@ -54,7 +54,7 @@ public class EmailService {
             throw new BadRequestException("인증 코드가 만료되었습니다. 다시 요청해주세요.");
         }
         /// 이미 인증된 경우
-        if(verification.isVertified()){
+        if(verification.isVerified()){
             throw new BadRequestException("이미 인증된 이메일입니다.");
         }
         /// 인증코드 비교
@@ -69,7 +69,7 @@ public class EmailService {
     public boolean isEmailVerified(String email){
         return emailVerificationRepository
                 .findTopByEmailOrderByCreatedAtDesc(email)
-                .map(v -> v.isVertified() && !v.isExpired())
+                .map(v -> v.isVerified() && !v.isExpired())
                 .orElse(false);
     }
 

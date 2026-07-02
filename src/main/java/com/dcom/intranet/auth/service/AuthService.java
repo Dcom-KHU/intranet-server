@@ -77,6 +77,9 @@ public class AuthService {
     /// 로그인
     @Transactional
     public LoginResponse login(LoginRequest request) {
+        // TODO: 삭제할 것 - 테스트용 해시 출력
+        System.out.println("HASH: " + passwordEncoder.encode("admin123"));
+
         /// 회원찾기
         User user = userRepository.findByLoginId(request.getLoginId())
                 .orElseThrow(() -> new UnauthorizedException("아이디 또는 비밀번호가 올바르지 않습니다."));
