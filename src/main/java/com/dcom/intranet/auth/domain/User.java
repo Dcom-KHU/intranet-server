@@ -48,6 +48,8 @@ public class User {
 
     private LocalDateTime lastLoginAt;
 
+    private LocalDateTime withdrawnAt;
+
     @Column
     private String tempPassword;
 
@@ -106,5 +108,27 @@ public class User {
         return this.role == UserRole.ADMIN;
     }
 
+
+     /// 프로필 수정
+    public void updateProfile(String name, String phoneNumber) {
+        this.name = name;
+        this.phoneNumber = phoneNumber;
+    }
+
+
+    public void changeEmail(String email) {
+        this.email = email;
+    }
+
+    /// 회원탈퇴
+    public void withdraw(LocalDateTime withdrawnAt) {
+        this.status = UserStatus.WITHDRAWN;
+        this.withdrawnAt = withdrawnAt;
+    }
+
+    /// 탈퇴시각조회
+    public LocalDateTime getWithdrawnAt() {
+        return this.withdrawnAt;
+    }
 
 }
