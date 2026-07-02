@@ -1,5 +1,7 @@
 package com.dcom.intranet.mypage;
 
+import com.dcom.intranet.auth.domain.EmailVerification;
+import com.dcom.intranet.auth.repository.EmailVerificationRepository;
 import com.dcom.intranet.mypage.dto.EmailVerificationSendResponse;
 import com.dcom.intranet.mypage.dto.EmailVerificationVerifyResponse;
 import com.dcom.intranet.auth.repository.UserRepository;

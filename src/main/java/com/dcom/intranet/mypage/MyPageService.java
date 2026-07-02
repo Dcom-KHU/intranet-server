@@ -1,5 +1,6 @@
 package com.dcom.intranet.mypage;
 
+import com.dcom.intranet.auth.domain.EmailVerification;
 import com.dcom.intranet.mypage.dto.MyProfileResponse;
 import com.dcom.intranet.mypage.dto.MyProfileUpdateRequest;
 import com.dcom.intranet.mypage.dto.MyProfileUpdateResponse;
