@@ -47,7 +47,11 @@ public class InfoPostFileStorageService {
 
             Path targetPath = directory.resolve(storedFileName);
 
-            file.transferTo(targetPath.toFile());
+            Files.copy(
+                    file.getInputStream(),
+                    targetPath,
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING
+            );
 
             String fileUrl = targetPath.toString();
 
