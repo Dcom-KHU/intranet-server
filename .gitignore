@@ -1,5 +1,7 @@
+HELP.md
+
 ### Gradle ###
-.gradle/
+.gradle
 build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
@@ -10,7 +12,7 @@ build/
 .classpath
 .factorypath
 .project
-.settings/
+.settings
 .springBeans
 .sts4-cache
 bin/
@@ -18,16 +20,13 @@ bin/
 !**/src/test/**/bin/
 
 ### IntelliJ IDEA ###
-.idea/
+.idea
 *.iws
 *.iml
 *.ipr
 out/
 !**/src/main/**/out/
 !**/src/test/**/out/
-
-### VS Code ###
-.vscode/
 
 ### NetBeans ###
 /nbproject/private/
@@ -36,40 +35,13 @@ out/
 /nbdist/
 /.nb-gradle/
 
+### VS Code ###
+.vscode/
+
 ### Mac ###
 .DS_Store
 
 ### Security / Local Config ###
-.env
-.env.*
+application-local.yml
+application-secret.yml
 *.env
-
-application.yml
-application.properties
-
-src/main/resources/application.yml
-src/main/resources/application.properties
-
-src/test/resources/application.yml
-src/test/resources/application.properties
-
-### Secrets / Keys ###
-*.pem
-*.key
-*.p12
-*.jks
-*.keystore
-
-### Upload Files ###
-uploads/
-upload/
-files/
-storage/
-
-### Logs ###
-logs/
-*.log
-
-### OS / Temp ###
-tmp/
-temp/
