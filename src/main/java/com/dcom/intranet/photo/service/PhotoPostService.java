@@ -115,9 +115,16 @@ public class PhotoPostService {
                         "사진첩을 찾을 수 없습니다."
                 ));
 
-        List<String> imageUrls = new ArrayList<>(photoPost.getImageUrls());
+        List<String> imagePaths = new ArrayList<>(photoPost.getImageUrls());
         photoPostRepository.delete(photoPost);
-        imageUrls.forEach(photoPostFileStorageService::delete);
+        imagePaths.forEach(path -> {
+            try {
+                photoPostFileStorageService.deleteByPath(path);
+            } catch (Exception e) {
+                // 파일 삭제 실패해도 DB는 이미 삭제됨
+                System.err.println("파일 삭제 실패: " + path);
+            }
+        });
 
         return new PhotoPostDeleteResponse("사진첩이 삭제되었습니다.");
     }

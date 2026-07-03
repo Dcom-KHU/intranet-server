@@ -55,7 +55,7 @@ public class PhotoPostFileStorageService {
                     originalFileName,
                     storedFileName,
                     uploadRoot.relativize(targetPath).toString(),
-                    targetPath.toString(),
+                    targetPath.toAbsolutePath().toString(),
                     file.getSize(),
                     file.getContentType()
             );
@@ -82,6 +82,22 @@ public class PhotoPostFileStorageService {
 
         try {
             Files.deleteIfExists(Path.of(fileUrl));
+        } catch (IOException e) {
+            throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "사진 파일 삭제 중 오류가 발생했습니다."
+            );
+        }
+    }
+
+    public void deleteByPath(String relativePath) {
+        if (relativePath == null || relativePath.isBlank()) {
+            return;
+        }
+
+        try {
+            Path fullPath = uploadRoot.resolve(relativePath);
+            Files.deleteIfExists(fullPath);
         } catch (IOException e) {
             throw new ResponseStatusException(
                     HttpStatus.INTERNAL_SERVER_ERROR,

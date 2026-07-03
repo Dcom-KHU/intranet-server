@@ -29,6 +29,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -224,6 +225,7 @@ public class NoticeController {
             @ApiResponse(responseCode = "401", description = "인증 필요", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = CommonResponse.class), examples = @ExampleObject(value = UNAUTHORIZED_401_EXAMPLE))),
             @ApiResponse(responseCode = "403", description = "관리자 권한 필요", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = CommonResponse.class), examples = @ExampleObject(value = FORBIDDEN_403_EXAMPLE)))
     })
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<CommonResponse<NoticeCreateResponse>> createNotice(
             @RequestPart("request") String requestJson,
@@ -256,6 +258,7 @@ public class NoticeController {
             @ApiResponse(responseCode = "403", description = "관리자 권한 필요", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = CommonResponse.class), examples = @ExampleObject(value = FORBIDDEN_403_EXAMPLE))),
             @ApiResponse(responseCode = "404", description = "공지사항 없음", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = CommonResponse.class), examples = @ExampleObject(value = NOT_FOUND_404_EXAMPLE)))
     })
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping(value = "/{noticeId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<CommonResponse<NoticeUpdateResponse>> updateNotice(
             @Parameter(description = "공지사항 ID", example = "1")
@@ -279,6 +282,7 @@ public class NoticeController {
             @ApiResponse(responseCode = "403", description = "관리자 권한 필요", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = CommonResponse.class), examples = @ExampleObject(value = FORBIDDEN_403_EXAMPLE))),
             @ApiResponse(responseCode = "404", description = "공지사항 없음", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = CommonResponse.class), examples = @ExampleObject(value = NOT_FOUND_404_EXAMPLE)))
     })
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{noticeId}")
     public ResponseEntity<CommonResponse<NoticeDeleteResponse>> deleteNotice(
             @Parameter(description = "공지사항 ID", example = "1")
