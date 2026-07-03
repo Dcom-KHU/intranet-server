@@ -19,8 +19,7 @@ public class InfoComment {
     @Column(name = "comment_id")
     private Long id;
 
-    @Lob
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "LONGTEXT")
     private String content;
 
     @ManyToOne(fetch = FetchType.LAZY)

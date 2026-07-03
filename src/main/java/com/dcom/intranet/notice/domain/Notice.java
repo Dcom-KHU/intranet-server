@@ -26,7 +26,7 @@ public class Notice {
     @Column(nullable = false, length = 200)
     private String title;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = false, columnDefinition = "LONGTEXT")
     private String content;
 
     @Column
@@ -105,7 +105,7 @@ public class Notice {
         @Column(nullable = false)
         private String fileName;
 
-        @Column(nullable = false)
+        @Column(nullable = false, length = 500)
         private String fileUrl;
 
         protected NoticeFile() {
