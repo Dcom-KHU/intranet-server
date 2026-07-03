@@ -178,14 +178,19 @@ CREATE TABLE notice_files (
     notice_file_id BIGINT NOT NULL AUTO_INCREMENT,
     notice_id BIGINT NOT NULL,
     original_file_name VARCHAR(255) NOT NULL,
+    stored_file_name VARCHAR(255) NOT NULL,
+    object_key VARCHAR(500) NOT NULL,
     file_url VARCHAR(500) NOT NULL,
+    file_size BIGINT NOT NULL,
+    content_type VARCHAR(100) NULL,
+    created_at DATETIME NOT NULL,
     PRIMARY KEY (notice_file_id),
     KEY idx_notice_files_notice_id (notice_id),
+    KEY idx_notice_files_object_key (object_key),
     CONSTRAINT fk_notice_files_notice
         FOREIGN KEY (notice_id) REFERENCES notices (notice_id)
         ON DELETE CASCADE
-    -- REVIEW: 최신 develop 기준 NoticeFile은 별도 Entity다.
-    -- TODO: 공지 파일에 object_key, file_size, content_type, 생성/수정 시각이 필요한지 검토한다.
+    -- REVIEW: Java Entity 반영은 백엔드팀 작업 범위다.
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 최신 develop 코드 기준 PhotoPost 테이블이다.
@@ -200,16 +205,24 @@ CREATE TABLE photo_posts (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE photo_post_images (
+    image_id BIGINT NOT NULL AUTO_INCREMENT,
     album_id BIGINT NOT NULL,
+    original_file_name VARCHAR(255) NOT NULL,
+    stored_file_name VARCHAR(255) NOT NULL,
+    object_key VARCHAR(500) NOT NULL,
+    file_url VARCHAR(500) NOT NULL,
+    file_size BIGINT NOT NULL,
+    content_type VARCHAR(100) NULL,
     upload_order INT NOT NULL,
-    image_url VARCHAR(500) NOT NULL,
-    PRIMARY KEY (album_id, upload_order),
+    created_at DATETIME NOT NULL,
+    PRIMARY KEY (image_id),
     KEY idx_photo_post_images_album_id (album_id),
+    KEY idx_photo_post_images_object_key (object_key),
+    UNIQUE KEY uk_photo_post_images_album_order (album_id, upload_order),
     CONSTRAINT fk_photo_post_images_album
         FOREIGN KEY (album_id) REFERENCES photo_posts (album_id)
         ON DELETE CASCADE
-    -- REVIEW: 현재 develop 코드는 이미지 메타데이터 없이 URL만 ElementCollection으로 저장한다.
-    -- TODO: object_key, file_size, content_type 등 파일 메타데이터가 필요하면 별도 PhotoImage Entity 전환을 검토한다.
+    -- REVIEW: 현재 Java 코드는 image_url ElementCollection 구조이므로, 백엔드팀에서 별도 Entity 매핑 반영이 필요하다.
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE photo_comments (
