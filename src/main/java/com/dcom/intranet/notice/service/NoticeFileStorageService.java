@@ -1,11 +1,11 @@
-package com.dcom.intranet.info.service;
+package com.dcom.intranet.notice.service;
 
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.http.HttpStatus;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -14,12 +14,12 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 @Service
-public class InfoPostFileStorageService {
+public class NoticeFileStorageService {
 
     private final Path uploadRoot;
 
-    public InfoPostFileStorageService(
-            @Value("${file.upload-dir:./uploads/info}") String uploadDir
+    public NoticeFileStorageService(
+            @Value("${file.notice-upload-dir:./uploads/notice}") String uploadDir
     ) {
         this.uploadRoot = Path.of(uploadDir);
     }
@@ -37,7 +37,6 @@ public class InfoPostFileStorageService {
         String storedFileName = UUID.randomUUID() + extension;
 
         LocalDate now = LocalDate.now();
-
         Path directory = uploadRoot
                 .resolve(String.valueOf(now.getYear()))
                 .resolve(String.format("%02d", now.getMonthValue()));
@@ -46,27 +45,35 @@ public class InfoPostFileStorageService {
             Files.createDirectories(directory);
 
             Path targetPath = directory.resolve(storedFileName);
-
             Files.copy(
                     file.getInputStream(),
                     targetPath,
                     java.nio.file.StandardCopyOption.REPLACE_EXISTING
             );
 
-            String fileUrl = targetPath.toString();
-
             return new StoredFile(
                     originalFileName,
-                    storedFileName,
-                    uploadRoot.relativize(targetPath).toString(),
-                    fileUrl,
-                    file.getSize(),
-                    file.getContentType()
+                    targetPath.toString()
             );
         } catch (IOException e) {
             throw new ResponseStatusException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
-                    "파일 저장 중 오류가 발생했습니다."
+                    "공지사항 첨부파일 저장 중 오류가 발생했습니다."
+            );
+        }
+    }
+
+    public void delete(String fileUrl) {
+        if (fileUrl == null || fileUrl.isBlank()) {
+            return;
+        }
+
+        try {
+            Files.deleteIfExists(Path.of(fileUrl));
+        } catch (IOException e) {
+            throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "공지사항 첨부파일 삭제 중 오류가 발생했습니다."
             );
         }
     }
@@ -82,42 +89,12 @@ public class InfoPostFileStorageService {
     @Getter
     public static class StoredFile {
 
-        private final String originalFileName;
-        private final String storedFileName;
-        private final String objectKey;
+        private final String fileName;
         private final String fileUrl;
-        private final Long fileSize;
-        private final String contentType;
 
-        public StoredFile(
-                String originalFileName,
-                String storedFileName,
-                String objectKey,
-                String fileUrl,
-                Long fileSize,
-                String contentType
-        ) {
-            this.originalFileName = originalFileName;
-            this.storedFileName = storedFileName;
-            this.objectKey = objectKey;
+        public StoredFile(String fileName, String fileUrl) {
+            this.fileName = fileName;
             this.fileUrl = fileUrl;
-            this.fileSize = fileSize;
-            this.contentType = contentType;
-        }
-    }
-
-    public void delete(String fileUrl) {
-        if (fileUrl == null || fileUrl.isBlank()) {
-            return;
-        }
-
-        try {
-            Files.deleteIfExists(Path.of(fileUrl));
-        } catch (IOException e) {
-            throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    "파일 삭제 중 오류가 발생했습니다."
-            );
         }
     }
 }

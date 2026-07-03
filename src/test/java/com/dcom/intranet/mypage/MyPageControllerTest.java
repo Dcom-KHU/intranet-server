@@ -30,6 +30,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
@@ -39,6 +41,10 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.nullValue;
+import static org.mockito.ArgumentCaptor.forClass;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -71,6 +77,9 @@ class MyPageControllerTest {
     private PasswordEncoder passwordEncoder;
 
     @Autowired
+    private JavaMailSender mailSender;
+
+    @Autowired
     private TestMyWrittenPostReader myWrittenPostReader;
 
     @Autowired
@@ -80,6 +89,7 @@ class MyPageControllerTest {
     void setUp() {
         myWrittenPostReader.reset();
         myWrittenCommentReader.reset();
+        reset(mailSender);
         emailVerificationRepository.deleteAll();
         userRepository.deleteAll();
     }
@@ -218,6 +228,14 @@ class MyPageControllerTest {
         assertThat(verification.getExpiresAt()).isAfter(LocalDateTime.now());
         assertThat(verification.isVerified()).isFalse();
         assertThat(verification.isUsed()).isFalse();
+
+        var messageCaptor = forClass(SimpleMailMessage.class);
+        verify(mailSender).send(messageCaptor.capture());
+        SimpleMailMessage message = messageCaptor.getValue();
+        assertThat(message.getTo()).containsExactly("new-email-send1@dcom.org");
+        assertThat(message.getSubject()).isEqualTo("[D.com Intranet] 이메일 인증 코드");
+        assertThat(message.getText()).contains("인증 코드 : " + verification.getVerificationCode());
+        assertThat(message.getText()).contains("5분 내로 입력해주세요.");
     }
 
     @Test
@@ -1477,6 +1495,16 @@ class MyPageControllerTest {
                 .andExpect(status().isOk());
 
         return latestVerification(loginId, newEmail).getEmailChangeToken();
+    }
+
+    @TestConfiguration
+    static class MailSenderTestConfig {
+
+        @Bean
+        @Primary
+        JavaMailSender javaMailSender() {
+            return mock(JavaMailSender.class);
+        }
     }
 
     @TestConfiguration
