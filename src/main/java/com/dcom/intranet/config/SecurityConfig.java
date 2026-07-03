@@ -1,10 +1,13 @@
 package com.dcom.intranet.config;
 
+import com.dcom.intranet.common.ApiResponse;
 import com.dcom.intranet.jwt.JwtAuthenticationFilter;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -17,6 +20,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final ObjectMapper objectMapper;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -44,10 +48,34 @@ public class SecurityConfig {
                                 "/v3/api-docs/**"
                         ).permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/photo-posts").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/photo-posts/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/photo-posts/*/comments").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/photo-posts/*/comments/*").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/photo-posts/*/comments/*").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/photo-posts").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/photo-posts/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/photo-posts/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/notice").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/notice/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/notice").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/notice/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/notice/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/announcements").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/announcements/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/announcements/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
+                )
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(401);
+                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                            response.setCharacterEncoding("UTF-8");
+                            objectMapper.writeValue(
+                                    response.getWriter(),
+                                    ApiResponse.failure(401, "인증이 필요합니다.")
+                            );
+                        })
                 )
                 .headers(headers -> headers
                         .frameOptions(frameOptions -> frameOptions.disable())

@@ -175,52 +175,41 @@ CREATE TABLE notices (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE notice_files (
-    notice_notice_id BIGINT NOT NULL,
-    file_name VARCHAR(255) NOT NULL,
+    notice_file_id BIGINT NOT NULL AUTO_INCREMENT,
+    notice_id BIGINT NOT NULL,
+    original_file_name VARCHAR(255) NOT NULL,
     file_url VARCHAR(500) NOT NULL,
-    KEY idx_notice_files_notice_notice_id (notice_notice_id),
+    PRIMARY KEY (notice_file_id),
+    KEY idx_notice_files_notice_id (notice_id),
     CONSTRAINT fk_notice_files_notice
-        FOREIGN KEY (notice_notice_id) REFERENCES notices (notice_id)
+        FOREIGN KEY (notice_id) REFERENCES notices (notice_id)
         ON DELETE CASCADE
-    -- REVIEW: 현재 코드는 @ElementCollection을 사용하므로 별도 notice_file_id PK가 없다.
-    -- TODO: NoticeFile을 Entity로 분리하면 notice_file_id, object_key, file_size, content_type, 생성/수정 시각을 추가한다.
+    -- REVIEW: 최신 develop 기준 NoticeFile은 별도 Entity다.
+    -- TODO: 공지 파일에 object_key, file_size, content_type, 생성/수정 시각이 필요한지 검토한다.
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ERD 기준 선설계 테이블이다. Photo Album domain Entity는 아직 구현되지 않았다.
-CREATE TABLE photo_albums (
+-- REVIEW: ERD 초안은 photo_albums/photo_images를 사용하지만, 최신 develop 코드는 photo_posts/photo_post_images를 사용한다.
+CREATE TABLE photo_posts (
     album_id BIGINT NOT NULL AUTO_INCREMENT,
-    admin_id BIGINT NOT NULL,
-    event_name VARCHAR(200) NOT NULL,
+    event_name VARCHAR(100) NOT NULL,
     activity_date DATE NOT NULL,
     description LONGTEXT NULL,
-    created_at DATETIME NOT NULL,
-    updated_at DATETIME NULL,
     PRIMARY KEY (album_id),
-    KEY idx_photo_albums_admin_id (admin_id),
-    KEY idx_photo_albums_activity_date (activity_date),
-    CONSTRAINT fk_photo_albums_admin
-        FOREIGN KEY (admin_id) REFERENCES users (id)
-        ON DELETE RESTRICT
-    -- REVIEW: ERD 기준 선설계 테이블이며, Java Entity는 아직 없다.
+    KEY idx_photo_posts_activity_date (activity_date)
+    -- REVIEW: 현재 PhotoPost Entity에는 작성자/admin_id와 생성/수정 시각 컬럼이 없다.
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE photo_images (
-    image_id BIGINT NOT NULL AUTO_INCREMENT,
+CREATE TABLE photo_post_images (
     album_id BIGINT NOT NULL,
-    original_file_name VARCHAR(255) NOT NULL,
-    stored_file_name VARCHAR(255) NOT NULL,
-    object_key VARCHAR(500) NOT NULL,
-    file_url VARCHAR(500) NOT NULL,
-    file_size BIGINT NOT NULL,
-    content_type VARCHAR(100) NULL,
-    display_order INT NOT NULL DEFAULT 0,
-    created_at DATETIME NOT NULL,
-    PRIMARY KEY (image_id),
-    KEY idx_photo_images_album_id (album_id),
-    CONSTRAINT fk_photo_images_album
-        FOREIGN KEY (album_id) REFERENCES photo_albums (album_id)
+    upload_order INT NOT NULL,
+    image_url VARCHAR(500) NOT NULL,
+    PRIMARY KEY (album_id, upload_order),
+    KEY idx_photo_post_images_album_id (album_id),
+    CONSTRAINT fk_photo_post_images_album
+        FOREIGN KEY (album_id) REFERENCES photo_posts (album_id)
         ON DELETE CASCADE
-    -- REVIEW: ERD 기준 선설계 테이블이며, Java Entity는 아직 없다.
+    -- REVIEW: 현재 develop 코드는 이미지 메타데이터 없이 URL만 ElementCollection으로 저장한다.
+    -- TODO: object_key, file_size, content_type 등 파일 메타데이터가 필요하면 별도 PhotoImage Entity 전환을 검토한다.
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE photo_comments (
@@ -234,12 +223,12 @@ CREATE TABLE photo_comments (
     KEY idx_photo_comments_album_id (album_id),
     KEY idx_photo_comments_author_id (author_id),
     CONSTRAINT fk_photo_comments_album
-        FOREIGN KEY (album_id) REFERENCES photo_albums (album_id)
+        FOREIGN KEY (album_id) REFERENCES photo_posts (album_id)
         ON DELETE CASCADE,
     CONSTRAINT fk_photo_comments_author
         FOREIGN KEY (author_id) REFERENCES users (id)
         ON DELETE RESTRICT
-    -- REVIEW: ERD 기준 선설계 테이블이며, Java Entity는 아직 없다.
+    -- REVIEW: 최신 develop 기준 PhotoComment Entity는 photo_posts를 부모로 참조한다.
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE legacy_migration_maps (

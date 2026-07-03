@@ -195,8 +195,9 @@ erDiagram
     }
 
     NOTICE_FILES {
-        BIGINT notice_notice_id FK "ElementCollection 조인 컬럼"
-        VARCHAR file_name "파일명"
+        BIGINT notice_file_id PK "AUTO_INCREMENT"
+        BIGINT notice_id FK "공지사항 ID"
+        VARCHAR original_file_name "원본 파일명"
         VARCHAR file_url "파일 URL"
     }
 
@@ -362,8 +363,9 @@ UNIQUE (subject_name, professor_name)
 
 주의 사항:
 
-- 현재 백엔드 코드에서는 `@ElementCollection` 구조일 수 있다.
-- MVP에서는 현재 구현과 맞추되, 장기적으로 별도 `NoticeFile` Entity 분리를 검토한다.
+- 최신 develop 기준 백엔드 코드는 별도 `NoticeFile` Entity 구조이다.
+- 현재 구현 컬럼은 `original_file_name`, `file_url` 중심이다.
+- `object_key`, `file_size`, `content_type` 같은 추가 파일 메타데이터가 필요한지는 추후 검토한다.
 
 ### PHOTO_ALBUMS / PHOTO_IMAGES / PHOTO_COMMENTS
 
@@ -393,7 +395,7 @@ UNIQUE (subject_name, professor_name)
 2. `archive_records.semester` nullable 허용 여부
 3. `archive_records.exam_type` nullable 허용 여부
 4. `archive_files.file_url`을 DB에 저장할지, `object_key` 기반으로 API에서 생성할지
-5. `notice_files`를 `ElementCollection`으로 유지할지 별도 Entity로 분리할지
+5. `notice_files`에 추가 파일 메타데이터를 둘지
 6. `legacy_migration_maps`를 실제 DB 테이블로 둘지 CSV로만 관리할지
 7. 마이그레이션된 족보의 `author_id`에 사용할 `migration admin` 계정 생성 방식
 8. 유저 탈퇴 시 작성 콘텐츠 유지 정책

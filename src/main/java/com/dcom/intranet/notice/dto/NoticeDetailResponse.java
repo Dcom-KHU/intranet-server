@@ -22,13 +22,14 @@ public record NoticeDetailResponse(
                 notice.getAuthorId(),
                 notice.getCreatedAt(),
                 notice.getFiles().stream()
-                        .map(file -> new FileInfo(file.getFileName(), file.getFileUrl()))
+                        .map(file -> new FileInfo(file.getId(), file.getOriginalFileName(), file.getFileUrl()))
                         .toList()
         );
     }
 
     public record FileInfo(
-            String fileName,
+            Long fileId,
+            String originalFileName,
             String fileUrl
     ) {
     }

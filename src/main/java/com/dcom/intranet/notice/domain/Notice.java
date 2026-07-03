@@ -1,14 +1,14 @@
 package com.dcom.intranet.notice.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
-import jakarta.persistence.Embeddable;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Column;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.CascadeType;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -38,7 +38,7 @@ public class Notice {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
-    @ElementCollection(fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "notice", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<NoticeFile> files = new ArrayList<>();
 
     protected Notice() {
@@ -58,7 +58,7 @@ public class Notice {
         this.authorId = authorId;
         this.createdAt = createdAt;
         this.updatedAt = createdAt;
-        this.files = files == null ? new ArrayList<>() : new ArrayList<>(files);
+        addFiles(files);
     }
 
     public Long getNoticeId() {
@@ -89,39 +89,29 @@ public class Notice {
         return Collections.unmodifiableList(files);
     }
 
-    public void update(String title, String content, List<NoticeFile> files, LocalDateTime updatedAt) {
+    public void update(String title, String content, LocalDateTime updatedAt) {
         this.title = title;
         this.content = content;
-        this.files.clear();
-        if (files != null) {
-            this.files.addAll(files);
-        }
         this.updatedAt = updatedAt;
     }
 
-    @Embeddable
-    public static class NoticeFile {
-
-        @Column(nullable = false)
-        private String fileName;
-
-        @Column(nullable = false, length = 500)
-        private String fileUrl;
-
-        protected NoticeFile() {
+    public void addFile(NoticeFile file) {
+        if (file == null) {
+            return;
         }
+        files.add(file);
+        file.setNotice(this);
+    }
 
-        public NoticeFile(String fileName, String fileUrl) {
-            this.fileName = fileName;
-            this.fileUrl = fileUrl;
+    public void addFiles(List<NoticeFile> files) {
+        if (files == null) {
+            return;
         }
+        files.forEach(this::addFile);
+    }
 
-        public String getFileName() {
-            return fileName;
-        }
-
-        public String getFileUrl() {
-            return fileUrl;
-        }
+    public void removeFile(NoticeFile file) {
+        files.remove(file);
+        file.setNotice(null);
     }
 }
