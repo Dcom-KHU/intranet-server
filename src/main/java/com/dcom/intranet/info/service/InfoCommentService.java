@@ -40,10 +40,10 @@ public class InfoCommentService {
     public InfoCommentResponse createComment(
             Long postId,
             InfoCommentCreateRequest request,
-            Long userId
+            String loginId
     ) {
         InfoPost post = findPost(postId);
-        User author = findUser(userId);
+        User author = findUser(loginId);
 
         InfoComment comment = new InfoComment(
                 post,
@@ -61,13 +61,13 @@ public class InfoCommentService {
             Long postId,
             Long commentId,
             InfoCommentUpdateRequest request,
-            Long userId
+            String loginId
     ) {
         validatePostExists(postId);
 
         InfoComment comment = findCommentInPost(postId, commentId);
 
-        validateAuthor(comment, userId);
+        validateAuthor(comment, loginId);
 
         comment.update(request.getContent());
 
@@ -80,13 +80,13 @@ public class InfoCommentService {
     public void deleteComment(
             Long postId,
             Long commentId,
-            Long userId
+            String loginId
     ) {
         validatePostExists(postId);
 
         InfoComment comment = findCommentInPost(postId, commentId);
 
-        validateAuthorOrAdmin(comment, userId);
+        validateAuthorOrAdmin(comment, loginId);
 
         infoCommentRepository.delete(comment);
     }
@@ -116,16 +116,16 @@ public class InfoCommentService {
                 ));
     }
 
-    private User findUser(Long userId) {
-        return userRepository.findById(userId)
+    private User findUser(String loginId) {
+        return userRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
                         "사용자를 찾을 수 없습니다."
                 ));
     }
 
-    private void validateAuthor(InfoComment comment, Long userId) {
-        User user = findUser(userId);
+    private void validateAuthor(InfoComment comment, String loginId) {
+        User user = findUser(loginId);
 
         if (!comment.isAuthor(user.getId())) {
             throw new ResponseStatusException(
@@ -135,8 +135,8 @@ public class InfoCommentService {
         }
     }
 
-    private void validateAuthorOrAdmin(InfoComment comment, Long userId) {
-        User user = findUser(userId);
+    private void validateAuthorOrAdmin(InfoComment comment, String loginId) {
+        User user = findUser(loginId);
 
         boolean isAuthor = comment.isAuthor(user.getId());
         boolean isAdmin = user.isAdmin();

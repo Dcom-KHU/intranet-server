@@ -1,5 +1,7 @@
 package com.dcom.intranet.mypage.service;
 
+import com.dcom.intranet.auth.domain.User;
+import com.dcom.intranet.auth.domain.UserStatus;
 import com.dcom.intranet.auth.repository.UserRepository;
 import com.dcom.intranet.mypage.domain.EmailChangeVerification;
 import com.dcom.intranet.mypage.dto.response.EmailVerificationSendResponse;
@@ -7,6 +9,8 @@ import com.dcom.intranet.mypage.dto.response.EmailVerificationVerifyResponse;
 import com.dcom.intranet.mypage.exception.MyPageApiException;
 import com.dcom.intranet.mypage.repository.EmailChangeVerificationRepository;
 import org.springframework.http.HttpStatus;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,17 +26,22 @@ public class EmailVerificationService {
 
     private final EmailChangeVerificationRepository emailVerificationRepository;
     private final UserRepository userRepository;
+    private final JavaMailSender mailSender;
 
     public EmailVerificationService(
             EmailChangeVerificationRepository emailVerificationRepository,
-            UserRepository userRepository
+            UserRepository userRepository,
+            JavaMailSender mailSender
     ) {
         this.emailVerificationRepository = emailVerificationRepository;
         this.userRepository = userRepository;
+        this.mailSender = mailSender;
     }
 
     @Transactional
     public EmailVerificationSendResponse sendEmailChangeVerification(String loginId, String newEmail) {
+        validateApprovedUser(loginId);
+
         if (userRepository.existsByEmail(newEmail)) {
             throw new MyPageApiException(HttpStatus.CONFLICT, "이미 사용 중인 이메일입니다.");
         }
@@ -47,13 +56,15 @@ public class EmailVerificationService {
                     );
                 });
 
+        String verificationCode = generateVerificationCode();
         EmailChangeVerification verification = EmailChangeVerification.create(
                 loginId,
                 newEmail,
-                generateVerificationCode(),
+                verificationCode,
                 now.plusSeconds(EXPIRES_IN_SECONDS)
         );
         emailVerificationRepository.save(verification);
+        sendVerificationEmail(newEmail, verificationCode);
 
         return new EmailVerificationSendResponse(
                 "이메일 변경 인증 코드가 생성되었습니다.",
@@ -67,6 +78,8 @@ public class EmailVerificationService {
             String newEmail,
             String verificationCode
     ) {
+        validateApprovedUser(loginId);
+
         EmailChangeVerification verification = emailVerificationRepository
                 .findTopByLoginIdAndEmailOrderByCreatedAtDesc(loginId, newEmail)
                 .orElseThrow(() -> new MyPageApiException(
@@ -109,6 +122,23 @@ public class EmailVerificationService {
 
         verification.markUsed();
         return verification;
+    }
+
+    private void validateApprovedUser(String loginId) {
+        User user = userRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new MyPageApiException(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."));
+        if (user.getStatus() != UserStatus.APPROVED) {
+            throw new MyPageApiException(HttpStatus.UNAUTHORIZED, "인증이 필요합니다.");
+        }
+    }
+
+    private void sendVerificationEmail(String email, String verificationCode) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(email);
+        message.setSubject("[D.com Intranet] 이메일 인증 코드");
+        message.setText("인증 코드 : " + verificationCode + "\n\n"
+                + (EXPIRES_IN_SECONDS / 60) + "분 내로 입력해주세요. ");
+        mailSender.send(message);
     }
 
     private String generateVerificationCode() {

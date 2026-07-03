@@ -23,6 +23,7 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -196,12 +197,12 @@ public class InfoPostController {
             @RequestPart(value = "files", required = false) List<MultipartFile> files,
 
             @Parameter(description = "요청 사용자 ID. JWT 적용 전 임시 파라미터", example = "1")
-            @RequestParam Long userId
+            Authentication authentication
     ) {
         InfoPostCreateRequest request = parseCreateRequest(requestJson);
 
         InfoPostCreateResponse response =
-                infoPostService.createPost(request, files, userId);
+                infoPostService.createPost(request, files, authentication.getName());
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(CommonResponse.success(
@@ -305,12 +306,12 @@ public class InfoPostController {
             @RequestPart(value = "files", required = false) List<MultipartFile> files,
 
             @Parameter(description = "요청 사용자 ID. JWT 적용 전 임시 파라미터", example = "1")
-            @RequestParam Long userId
+            Authentication authentication
     ) {
         InfoPostUpdateRequest request = parseUpdateRequest(requestJson);
 
         InfoPostUpdateResponse response =
-                infoPostService.updatePost(postId, request, files, userId);
+                infoPostService.updatePost(postId, request, files, authentication.getName());
 
         return ResponseEntity.ok(
                 CommonResponse.success(
@@ -380,9 +381,9 @@ public class InfoPostController {
             @PathVariable Long postId,
 
             @Parameter(description = "요청 사용자 ID. JWT 적용 전 임시 파라미터", example = "1")
-            @RequestParam Long userId
+            Authentication authentication
     ) {
-        infoPostService.deletePost(postId, userId);
+        infoPostService.deletePost(postId, authentication.getName());
 
         return ResponseEntity.ok(
                 CommonResponse.success(
