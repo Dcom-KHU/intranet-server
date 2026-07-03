@@ -22,19 +22,20 @@ public class InfoPostFile {
     @Column(nullable = false)
     private String storedFileName;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 500)
     private String objectKey;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 500)
     private String fileUrl;
 
     @Column(nullable = false)
     private Long fileSize;
 
+    @Column(length = 100)
     private String contentType;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "post_id")
+    @JoinColumn(name = "post_id", nullable = false)
     private InfoPost post;
 
     public InfoPostFile(

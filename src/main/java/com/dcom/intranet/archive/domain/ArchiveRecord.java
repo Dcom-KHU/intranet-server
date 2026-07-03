@@ -29,15 +29,15 @@ public class ArchiveRecord {
     @JoinColumn(name = "author_id", nullable = false)
     private User author;
 
-    @Column(nullable = false)
+    @Column
     private Integer examYear;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(length = 20, columnDefinition = "varchar(20)")
     private Semester semester;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(length = 20, columnDefinition = "varchar(20)")
     private ExamType examType;
 
     // 설명글은 필요 사항이 아니니깐 'nullable = false' 따로 안씀

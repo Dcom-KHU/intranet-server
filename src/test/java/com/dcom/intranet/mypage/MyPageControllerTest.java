@@ -10,9 +10,11 @@ import com.dcom.intranet.mypage.dto.MyWrittenPostListResponse;
 import com.dcom.intranet.mypage.dto.MyWrittenPostResponse;
 import com.dcom.intranet.mypage.dto.MyWrittenPostTargetResponse;
 import com.dcom.intranet.mypage.dto.PageInfoResponse;
+import com.dcom.intranet.auth.domain.EmailVerification;
 import com.dcom.intranet.auth.domain.User;
 import com.dcom.intranet.auth.domain.UserRole;
 import com.dcom.intranet.auth.domain.UserStatus;
+import com.dcom.intranet.auth.repository.EmailVerificationRepository;
 import com.dcom.intranet.auth.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -27,6 +29,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -554,16 +557,15 @@ class MyPageControllerTest {
         String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
         String newEmail = "new-email-settings5@dcom.org";
         String emailChangeToken = verifiedEmailChangeToken(token, user.getLoginId(), newEmail);
-        userRepository.save(new User(
+        userRepository.save(testUser(
                 "settings5owner",
-                "20995555",
                 "encoded-password",
                 "이메일소유자",
-                "010-5555-0000",
+                "20995555",
                 newEmail,
-                true,
                 UserStatus.APPROVED,
-                UserRole.USER
+                UserRole.USER,
+                "010-5555-0000"
         ));
 
         mockMvc.perform(patch("/api/users/me/settings")
@@ -1422,19 +1424,27 @@ class MyPageControllerTest {
     }
 
     private User saveUser(String loginId, UserStatus status, UserRole role) {
-        User user = new User(
+        User user = testUser(
                 loginId,
-                studentIdFor(loginId),
                 passwordEncoder.encode(CURRENT_PASSWORD),
                 "홍길동",
-                "010-1234-5678",
+                studentIdFor(loginId),
                 loginId + "@dcom.org",
-                true,
                 status,
-                role
+                role,
+                "010-1234-5678"
         );
 
         return userRepository.save(user);
+    }
+
+    private User testUser(String loginId, String password, String name,
+                          String studentId, String email, UserStatus status,
+                          UserRole role, String phoneNumber) {
+        User user = new User(loginId, password, name, studentId, email, phoneNumber);
+        ReflectionTestUtils.setField(user, "status", status);
+        ReflectionTestUtils.setField(user, "role", role);
+        return user;
     }
 
     private String bearer(String token) {

@@ -1,0 +1,24 @@
+spring:
+  sql:
+    init:
+      mode: never
+
+  datasource:
+    url: ${DB_URL:jdbc:mariadb://localhost:3306/dcom_intranet}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.mariadb.jdbc.Driver
+
+  jpa:
+    defer-datasource-initialization: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: true
+    open-in-view: false
+
+  h2:
+    console:
+      enabled: false
