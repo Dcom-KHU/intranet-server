@@ -38,8 +38,9 @@ Git 기준:
 | Info | `InfoPostFile` | `info_post_files` | `file_id` | `post_id` | 없음 | `originalFileName`, `storedFileName`, `objectKey`, `fileUrl`, `fileSize`, `post_id` not null. `contentType` nullable, length 100 |
 | Info | `InfoComment` | `info_comments` | `comment_id` | `post_id`, `author_id` | 없음 | `content`, `post_id`, `author_id`, `createdAt` not null. `updatedAt` nullable |
 | Notice | `Notice` | `notices` | `noticeId` | 없음 | 없음 | `title`, `content`, `createdAt`, `updatedAt` not null. `authorId` nullable scalar, User FK 아님 |
-| Notice | `NoticeFile` | `notice_files` | `notice_file_id` | `notice_id` | 없음 | `originalFileName`, `fileUrl` not null. `fileUrl` length 500 |
-| Photo | `PhotoPost` | `photo_posts` | `albumId` | 없음 | 없음 | `eventName`, `activityDate` not null. `description` nullable. 이미지 URL은 `photo_post_images` ElementCollection |
+| Notice | `NoticeFile` | `notice_files` | `notice_file_id` | `notice_id` | 없음 | 현재 Entity는 `originalFileName`, `fileUrl` 중심. DB 기준은 파일 메타데이터 추가 |
+| Photo | `PhotoPost` | `photo_posts` | `albumId` | 없음 | 없음 | `eventName`, `activityDate` not null. `description` nullable |
+| Photo | Photo image | `photo_post_images` | DB 기준 `image_id` | `album_id` | 없음 | 현재 Entity는 `image_url` ElementCollection. DB 기준은 이미지 메타데이터 테이블 |
 | Photo | `PhotoComment` | `photo_comments` | `commentId` | `album_id`, `author_id` | 없음 | `content`, `album_id`, `author_id`, `createdAt` not null. `updatedAt` nullable |
 
 ## 3. ERD와 Entity가 일치하는 항목
@@ -70,9 +71,9 @@ Git 기준:
 | `archive_files.created_at` nullable | `@Column` 없음, 생성자에서 설정 | ERD상 생성 일시 | DB에서는 not null 권장, Entity 명시 추천 |
 | `notices.author_id` 관계 | scalar `Long authorId`, FK 아님 | ERD는 User 작성 관계를 표현하나 현재 코드상 FK 아님 | 현재 코드 유지 또는 FK 전환 결정 필요 |
 | `notice_files` 구조 | 별도 `NoticeFile` Entity | ERD상 `notice_files` 테이블 | develop 최신 구조와 일치 |
-| `notice_files` 메타데이터 | `originalFileName`, `fileUrl`만 있음 | 파일 메타데이터 확장 가능 | `object_key`, `file_size`, `content_type` 추가 여부 미확정/주의 필요 |
+| `notice_files` 메타데이터 | `originalFileName`, `fileUrl`만 있음 | DB 기준은 `stored_file_name`, `object_key`, `file_size`, `content_type`, `created_at` 포함 | Java Entity 반영 필요 |
 | Photo 테이블명 | `photo_posts`, `photo_post_images`, `photo_comments` | develop 코드 기준으로 ERD 문서/SQL 초안도 맞춤 | 일치 |
-| Photo 이미지 메타데이터 | `photo_post_images.image_url`만 있음 | 파일 정책상 `object_key`, `file_size`, `content_type` 검토 가능 | 미확정/주의 필요 |
+| Photo 이미지 메타데이터 | `photo_post_images.image_url`만 있음 | DB 기준은 `PhotoImage` 성격의 메타데이터 테이블 | Java Entity 반영 필요 |
 | `legacy_migration_maps` | Entity 없음 | 선택 테이블 후보 | SQL 초안에는 포함, Java Entity는 추후 결정 |
 
 ## 5. 수정 추천 항목
@@ -80,8 +81,8 @@ Git 기준:
 아래 항목은 추후 백엔드 수정 후보이다. MariaDB 검증 과정에서 일부 매핑 항목은 이미 반영했다.
 
 1. `ArchiveFile.createdAt`에 `nullable = false, updatable = false` 명시 검토
-2. `NoticeFile`에 `object_key`, `file_size`, `content_type` 같은 파일 메타데이터를 추가할지 검토
-3. Photo 이미지 저장 구조를 현재 `photo_post_images.image_url`만 유지할지, `object_key`, `file_size`, `content_type`을 포함한 별도 Entity로 확장할지 검토
+2. 백엔드팀에서 `NoticeFile` Entity에 `storedFileName`, `objectKey`, `fileSize`, `contentType`, `createdAt` 매핑 반영 필요
+3. 백엔드팀에서 Photo 이미지를 `image_url` ElementCollection이 아니라 메타데이터를 가진 별도 Entity로 전환 필요
 4. `legacy_migration_maps`를 실제 운영 테이블로 사용할 경우 별도 Entity 또는 마이그레이션 전용 SQL/CSV 관리 방식 결정
 
 ## 6. 미확정/주의 필요 항목
@@ -90,9 +91,9 @@ Git 기준:
 |---|---|
 | `file_url` 저장 방식 | 현재 코드에 있으므로 SQL 초안에는 포함. 장기적으로 `object_key` 기반 생성 검토 |
 | 마이그레이션 족보 `author_id` | 기존 users 미이전. `migration admin` 계정 연결을 우선 가정 |
-| `notice_files` 구조 | 최신 develop 기준 별도 `NoticeFile` Entity로 변경됨. 파일 메타데이터 확장 여부는 미확정 |
+| `notice_files` 구조 | DB 기준은 파일 메타데이터 포함. Java Entity 반영 필요 |
 | `legacy_migration_maps` | SQL 초안에는 포함. 실제 운영 테이블로 둘지 CSV 추적으로 둘지는 미확정 |
-| Photo 이미지 저장 | 테이블명은 develop 코드 기준으로 정리 완료. 다만 이미지 파일 메타데이터 저장 여부는 주의 필요 |
+| Photo 이미지 저장 | DB 기준은 파일 메타데이터 포함. Java Entity 반영 필요 |
 | `RefreshToken.loginId` | 현재 FK 없이 문자열 저장. 장기적으로 `user_id` FK 구조 검토 가능 |
 | `Notice.authorId` | 현재 FK 없이 scalar 저장. User FK 전환 여부 주의 필요 |
 | 레거시 `files.download` 이전 | `archive_files.download_count`로 이전 가능하나 실제 이전 정책 확인 필요 |

@@ -198,7 +198,12 @@ erDiagram
         BIGINT notice_file_id PK "AUTO_INCREMENT"
         BIGINT notice_id FK "공지사항 ID"
         VARCHAR original_file_name "원본 파일명"
+        VARCHAR stored_file_name "서버 저장 파일명"
+        VARCHAR object_key "로컬 저장소 내부 key/path"
         VARCHAR file_url "파일 URL"
+        BIGINT file_size "파일 크기"
+        VARCHAR content_type "MIME 타입"
+        DATETIME created_at "생성 일시"
     }
 
     PHOTO_POSTS {
@@ -209,9 +214,16 @@ erDiagram
     }
 
     PHOTO_POST_IMAGES {
+        BIGINT image_id PK "AUTO_INCREMENT"
         BIGINT album_id FK "소속 사진첩 ID"
+        VARCHAR original_file_name "원본 이미지명"
+        VARCHAR stored_file_name "서버 저장 이미지명"
+        VARCHAR object_key "로컬 저장소 내부 key/path"
+        VARCHAR file_url "이미지 URL"
+        BIGINT file_size "파일 크기"
+        VARCHAR content_type "MIME 타입"
         INT upload_order "업로드 순서"
-        VARCHAR image_url "이미지 URL"
+        DATETIME created_at "생성 일시"
     }
 
     PHOTO_COMMENTS {
@@ -353,8 +365,8 @@ UNIQUE (subject_name, professor_name)
 주의 사항:
 
 - 최신 develop 기준 백엔드 코드는 별도 `NoticeFile` Entity 구조이다.
-- 현재 구현 컬럼은 `original_file_name`, `file_url` 중심이다.
-- `object_key`, `file_size`, `content_type` 같은 추가 파일 메타데이터가 필요한지는 추후 검토한다.
+- DB 기준은 `original_file_name`, `stored_file_name`, `object_key`, `file_url`, `file_size`, `content_type`, `created_at`을 저장하는 구조이다.
+- 현재 Java Entity 반영은 백엔드팀 작업 범위이다.
 
 ### PHOTO_POSTS / PHOTO_POST_IMAGES / PHOTO_COMMENTS
 
@@ -363,8 +375,8 @@ UNIQUE (subject_name, professor_name)
 주의 사항:
 
 - 최신 develop 코드 기준 테이블명은 `photo_posts`, `photo_post_images`, `photo_comments`이다.
-- `photo_post_images`는 별도 이미지 Entity가 아니라 `PhotoPost.imageUrls`의 `@ElementCollection` 구조이다.
-- 현재 구현은 이미지 메타데이터 없이 `image_url`만 저장한다.
+- DB 기준으로 `photo_post_images`는 이미지별 메타데이터를 저장하는 테이블이다.
+- 현재 Java 구현은 `PhotoPost.imageUrls`의 `@ElementCollection` 구조이므로, 백엔드팀에서 별도 이미지 Entity 매핑 반영이 필요하다.
 
 ### LEGACY_MIGRATION_MAPS
 
