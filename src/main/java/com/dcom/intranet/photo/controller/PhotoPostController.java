@@ -6,19 +6,28 @@ import com.dcom.intranet.photo.dto.PhotoCommentCreateResponse;
 import com.dcom.intranet.photo.dto.PhotoCommentDeleteResponse;
 import com.dcom.intranet.photo.dto.PhotoCommentUpdateResponse;
 import com.dcom.intranet.photo.dto.PhotoPostCreateResponse;
+import com.dcom.intranet.photo.dto.PhotoPostCreateRequest;
 import com.dcom.intranet.photo.dto.PhotoPostDeleteResponse;
 import com.dcom.intranet.photo.dto.PhotoPostDetailResponse;
 import com.dcom.intranet.photo.dto.PhotoPostListResponse;
+import com.dcom.intranet.photo.dto.PhotoPostUpdateRequest;
+import com.dcom.intranet.photo.dto.swagger.PhotoPostCreateMultipartRequest;
+import com.dcom.intranet.photo.dto.swagger.PhotoPostUpdateMultipartRequest;
 import com.dcom.intranet.photo.service.PhotoPostService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Encoding;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Valid;
+import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -39,9 +48,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Set;
 
 import static org.springframework.data.domain.Sort.Direction.DESC;
 
@@ -225,6 +233,8 @@ public class PhotoPostController {
             """;
 
     private final PhotoPostService photoPostService;
+    private final ObjectMapper objectMapper;
+    private final Validator validator;
 
     @Operation(summary = "사진첩 목록 조회", description = "사진첩 목록을 조회합니다. 대표 이미지는 첫 번째 업로드 사진이며, 기본 페이지 크기는 8개입니다.")
     @ApiResponses({
@@ -253,7 +263,18 @@ public class PhotoPostController {
         return ResponseEntity.ok(CommonResponse.success(photoPostService.getPhotoPostDetail(albumId)));
     }
 
-    @Operation(summary = "사진첩 등록", description = "사진첩을 등록합니다. ADMIN만 등록할 수 있으며 요청 형식은 multipart/form-data입니다.")
+    @Operation(
+            summary = "사진첩 등록",
+            description = "사진첩을 등록합니다. ADMIN만 등록할 수 있으며 요청 형식은 multipart/form-data입니다. 첫 번째 사진이 대표 사진으로 사용됩니다.",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    required = true,
+                    content = @Content(
+                            mediaType = MediaType.MULTIPART_FORM_DATA_VALUE,
+                            schema = @Schema(implementation = PhotoPostCreateMultipartRequest.class),
+                            encoding = @Encoding(name = "request", contentType = MediaType.APPLICATION_JSON_VALUE)
+                    )
+            )
+    )
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "등록 성공", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = CommonResponse.class), examples = @ExampleObject(value = PHOTO_SAVE_SUCCESS_EXAMPLE))),
             @ApiResponse(responseCode = "400", description = "잘못된 요청", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = CommonResponse.class), examples = @ExampleObject(value = BAD_REQUEST_400_EXAMPLE))),
@@ -263,24 +284,35 @@ public class PhotoPostController {
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<CommonResponse<PhotoPostCreateResponse>> createPhotoPost(
-            @RequestPart("eventName") String eventName,
-            @RequestPart("activityDate") String activityDate,
-            @RequestPart("coverImage") MultipartFile coverImage,
-            @RequestPart(value = "images", required = false) List<MultipartFile> images,
-            @RequestPart(value = "description", required = false) String description
+            @RequestPart("request") String requestJson,
+            @Parameter(description = "사진 목록. 첫 번째 사진이 대표 사진으로 사용됩니다.")
+            @RequestPart("files") List<MultipartFile> files
     ) {
+        PhotoPostCreateRequest request = parseCreateRequest(requestJson);
         PhotoPostCreateResponse response = photoPostService.createPhotoPost(
-                eventName,
-                parseActivityDate(activityDate),
-                coverImage,
-                images,
-                description
+                request,
+                files
         );
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(CommonResponse.success(201, "사진첩이 등록되었습니다.", response));
     }
 
-    @Operation(summary = "사진첩 수정", description = "사진첩을 수정합니다. ADMIN만 수정할 수 있으며 요청 형식은 multipart/form-data입니다.")
+    @Operation(
+            summary = "사진첩 수정",
+            description = """
+                    사진첩을 수정합니다. ADMIN만 수정할 수 있으며 요청 형식은 multipart/form-data입니다.
+                    files를 전달하면 기존 사진 전체를 교체하고, 첫 번째 사진이 대표 사진으로 사용됩니다.
+                    files를 생략하면 기존 사진을 유지하고 행사명, 활동일자, 설명만 수정합니다.
+                    """,
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    required = true,
+                    content = @Content(
+                            mediaType = MediaType.MULTIPART_FORM_DATA_VALUE,
+                            schema = @Schema(implementation = PhotoPostUpdateMultipartRequest.class),
+                            encoding = @Encoding(name = "request", contentType = MediaType.APPLICATION_JSON_VALUE)
+                    )
+            )
+    )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "수정 성공", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = CommonResponse.class), examples = @ExampleObject(value = PHOTO_UPDATE_SUCCESS_200_EXAMPLE))),
             @ApiResponse(responseCode = "400", description = "잘못된 요청", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = CommonResponse.class), examples = @ExampleObject(value = BAD_REQUEST_400_EXAMPLE))),
@@ -293,19 +325,15 @@ public class PhotoPostController {
     public ResponseEntity<CommonResponse<PhotoPostCreateResponse>> updatePhotoPost(
             @Parameter(description = "사진첩 ID", example = "1")
             @PathVariable Long albumId,
-            @RequestPart("eventName") String eventName,
-            @RequestPart("activityDate") String activityDate,
-            @RequestPart("coverImage") MultipartFile coverImage,
-            @RequestPart(value = "images", required = false) List<MultipartFile> images,
-            @RequestPart(value = "description", required = false) String description
+            @RequestPart("request") String requestJson,
+            @Parameter(description = "새 사진 목록. 전달하면 기존 사진 전체를 교체합니다.")
+            @RequestPart(value = "files", required = false) List<MultipartFile> files
     ) {
+        PhotoPostUpdateRequest request = parseUpdateRequest(requestJson);
         PhotoPostCreateResponse response = photoPostService.updatePhotoPost(
                 albumId,
-                eventName,
-                parseActivityDate(activityDate),
-                coverImage,
-                images,
-                description
+                request,
+                files
         );
         return ResponseEntity.ok(CommonResponse.success(response));
     }
@@ -398,14 +426,38 @@ public class PhotoPostController {
         return ResponseEntity.ok(CommonResponse.success(response));
     }
 
-    private LocalDate parseActivityDate(String activityDate) {
+    private PhotoPostCreateRequest parseCreateRequest(String requestJson) {
         try {
-            return LocalDate.parse(activityDate);
-        } catch (DateTimeParseException e) {
+            PhotoPostCreateRequest request = objectMapper.readValue(requestJson, PhotoPostCreateRequest.class);
+            return validateRequest(request);
+        } catch (JsonProcessingException e) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "activityDate는 yyyy-MM-dd 형식이어야 합니다."
+                    "request JSON 형식이 올바르지 않습니다."
             );
         }
+    }
+
+    private PhotoPostUpdateRequest parseUpdateRequest(String requestJson) {
+        try {
+            PhotoPostUpdateRequest request = objectMapper.readValue(requestJson, PhotoPostUpdateRequest.class);
+            return validateRequest(request);
+        } catch (JsonProcessingException e) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "request JSON 형식이 올바르지 않습니다."
+            );
+        }
+    }
+
+    private <T> T validateRequest(T request) {
+        Set<ConstraintViolation<T>> violations = validator.validate(request);
+        if (!violations.isEmpty()) {
+            String message = violations.iterator()
+                    .next()
+                    .getMessage();
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
+        }
+        return request;
     }
 }

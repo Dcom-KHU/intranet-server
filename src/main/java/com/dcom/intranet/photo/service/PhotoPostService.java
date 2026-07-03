@@ -7,10 +7,12 @@ import com.dcom.intranet.photo.domain.PhotoPost;
 import com.dcom.intranet.photo.dto.PhotoCommentCreateResponse;
 import com.dcom.intranet.photo.dto.PhotoCommentDeleteResponse;
 import com.dcom.intranet.photo.dto.PhotoCommentUpdateResponse;
+import com.dcom.intranet.photo.dto.PhotoPostCreateRequest;
 import com.dcom.intranet.photo.dto.PhotoPostCreateResponse;
 import com.dcom.intranet.photo.dto.PhotoPostDeleteResponse;
 import com.dcom.intranet.photo.dto.PhotoPostDetailResponse;
 import com.dcom.intranet.photo.dto.PhotoPostListResponse;
+import com.dcom.intranet.photo.dto.PhotoPostUpdateRequest;
 import com.dcom.intranet.photo.repository.PhotoCommentRepository;
 import com.dcom.intranet.photo.repository.PhotoPostRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +24,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -61,18 +62,15 @@ public class PhotoPostService {
 
     @Transactional
     public PhotoPostCreateResponse createPhotoPost(
-            String eventName,
-            LocalDate activityDate,
-            MultipartFile coverImage,
-            List<MultipartFile> images,
-            String description
+            PhotoPostCreateRequest request,
+            List<MultipartFile> files
     ) {
-        List<String> imageUrls = storeImages(coverImage, images);
+        List<String> imageUrls = storeImages(files);
 
         PhotoPost photoPost = new PhotoPost(
-                eventName,
-                activityDate,
-                description,
+                request.eventName(),
+                request.activityDate(),
+                request.description(),
                 imageUrls
         );
 
@@ -83,11 +81,8 @@ public class PhotoPostService {
     @Transactional
     public PhotoPostCreateResponse updatePhotoPost(
             Long albumId,
-            String eventName,
-            LocalDate activityDate,
-            MultipartFile coverImage,
-            List<MultipartFile> images,
-            String description
+            PhotoPostUpdateRequest request,
+            List<MultipartFile> files
     ) {
         PhotoPost photoPost = photoPostRepository.findById(albumId)
                 .orElseThrow(() -> new ResponseStatusException(
@@ -95,14 +90,19 @@ public class PhotoPostService {
                         "사진첩을 찾을 수 없습니다."
                 ));
 
-        List<String> imageUrls = storeImages(coverImage, images);
-
         photoPost.update(
-                eventName,
-                activityDate,
-                description,
-                imageUrls
+                request.eventName(),
+                request.activityDate(),
+                request.description()
         );
+
+        if (hasFiles(files)) {
+            List<String> oldImageUrls = new ArrayList<>(photoPost.getImageUrls());
+            List<String> newImageUrls = storeImages(files);
+
+            photoPost.replaceImages(newImageUrls);
+            oldImageUrls.forEach(photoPostFileStorageService::delete);
+        }
 
         return PhotoPostCreateResponse.from(photoPost);
     }
@@ -119,7 +119,7 @@ public class PhotoPostService {
         photoPostRepository.delete(photoPost);
         imagePaths.forEach(path -> {
             try {
-                photoPostFileStorageService.deleteByPath(path);
+                photoPostFileStorageService.delete(path);
             } catch (Exception e) {
                 // 파일 삭제 실패해도 DB는 이미 삭제됨
                 System.err.println("파일 삭제 실패: " + path);
@@ -218,18 +218,29 @@ public class PhotoPostService {
         }
     }
 
-    private List<String> storeImages(MultipartFile coverImage, List<MultipartFile> images) {
-        List<String> imageUrls = new ArrayList<>();
-        imageUrls.add(photoPostFileStorageService.store(coverImage).getFileUrl());
-
-        if (images != null) {
-            images.stream()
-                    .filter(image -> image != null && !image.isEmpty())
-                    .map(photoPostFileStorageService::store)
-                    .map(PhotoPostFileStorageService.StoredFile::getFileUrl)
-                    .forEach(imageUrls::add);
+    private List<String> storeImages(List<MultipartFile> files) {
+        if (!hasFiles(files)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "사진은 최소 1개 이상 필요합니다."
+            );
         }
 
-        return imageUrls;
+        List<String> imageUrls = files.stream()
+                .filter(file -> file != null && !file.isEmpty())
+                .map(photoPostFileStorageService::store)
+                .map(PhotoPostFileStorageService.StoredFile::getFileUrl)
+                .toList();
+
+        return new ArrayList<>(imageUrls);
+    }
+
+    private boolean hasFiles(List<MultipartFile> files) {
+        if (files == null || files.isEmpty()) {
+            return false;
+        }
+
+        return files.stream()
+                .anyMatch(file -> file != null && !file.isEmpty());
     }
 }

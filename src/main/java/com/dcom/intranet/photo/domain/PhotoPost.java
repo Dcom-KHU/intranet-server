@@ -83,21 +83,24 @@ public class PhotoPost {
     }
 
     public List<String> getImageUrls() {
-        return Collections.unmodifiableList(imageUrls);
+        return imageUrls == null ? List.of() : List.copyOf(imageUrls);
     }
 
     public List<PhotoComment> getComments() {
-        return Collections.unmodifiableList(comments);
+        return comments == null ? List.of() : List.copyOf(comments);
     }
 
     public String getCoverImageUrl() {
         return imageUrls.isEmpty() ? null : imageUrls.get(0);
     }
 
-    public void update(String eventName, LocalDate activityDate, String description, List<String> imageUrls) {
+    public void update(String eventName, LocalDate activityDate, String description) {
         this.eventName = eventName;
         this.activityDate = activityDate;
         this.description = description == null ? "" : description;
+    }
+
+    public void replaceImages(List<String> imageUrls) {
         this.imageUrls.clear();
         if (imageUrls != null) {
             this.imageUrls.addAll(imageUrls);
