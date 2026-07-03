@@ -6,7 +6,10 @@ import com.dcom.intranet.notice.dto.NoticeCreateResponse;
 import com.dcom.intranet.notice.dto.NoticeDeleteResponse;
 import com.dcom.intranet.notice.dto.NoticeDetailResponse;
 import com.dcom.intranet.notice.dto.NoticeListResponse;
+import com.dcom.intranet.notice.dto.NoticeUpdateRequest;
 import com.dcom.intranet.notice.dto.NoticeUpdateResponse;
+import com.dcom.intranet.notice.dto.swagger.NoticeCreateMultipartRequest;
+import com.dcom.intranet.notice.dto.swagger.NoticeUpdateMultipartRequest;
 import com.dcom.intranet.notice.service.NoticeService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -92,7 +95,8 @@ public class NoticeController {
                 "createdAt": "2026-07-03T12:00:00",
                 "files": [
                   {
-                    "fileName": "notice.pdf",
+                    "fileId": 1,
+                    "originalFileName": "notice.pdf",
                     "fileUrl": "/uploads/notice/2026/07/notice.pdf"
                   }
                 ]
@@ -214,7 +218,7 @@ public class NoticeController {
                     required = true,
                     content = @Content(
                             mediaType = MediaType.MULTIPART_FORM_DATA_VALUE,
-                            schema = @Schema(implementation = NoticeCreateRequest.class),
+                            schema = @Schema(implementation = NoticeCreateMultipartRequest.class),
                             encoding = @Encoding(name = "request", contentType = MediaType.APPLICATION_JSON_VALUE)
                     )
             )
@@ -241,12 +245,16 @@ public class NoticeController {
 
     @Operation(
             summary = "공지사항 수정",
-            description = "공지사항을 수정합니다. ADMIN만 수정할 수 있으며, 첨부파일은 선택입니다.",
+            description = """
+                    공지사항을 수정합니다. ADMIN만 수정할 수 있으며, 첨부파일은 선택입니다.
+                    기존 파일 중 삭제할 파일은 request.deleteFileIds에 담습니다.
+                    files가 있으면 기존 파일을 유지한 상태에서 새 파일이 추가됩니다.
+                    """,
             requestBody = @RequestBody(
                     required = true,
                     content = @Content(
                             mediaType = MediaType.MULTIPART_FORM_DATA_VALUE,
-                            schema = @Schema(implementation = NoticeCreateRequest.class),
+                            schema = @Schema(implementation = NoticeUpdateMultipartRequest.class),
                             encoding = @Encoding(name = "request", contentType = MediaType.APPLICATION_JSON_VALUE)
                     )
             )
@@ -267,7 +275,7 @@ public class NoticeController {
             @Parameter(description = "첨부파일 목록")
             @RequestPart(value = "files", required = false) List<MultipartFile> files
     ) {
-        NoticeCreateRequest request = parseRequest(requestJson);
+        NoticeUpdateRequest request = parseUpdateRequest(requestJson);
         return ResponseEntity.ok(CommonResponse.success(
                 200,
                 "공지사항이 수정되었습니다.",
@@ -294,6 +302,18 @@ public class NoticeController {
     private NoticeCreateRequest parseRequest(String requestJson) {
         try {
             NoticeCreateRequest request = objectMapper.readValue(requestJson, NoticeCreateRequest.class);
+            return validateRequest(request);
+        } catch (JsonProcessingException e) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "request JSON 형식이 올바르지 않습니다."
+            );
+        }
+    }
+
+    private NoticeUpdateRequest parseUpdateRequest(String requestJson) {
+        try {
+            NoticeUpdateRequest request = objectMapper.readValue(requestJson, NoticeUpdateRequest.class);
             return validateRequest(request);
         } catch (JsonProcessingException e) {
             throw new ResponseStatusException(
