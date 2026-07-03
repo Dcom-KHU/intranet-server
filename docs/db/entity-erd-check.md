@@ -17,8 +17,8 @@ Git 기준:
 
 - 작업 브랜치: `feature/database`
 - PR 대상 브랜치: `develop`
-- 로컬 `origin/develop` 대비 차이: `0 ahead / 0 behind`
-- 주의: 원격 최신 상태는 별도 fetch 승인 없이 로컬 원격 추적 브랜치 기준으로 확인했다.
+- 2026-07-04 기준 `origin/develop` 최신 변경사항을 `feature/database`에 병합했다.
+- 병합 중 `README.md`, `Notice`, `MyPageControllerTest` 충돌을 해결했다.
 
 ## 2. 현재 Entity 분석 요약
 
@@ -38,8 +38,9 @@ Git 기준:
 | Info | `InfoPostFile` | `info_post_files` | `file_id` | `post_id` | 없음 | `originalFileName`, `storedFileName`, `objectKey`, `fileUrl`, `fileSize`, `post_id` not null. `contentType` nullable, length 100 |
 | Info | `InfoComment` | `info_comments` | `comment_id` | `post_id`, `author_id` | 없음 | `content`, `post_id`, `author_id`, `createdAt` not null. `updatedAt` nullable |
 | Notice | `Notice` | `notices` | `noticeId` | 없음 | 없음 | `title`, `content`, `createdAt`, `updatedAt` not null. `authorId` nullable scalar, User FK 아님 |
-| Notice | `Notice.NoticeFile` | `@ElementCollection` | 별도 PK 없음 | JPA collection table 자동 생성 | 없음 | `fileName`, `fileUrl` not null. 파일 메타데이터 컬럼 없음 |
-| Photo | - | - | - | - | - | Photo Album domain Entity 미구현. `home/dto/PhotoAlbumSummaryResponse`만 확인됨 |
+| Notice | `NoticeFile` | `notice_files` | `notice_file_id` | `notice_id` | 없음 | `originalFileName`, `fileUrl` not null. `fileUrl` length 500 |
+| Photo | `PhotoPost` | `photo_posts` | `albumId` | 없음 | 없음 | `eventName`, `activityDate` not null. `description` nullable. 이미지 URL은 `photo_post_images` ElementCollection |
+| Photo | `PhotoComment` | `photo_comments` | `commentId` | `album_id`, `author_id` | 없음 | `content`, `album_id`, `author_id`, `createdAt` not null. `updatedAt` nullable |
 
 ## 3. ERD와 Entity가 일치하는 항목
 
@@ -68,11 +69,11 @@ Git 기준:
 |---|---|---|---|
 | `archive_files.created_at` nullable | `@Column` 없음, 생성자에서 설정 | ERD상 생성 일시 | DB에서는 not null 권장, Entity 명시 추천 |
 | `notices.author_id` 관계 | scalar `Long authorId`, FK 아님 | ERD는 User 작성 관계를 표현하나 현재 코드상 FK 아님 | 현재 코드 유지 또는 FK 전환 결정 필요 |
-| `notice_files` 구조 | `Notice.NoticeFile` `@ElementCollection` | ERD상 `notice_files` 테이블 | MVP는 현재 코드 기준 유지, 장기 Entity 분리 검토 |
-| `notice_files` 메타데이터 | `fileName`, `fileUrl`만 있음 | 파일 메타데이터 확장 가능 | 미확정/주의 필요 |
-| `photo_albums` | Entity 없음 | ERD 기준 테이블 존재 | 구현 전 선설계 |
-| `photo_images` | Entity 없음 | ERD 기준 테이블 존재 | 구현 전 선설계 |
-| `photo_comments` | Entity 없음 | ERD 기준 테이블 존재 | 구현 전 선설계 |
+| `notice_files` 구조 | 별도 `NoticeFile` Entity | ERD상 `notice_files` 테이블 | develop 최신 구조와 일치 |
+| `notice_files` 메타데이터 | `originalFileName`, `fileUrl`만 있음 | 파일 메타데이터 확장 가능 | `object_key`, `file_size`, `content_type` 추가 여부 미확정/주의 필요 |
+| `photo_albums` | `photo_posts` | ERD 기준 테이블명 `photo_albums` | develop 최신 코드와 ERD 초안의 테이블명 불일치 |
+| `photo_images` | `photo_post_images` ElementCollection | ERD 기준 별도 `photo_images` 테이블 | 이미지 메타데이터 없이 URL만 저장 |
+| `photo_comments` | `photo_comments` | ERD 기준 테이블 존재 | 테이블명은 일치, 부모 FK는 코드상 `photo_posts(album_id)` 기준 |
 | `legacy_migration_maps` | Entity 없음 | 선택 테이블 후보 | SQL 초안에는 포함, Java Entity는 추후 결정 |
 
 ## 5. 수정 추천 항목
@@ -80,8 +81,8 @@ Git 기준:
 아래 항목은 추후 백엔드 수정 후보이다. MariaDB 검증 과정에서 일부 매핑 항목은 이미 반영했다.
 
 1. `ArchiveFile.createdAt`에 `nullable = false, updatable = false` 명시 검토
-2. `NoticeFile`을 MVP 동안 `ElementCollection`으로 유지할지, 별도 Entity로 분리할지 결정 후 반영
-3. Photo Album 기능 구현 시 `photo_albums`, `photo_images`, `photo_comments` Entity 신규 작성
+2. `NoticeFile`에 `object_key`, `file_size`, `content_type` 같은 파일 메타데이터를 추가할지 검토
+3. Photo 도메인의 테이블명을 ERD 기준 `photo_albums/photo_images`로 맞출지, 현재 develop 코드 기준 `photo_posts/photo_post_images`를 유지할지 결정
 4. `legacy_migration_maps`를 실제 운영 테이블로 사용할 경우 별도 Entity 또는 마이그레이션 전용 SQL/CSV 관리 방식 결정
 
 ## 6. 미확정/주의 필요 항목
@@ -90,9 +91,9 @@ Git 기준:
 |---|---|
 | `file_url` 저장 방식 | 현재 코드에 있으므로 SQL 초안에는 포함. 장기적으로 `object_key` 기반 생성 검토 |
 | 마이그레이션 족보 `author_id` | 기존 users 미이전. `migration admin` 계정 연결을 우선 가정 |
-| `notice_files` 구조 | MVP는 현재 코드의 `ElementCollection` 기준. 파일 메타데이터 확장이 필요하면 Entity 분리 |
+| `notice_files` 구조 | 최신 develop 기준 별도 `NoticeFile` Entity로 변경됨. 파일 메타데이터 확장 여부는 미확정 |
 | `legacy_migration_maps` | SQL 초안에는 포함. 실제 운영 테이블로 둘지 CSV 추적으로 둘지는 미확정 |
-| Photo Album | Entity 미구현. SQL 초안은 ERD 기준 선설계 |
+| Photo Album | 최신 develop에는 `PhotoPost`, `PhotoComment`, `photo_post_images`가 구현됨. ERD 초안의 `photo_albums`, `photo_images`와 이름/구조 차이 주의 필요 |
 | `RefreshToken.loginId` | 현재 FK 없이 문자열 저장. 장기적으로 `user_id` FK 구조 검토 가능 |
 | `Notice.authorId` | 현재 FK 없이 scalar 저장. User FK 전환 여부 주의 필요 |
 | 레거시 `files.download` 이전 | `archive_files.download_count`로 이전 가능하나 실제 이전 정책 확인 필요 |
@@ -109,5 +110,5 @@ Git 기준:
 - `archive_records.exam_year`, `semester`, `exam_type`은 NULL 허용으로 작성한다.
 - `archives(subject_name, professor_name)` 복합 unique를 포함한다.
 - 파일 바이너리나 실제 사용자 데이터는 포함하지 않는다.
-- 코드에 구현되지 않은 Photo Album 테이블은 ERD 기준 선설계 주석을 남긴다.
+- Photo 관련 SQL은 최신 develop 코드 기준 `photo_posts`, `photo_post_images`, `photo_comments`를 우선 반영하고, ERD 초안과의 이름 차이는 주석으로 남긴다.
 - 미확정 항목은 SQL 주석 `-- REVIEW:` 또는 `-- TODO:`로 표시한다.

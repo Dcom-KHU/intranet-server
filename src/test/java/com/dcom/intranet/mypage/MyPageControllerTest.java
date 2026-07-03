@@ -1,21 +1,24 @@
 package com.dcom.intranet.mypage;
 
 import com.dcom.intranet.jwt.JwtTokenProvider;
-import com.dcom.intranet.mypage.dto.MyWrittenCommentDeleteResponse;
-import com.dcom.intranet.mypage.dto.MyWrittenCommentListResponse;
-import com.dcom.intranet.mypage.dto.MyWrittenCommentResponse;
-import com.dcom.intranet.mypage.dto.MyWrittenCommentTargetResponse;
-import com.dcom.intranet.mypage.dto.MyWrittenPostDeleteResponse;
-import com.dcom.intranet.mypage.dto.MyWrittenPostListResponse;
-import com.dcom.intranet.mypage.dto.MyWrittenPostResponse;
-import com.dcom.intranet.mypage.dto.MyWrittenPostTargetResponse;
-import com.dcom.intranet.mypage.dto.PageInfoResponse;
-import com.dcom.intranet.auth.domain.EmailVerification;
 import com.dcom.intranet.auth.domain.User;
 import com.dcom.intranet.auth.domain.UserRole;
 import com.dcom.intranet.auth.domain.UserStatus;
-import com.dcom.intranet.auth.repository.EmailVerificationRepository;
 import com.dcom.intranet.auth.repository.UserRepository;
+import com.dcom.intranet.mypage.domain.EmailChangeVerification;
+import com.dcom.intranet.mypage.dto.response.PageInfoResponse;
+import com.dcom.intranet.mypage.dto.response.MyWrittenCommentDeleteResponse;
+import com.dcom.intranet.mypage.dto.response.MyWrittenCommentListResponse;
+import com.dcom.intranet.mypage.dto.response.MyWrittenCommentResponse;
+import com.dcom.intranet.mypage.dto.response.MyWrittenCommentTargetResponse;
+import com.dcom.intranet.mypage.dto.response.MyWrittenPostDeleteResponse;
+import com.dcom.intranet.mypage.dto.response.MyWrittenPostListResponse;
+import com.dcom.intranet.mypage.dto.response.MyWrittenPostResponse;
+import com.dcom.intranet.mypage.dto.response.MyWrittenPostTargetResponse;
+import com.dcom.intranet.mypage.exception.MyPageApiException;
+import com.dcom.intranet.mypage.repository.EmailChangeVerificationRepository;
+import com.dcom.intranet.mypage.service.MyWrittenCommentReader;
+import com.dcom.intranet.mypage.service.MyWrittenPostReader;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -27,15 +30,21 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.nullValue;
+import static org.mockito.ArgumentCaptor.forClass;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -62,10 +71,13 @@ class MyPageControllerTest {
     private UserRepository userRepository;
 
     @Autowired
-    private EmailVerificationRepository emailVerificationRepository;
+    private EmailChangeVerificationRepository emailVerificationRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private JavaMailSender mailSender;
 
     @Autowired
     private TestMyWrittenPostReader myWrittenPostReader;
@@ -77,6 +89,7 @@ class MyPageControllerTest {
     void setUp() {
         myWrittenPostReader.reset();
         myWrittenCommentReader.reset();
+        reset(mailSender);
         emailVerificationRepository.deleteAll();
         userRepository.deleteAll();
     }
@@ -208,13 +221,21 @@ class MyPageControllerTest {
                 .andExpect(jsonPath("$.data.expiresIn").value(300))
                 .andExpect(jsonPath("$.data.verificationCode").doesNotExist());
 
-        EmailVerification verification = emailVerificationRepository
+        EmailChangeVerification verification = emailVerificationRepository
                 .findTopByLoginIdAndEmailOrderByCreatedAtDesc("emailSend1", "new-email-send1@dcom.org")
                 .orElseThrow();
         assertThat(verification.getVerificationCode()).hasSize(6);
         assertThat(verification.getExpiresAt()).isAfter(LocalDateTime.now());
         assertThat(verification.isVerified()).isFalse();
         assertThat(verification.isUsed()).isFalse();
+
+        var messageCaptor = forClass(SimpleMailMessage.class);
+        verify(mailSender).send(messageCaptor.capture());
+        SimpleMailMessage message = messageCaptor.getValue();
+        assertThat(message.getTo()).containsExactly("new-email-send1@dcom.org");
+        assertThat(message.getSubject()).isEqualTo("[D.com Intranet] 이메일 인증 코드");
+        assertThat(message.getText()).contains("인증 코드 : " + verification.getVerificationCode());
+        assertThat(message.getText()).contains("5분 내로 입력해주세요.");
     }
 
     @Test
@@ -312,7 +333,7 @@ class MyPageControllerTest {
         String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
         String newEmail = "new-email-verify1@dcom.org";
 
-        requestEmailVerification(token, newEmail);
+        requestEmailChangeVerification(token, newEmail);
         String verificationCode = latestVerification(user.getLoginId(), newEmail).getVerificationCode();
 
         mockMvc.perform(post("/api/users/me/email/verification/verify")
@@ -332,7 +353,7 @@ class MyPageControllerTest {
                 .andExpect(jsonPath("$.data.message").value("이메일 변경 인증이 완료되었습니다."))
                 .andExpect(jsonPath("$.data.verifiedEmail").value(newEmail));
 
-        EmailVerification verification = latestVerification(user.getLoginId(), newEmail);
+        EmailChangeVerification verification = latestVerification(user.getLoginId(), newEmail);
         assertThat(verification.isVerified()).isTrue();
         assertThat(verification.getEmailChangeToken()).isNotBlank();
     }
@@ -344,7 +365,7 @@ class MyPageControllerTest {
         String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
         String newEmail = "new-email-verify2@dcom.org";
 
-        requestEmailVerification(token, newEmail);
+        requestEmailChangeVerification(token, newEmail);
 
         mockMvc.perform(post("/api/users/me/email/verification/verify")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
@@ -390,7 +411,7 @@ class MyPageControllerTest {
         User user = saveUser("emailVerify4", UserStatus.APPROVED, UserRole.USER);
         String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
         String newEmail = "new-email-verify4@dcom.org";
-        emailVerificationRepository.save(EmailVerification.create(
+        emailVerificationRepository.save(EmailChangeVerification.create(
                 user.getLoginId(),
                 newEmail,
                 "123456",
@@ -524,7 +545,7 @@ class MyPageControllerTest {
     void profileSettingsUpdateWithExpiredEmailChangeTokenReturns410CommonEnvelope() throws Exception {
         User user = saveUser("settings4", UserStatus.APPROVED, UserRole.USER);
         String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
-        EmailVerification verification = EmailVerification.create(
+        EmailChangeVerification verification = EmailChangeVerification.create(
                 user.getLoginId(),
                 "new-email-settings4@dcom.org",
                 "123456",
@@ -557,14 +578,12 @@ class MyPageControllerTest {
         String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
         String newEmail = "new-email-settings5@dcom.org";
         String emailChangeToken = verifiedEmailChangeToken(token, user.getLoginId(), newEmail);
-        userRepository.save(testUser(
+        userRepository.save(new User(
                 "settings5owner",
                 "encoded-password",
                 "이메일소유자",
                 "20995555",
                 newEmail,
-                UserStatus.APPROVED,
-                UserRole.USER,
                 "010-5555-0000"
         ));
 
@@ -1424,34 +1443,25 @@ class MyPageControllerTest {
     }
 
     private User saveUser(String loginId, UserStatus status, UserRole role) {
-        User user = testUser(
+        User user = new User(
                 loginId,
                 passwordEncoder.encode(CURRENT_PASSWORD),
                 "홍길동",
                 studentIdFor(loginId),
                 loginId + "@dcom.org",
-                status,
-                role,
                 "010-1234-5678"
         );
-
-        return userRepository.save(user);
-    }
-
-    private User testUser(String loginId, String password, String name,
-                          String studentId, String email, UserStatus status,
-                          UserRole role, String phoneNumber) {
-        User user = new User(loginId, password, name, studentId, email, phoneNumber);
         ReflectionTestUtils.setField(user, "status", status);
         ReflectionTestUtils.setField(user, "role", role);
-        return user;
+
+        return userRepository.save(user);
     }
 
     private String bearer(String token) {
         return "Bearer " + token;
     }
 
-    private void requestEmailVerification(String token, String newEmail) throws Exception {
+    private void requestEmailChangeVerification(String token, String newEmail) throws Exception {
         mockMvc.perform(post("/api/users/me/email/verification/send")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
@@ -1463,14 +1473,14 @@ class MyPageControllerTest {
                 .andExpect(status().isOk());
     }
 
-    private EmailVerification latestVerification(String loginId, String email) {
+    private EmailChangeVerification latestVerification(String loginId, String email) {
         return emailVerificationRepository
                 .findTopByLoginIdAndEmailOrderByCreatedAtDesc(loginId, email)
                 .orElseThrow();
     }
 
     private String verifiedEmailChangeToken(String token, String loginId, String newEmail) throws Exception {
-        requestEmailVerification(token, newEmail);
+        requestEmailChangeVerification(token, newEmail);
         String verificationCode = latestVerification(loginId, newEmail).getVerificationCode();
 
         mockMvc.perform(post("/api/users/me/email/verification/verify")
@@ -1485,6 +1495,16 @@ class MyPageControllerTest {
                 .andExpect(status().isOk());
 
         return latestVerification(loginId, newEmail).getEmailChangeToken();
+    }
+
+    @TestConfiguration
+    static class MailSenderTestConfig {
+
+        @Bean
+        @Primary
+        JavaMailSender javaMailSender() {
+            return mock(JavaMailSender.class);
+        }
     }
 
     @TestConfiguration

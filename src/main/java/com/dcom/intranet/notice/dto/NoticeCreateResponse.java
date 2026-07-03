@@ -7,7 +7,6 @@ import java.time.LocalDateTime;
 public record NoticeCreateResponse(
         Long noticeId,
         String title,
-        String content,
         LocalDateTime createdAt
 ) {
 
@@ -15,7 +14,6 @@ public record NoticeCreateResponse(
         return new NoticeCreateResponse(
                 notice.getNoticeId(),
                 notice.getTitle(),
-                notice.getContent(),
                 notice.getCreatedAt()
         );
     }
