@@ -201,27 +201,17 @@ erDiagram
         VARCHAR file_url "파일 URL"
     }
 
-    PHOTO_ALBUMS {
+    PHOTO_POSTS {
         BIGINT album_id PK "AUTO_INCREMENT"
-        BIGINT admin_id FK "작성 관리자 ID"
         VARCHAR event_name "행사명"
         DATE activity_date "활동 일자"
         LONGTEXT description "앨범 설명"
-        DATETIME created_at "작성 일시"
-        DATETIME updated_at "수정 일시"
     }
 
-    PHOTO_IMAGES {
-        BIGINT image_id PK "AUTO_INCREMENT"
+    PHOTO_POST_IMAGES {
         BIGINT album_id FK "소속 사진첩 ID"
-        VARCHAR original_file_name "원본 이미지명"
-        VARCHAR stored_file_name "서버 저장 이미지명"
-        VARCHAR object_key "로컬 저장소 내부 key/path"
-        VARCHAR file_url "이미지 접근 URL"
-        BIGINT file_size "파일 크기"
-        VARCHAR content_type "MIME 타입, 예: image/jpeg"
-        INT display_order "표시 순서"
-        DATETIME created_at "생성 일시"
+        INT upload_order "업로드 순서"
+        VARCHAR image_url "이미지 URL"
     }
 
     PHOTO_COMMENTS {
@@ -257,9 +247,8 @@ erDiagram
     USERS ||--o{ NOTICES : "writes"
     NOTICES ||--o{ NOTICE_FILES : "embeds"
 
-    USERS ||--o{ PHOTO_ALBUMS : "writes"
-    PHOTO_ALBUMS ||--o{ PHOTO_IMAGES : "has"
-    PHOTO_ALBUMS ||--o{ PHOTO_COMMENTS : "has"
+    PHOTO_POSTS ||--o{ PHOTO_POST_IMAGES : "has"
+    PHOTO_POSTS ||--o{ PHOTO_COMMENTS : "has"
     USERS ||--o{ PHOTO_COMMENTS : "writes"
 ```
 
@@ -367,14 +356,15 @@ UNIQUE (subject_name, professor_name)
 - 현재 구현 컬럼은 `original_file_name`, `file_url` 중심이다.
 - `object_key`, `file_size`, `content_type` 같은 추가 파일 메타데이터가 필요한지는 추후 검토한다.
 
-### PHOTO_ALBUMS / PHOTO_IMAGES / PHOTO_COMMENTS
+### PHOTO_POSTS / PHOTO_POST_IMAGES / PHOTO_COMMENTS
 
 활동 사진 앨범 관련 테이블이다.
 
 주의 사항:
 
-- 아직 구현 전일 수 있으므로 ERD 기준으로 선설계한다.
-- 대표 이미지는 별도 컬럼보다 `display_order`가 가장 앞선 이미지를 사용하는 방식을 우선 고려한다.
+- 최신 develop 코드 기준 테이블명은 `photo_posts`, `photo_post_images`, `photo_comments`이다.
+- `photo_post_images`는 별도 이미지 Entity가 아니라 `PhotoPost.imageUrls`의 `@ElementCollection` 구조이다.
+- 현재 구현은 이미지 메타데이터 없이 `image_url`만 저장한다.
 
 ### LEGACY_MIGRATION_MAPS
 

@@ -71,9 +71,8 @@ Git 기준:
 | `notices.author_id` 관계 | scalar `Long authorId`, FK 아님 | ERD는 User 작성 관계를 표현하나 현재 코드상 FK 아님 | 현재 코드 유지 또는 FK 전환 결정 필요 |
 | `notice_files` 구조 | 별도 `NoticeFile` Entity | ERD상 `notice_files` 테이블 | develop 최신 구조와 일치 |
 | `notice_files` 메타데이터 | `originalFileName`, `fileUrl`만 있음 | 파일 메타데이터 확장 가능 | `object_key`, `file_size`, `content_type` 추가 여부 미확정/주의 필요 |
-| `photo_albums` | `photo_posts` | ERD 기준 테이블명 `photo_albums` | develop 최신 코드와 ERD 초안의 테이블명 불일치 |
-| `photo_images` | `photo_post_images` ElementCollection | ERD 기준 별도 `photo_images` 테이블 | 이미지 메타데이터 없이 URL만 저장 |
-| `photo_comments` | `photo_comments` | ERD 기준 테이블 존재 | 테이블명은 일치, 부모 FK는 코드상 `photo_posts(album_id)` 기준 |
+| Photo 테이블명 | `photo_posts`, `photo_post_images`, `photo_comments` | develop 코드 기준으로 ERD 문서/SQL 초안도 맞춤 | 일치 |
+| Photo 이미지 메타데이터 | `photo_post_images.image_url`만 있음 | 파일 정책상 `object_key`, `file_size`, `content_type` 검토 가능 | 미확정/주의 필요 |
 | `legacy_migration_maps` | Entity 없음 | 선택 테이블 후보 | SQL 초안에는 포함, Java Entity는 추후 결정 |
 
 ## 5. 수정 추천 항목
@@ -82,7 +81,7 @@ Git 기준:
 
 1. `ArchiveFile.createdAt`에 `nullable = false, updatable = false` 명시 검토
 2. `NoticeFile`에 `object_key`, `file_size`, `content_type` 같은 파일 메타데이터를 추가할지 검토
-3. Photo 도메인의 테이블명을 ERD 기준 `photo_albums/photo_images`로 맞출지, 현재 develop 코드 기준 `photo_posts/photo_post_images`를 유지할지 결정
+3. Photo 이미지 저장 구조를 현재 `photo_post_images.image_url`만 유지할지, `object_key`, `file_size`, `content_type`을 포함한 별도 Entity로 확장할지 검토
 4. `legacy_migration_maps`를 실제 운영 테이블로 사용할 경우 별도 Entity 또는 마이그레이션 전용 SQL/CSV 관리 방식 결정
 
 ## 6. 미확정/주의 필요 항목
@@ -93,7 +92,7 @@ Git 기준:
 | 마이그레이션 족보 `author_id` | 기존 users 미이전. `migration admin` 계정 연결을 우선 가정 |
 | `notice_files` 구조 | 최신 develop 기준 별도 `NoticeFile` Entity로 변경됨. 파일 메타데이터 확장 여부는 미확정 |
 | `legacy_migration_maps` | SQL 초안에는 포함. 실제 운영 테이블로 둘지 CSV 추적으로 둘지는 미확정 |
-| Photo Album | 최신 develop에는 `PhotoPost`, `PhotoComment`, `photo_post_images`가 구현됨. ERD 초안의 `photo_albums`, `photo_images`와 이름/구조 차이 주의 필요 |
+| Photo 이미지 저장 | 테이블명은 develop 코드 기준으로 정리 완료. 다만 이미지 파일 메타데이터 저장 여부는 주의 필요 |
 | `RefreshToken.loginId` | 현재 FK 없이 문자열 저장. 장기적으로 `user_id` FK 구조 검토 가능 |
 | `Notice.authorId` | 현재 FK 없이 scalar 저장. User FK 전환 여부 주의 필요 |
 | 레거시 `files.download` 이전 | `archive_files.download_count`로 이전 가능하나 실제 이전 정책 확인 필요 |
@@ -110,5 +109,5 @@ Git 기준:
 - `archive_records.exam_year`, `semester`, `exam_type`은 NULL 허용으로 작성한다.
 - `archives(subject_name, professor_name)` 복합 unique를 포함한다.
 - 파일 바이너리나 실제 사용자 데이터는 포함하지 않는다.
-- Photo 관련 SQL은 최신 develop 코드 기준 `photo_posts`, `photo_post_images`, `photo_comments`를 우선 반영하고, ERD 초안과의 이름 차이는 주석으로 남긴다.
+- Photo 관련 SQL은 최신 develop 코드 기준 `photo_posts`, `photo_post_images`, `photo_comments`를 반영한다.
 - 미확정 항목은 SQL 주석 `-- REVIEW:` 또는 `-- TODO:`로 표시한다.
