@@ -3,11 +3,13 @@ package com.dcom.intranet.notice.service;
 import com.dcom.intranet.auth.domain.User;
 import com.dcom.intranet.auth.repository.UserRepository;
 import com.dcom.intranet.notice.domain.Notice;
+import com.dcom.intranet.notice.domain.NoticeFile;
 import com.dcom.intranet.notice.dto.NoticeCreateRequest;
 import com.dcom.intranet.notice.dto.NoticeCreateResponse;
 import com.dcom.intranet.notice.dto.NoticeDeleteResponse;
 import com.dcom.intranet.notice.dto.NoticeDetailResponse;
 import com.dcom.intranet.notice.dto.NoticeListResponse;
+import com.dcom.intranet.notice.dto.NoticeUpdateRequest;
 import com.dcom.intranet.notice.dto.NoticeUpdateResponse;
 import com.dcom.intranet.notice.repository.NoticeRepository;
 import lombok.RequiredArgsConstructor;
@@ -68,7 +70,7 @@ public class NoticeService {
                 request.content(),
                 author.getId(),
                 LocalDateTime.now(),
-                toNoticeFiles(request, files)
+                toNoticeFiles(files)
         );
 
         Notice savedNotice = noticeRepository.save(notice);
@@ -78,7 +80,7 @@ public class NoticeService {
     @Transactional
     public NoticeUpdateResponse updateNotice(
             Long noticeId,
-            NoticeCreateRequest request,
+            NoticeUpdateRequest request,
             List<MultipartFile> files
     ) {
         Notice notice = findNotice(noticeId);
@@ -86,9 +88,11 @@ public class NoticeService {
         notice.update(
                 request.title(),
                 request.content(),
-                toNoticeFiles(request, files),
                 LocalDateTime.now()
         );
+
+        deleteFiles(notice, request.deleteFileIds());
+        notice.addFiles(toNoticeFiles(files));
 
         return NoticeUpdateResponse.from(notice);
     }
@@ -97,7 +101,11 @@ public class NoticeService {
     public NoticeDeleteResponse deleteNotice(Long noticeId) {
         Notice notice = findNotice(noticeId);
 
+        List<NoticeFile> filesToDelete = new ArrayList<>(notice.getFiles());
+
         noticeRepository.delete(notice);
+        filesToDelete.forEach(file -> noticeFileStorageService.delete(file.getFileUrl()));
+
         return new NoticeDeleteResponse("공지사항이 삭제되었습니다.");
     }
 
@@ -117,17 +125,42 @@ public class NoticeService {
                 ));
     }
 
-    private List<Notice.NoticeFile> toNoticeFiles(NoticeCreateRequest request, List<MultipartFile> files) {
-        List<Notice.NoticeFile> noticeFiles = new ArrayList<>(request.toNoticeFiles());
+    private List<NoticeFile> toNoticeFiles(List<MultipartFile> files) {
+        List<NoticeFile> noticeFiles = new ArrayList<>();
 
         if (files != null) {
             files.stream()
                     .filter(file -> file != null && !file.isEmpty())
                     .map(noticeFileStorageService::store)
-                    .map(file -> new Notice.NoticeFile(file.getFileName(), file.getFileUrl()))
+                    .map(file -> new NoticeFile(file.getFileName(), file.getFileUrl()))
                     .forEach(noticeFiles::add);
         }
 
         return noticeFiles;
+    }
+
+    private void deleteFiles(Notice notice, List<Long> deleteFileIds) {
+        if (deleteFileIds == null || deleteFileIds.isEmpty()) {
+            return;
+        }
+
+        deleteFileIds.stream()
+                .distinct()
+                .map(fileId -> findFileInNotice(notice, fileId))
+                .forEach(file -> {
+                    noticeFileStorageService.delete(file.getFileUrl());
+                    notice.removeFile(file);
+                });
+    }
+
+    private NoticeFile findFileInNotice(Notice notice, Long fileId) {
+        return notice.getFiles()
+                .stream()
+                .filter(file -> file.getId().equals(fileId))
+                .findFirst()
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "첨부파일을 찾을 수 없습니다."
+                ));
     }
 }

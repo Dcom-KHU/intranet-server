@@ -63,6 +63,21 @@ public class NoticeFileStorageService {
         }
     }
 
+    public void delete(String fileUrl) {
+        if (fileUrl == null || fileUrl.isBlank()) {
+            return;
+        }
+
+        try {
+            Files.deleteIfExists(Path.of(fileUrl));
+        } catch (IOException e) {
+            throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "공지사항 첨부파일 삭제 중 오류가 발생했습니다."
+            );
+        }
+    }
+
     private String extractExtension(String originalFileName) {
         if (originalFileName == null || !originalFileName.contains(".")) {
             return "";
