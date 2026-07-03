@@ -21,9 +21,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "Information Board Comment", description = "정보공유 게시판 댓글 API")
+@Tag(name = "정보공유 게시판 댓글", description = "정보공유 게시판 댓글 API")
 @RestController
 @RequestMapping("/api/info-posts/{postId}/comments")
 @RequiredArgsConstructor
@@ -71,18 +78,12 @@ public class InfoCommentController {
     ) {
         InfoCommentListResponse response = infoCommentService.getComments(postId);
 
-        return ResponseEntity.ok(
-                CommonResponse.success(response)
-        );
+        return ResponseEntity.ok(CommonResponse.success(response));
     }
 
     @Operation(
             summary = "정보공유 댓글 작성",
-            description = """
-                    특정 정보공유 게시글에 댓글을 작성합니다.
-                    
-                    현재 JWT 연동 전이므로 userId를 임시 RequestParam으로 받습니다.
-                    """
+            description = "특정 정보공유 게시글에 댓글을 작성합니다."
     )
     @ApiResponses({
             @ApiResponse(
@@ -128,8 +129,6 @@ public class InfoCommentController {
             @PathVariable Long postId,
 
             @Valid @RequestBody InfoCommentCreateRequest request,
-
-            @Parameter(description = "요청 사용자 ID.", example = "1")
             Authentication authentication
     ) {
         InfoCommentResponse response =
@@ -145,11 +144,7 @@ public class InfoCommentController {
 
     @Operation(
             summary = "정보공유 댓글 수정",
-            description = """
-                    댓글을 수정합니다.
-                    
-                    댓글 작성자 본인만 수정할 수 있습니다.
-                    """
+            description = "댓글을 수정합니다. 댓글 작성자만 수정할 수 있습니다."
     )
     @ApiResponses({
             @ApiResponse(
@@ -198,8 +193,6 @@ public class InfoCommentController {
             @PathVariable Long commentId,
 
             @Valid @RequestBody InfoCommentUpdateRequest request,
-
-            @Parameter(description = "요청 사용자 ID.", example = "1")
             Authentication authentication
     ) {
         InfoCommentResponse response =
@@ -216,12 +209,7 @@ public class InfoCommentController {
 
     @Operation(
             summary = "정보공유 댓글 삭제",
-            description = """
-                    댓글을 삭제합니다.
-                    
-                    댓글 작성자 본인 또는 ADMIN만 삭제할 수 있습니다.
-                    삭제는 물리 삭제로 처리합니다.
-                    """
+            description = "댓글을 삭제합니다. 댓글 작성자 또는 ADMIN만 삭제할 수 있습니다."
     )
     @ApiResponses({
             @ApiResponse(
@@ -260,7 +248,6 @@ public class InfoCommentController {
             @Parameter(description = "댓글 ID", example = "1")
             @PathVariable Long commentId,
 
-            @Parameter(description = "요청 사용자 ID", example = "1")
             Authentication authentication
     ) {
         infoCommentService.deleteComment(postId, commentId, authentication.getName());

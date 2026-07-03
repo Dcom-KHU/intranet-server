@@ -1,5 +1,7 @@
 package com.dcom.intranet.notice.service;
 
+import com.dcom.intranet.auth.domain.User;
+import com.dcom.intranet.auth.repository.UserRepository;
 import com.dcom.intranet.notice.domain.Notice;
 import com.dcom.intranet.notice.dto.NoticeCreateRequest;
 import com.dcom.intranet.notice.dto.NoticeCreateResponse;
@@ -14,15 +16,20 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class NoticeService {
 
     private final NoticeRepository noticeRepository;
+    private final UserRepository userRepository;
+    private final NoticeFileStorageService noticeFileStorageService;
 
     @Transactional(readOnly = true)
     public NoticeListResponse getNoticeList(String title, Pageable pageable) {
@@ -43,21 +50,25 @@ public class NoticeService {
 
     @Transactional(readOnly = true)
     public NoticeDetailResponse getNoticeDetail(Long noticeId) {
-        Notice notice = noticeRepository.findById(noticeId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        Notice notice = findNotice(noticeId);
 
         return NoticeDetailResponse.from(notice);
     }
 
     @Transactional
-    public NoticeCreateResponse createNotice(NoticeCreateRequest request) {
+    public NoticeCreateResponse createNotice(
+            NoticeCreateRequest request,
+            List<MultipartFile> files,
+            String loginId
+    ) {
+        User author = findUser(loginId);
+
         Notice notice = new Notice(
                 request.title(),
                 request.content(),
-                // TODO: JWT에서 로그인한 관리자 ID 주입 필요
-                null,
+                author.getId(),
                 LocalDateTime.now(),
-                request.toNoticeFiles()
+                toNoticeFiles(request, files)
         );
 
         Notice savedNotice = noticeRepository.save(notice);
@@ -65,14 +76,17 @@ public class NoticeService {
     }
 
     @Transactional
-    public NoticeUpdateResponse updateNotice(Long noticeId, NoticeCreateRequest request) {
-        Notice notice = noticeRepository.findById(noticeId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+    public NoticeUpdateResponse updateNotice(
+            Long noticeId,
+            NoticeCreateRequest request,
+            List<MultipartFile> files
+    ) {
+        Notice notice = findNotice(noticeId);
 
         notice.update(
                 request.title(),
                 request.content(),
-                request.toNoticeFiles(),
+                toNoticeFiles(request, files),
                 LocalDateTime.now()
         );
 
@@ -81,10 +95,39 @@ public class NoticeService {
 
     @Transactional
     public NoticeDeleteResponse deleteNotice(Long noticeId) {
-        Notice notice = noticeRepository.findById(noticeId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        Notice notice = findNotice(noticeId);
 
         noticeRepository.delete(notice);
         return new NoticeDeleteResponse("공지사항이 삭제되었습니다.");
+    }
+
+    private Notice findNotice(Long noticeId) {
+        return noticeRepository.findById(noticeId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "공지사항을 찾을 수 없습니다."
+                ));
+    }
+
+    private User findUser(String loginId) {
+        return userRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "사용자를 찾을 수 없습니다."
+                ));
+    }
+
+    private List<Notice.NoticeFile> toNoticeFiles(NoticeCreateRequest request, List<MultipartFile> files) {
+        List<Notice.NoticeFile> noticeFiles = new ArrayList<>(request.toNoticeFiles());
+
+        if (files != null) {
+            files.stream()
+                    .filter(file -> file != null && !file.isEmpty())
+                    .map(noticeFileStorageService::store)
+                    .map(file -> new Notice.NoticeFile(file.getFileName(), file.getFileUrl()))
+                    .forEach(noticeFiles::add);
+        }
+
+        return noticeFiles;
     }
 }
