@@ -188,7 +188,7 @@ CREATE TABLE notice_files (
     -- TODO: 공지 파일에 object_key, file_size, content_type, 생성/수정 시각이 필요한지 검토한다.
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- REVIEW: ERD 초안은 photo_albums/photo_images를 사용하지만, 최신 develop 코드는 photo_posts/photo_post_images를 사용한다.
+-- 최신 develop 코드 기준 PhotoPost 테이블이다.
 CREATE TABLE photo_posts (
     album_id BIGINT NOT NULL AUTO_INCREMENT,
     event_name VARCHAR(100) NOT NULL,
