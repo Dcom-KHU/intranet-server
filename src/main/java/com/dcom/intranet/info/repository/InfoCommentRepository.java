@@ -10,5 +10,7 @@ public interface InfoCommentRepository extends JpaRepository<InfoComment, Long> 
 
     List<InfoComment> findByPostIdOrderByCreatedAtAsc(Long postId);
 
+    List<InfoComment> findByAuthorId(Long authorId);
+
     Optional<InfoComment> findByIdAndPostId(Long commentId, Long postId);
 }

@@ -5,6 +5,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
+
 public interface InfoPostRepository extends JpaRepository<InfoPost, Long> {
 
     Page<InfoPost> findByTitleContainingOrContentContaining(
@@ -12,4 +14,6 @@ public interface InfoPostRepository extends JpaRepository<InfoPost, Long> {
             String contentKeyword,
             Pageable pageable
     );
+
+    List<InfoPost> findByAuthorId(Long authorId);
 }
