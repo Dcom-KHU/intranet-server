@@ -6,6 +6,8 @@ import java.time.LocalDateTime;
 
 public record PhotoCommentCreateResponse(
         Long commentId,
+        Long albumId,
+        Long authorId,
         String content,
         LocalDateTime createdAt
 ) {
@@ -13,6 +15,8 @@ public record PhotoCommentCreateResponse(
     public static PhotoCommentCreateResponse from(PhotoComment comment) {
         return new PhotoCommentCreateResponse(
                 comment.getCommentId(),
+                comment.getPhotoPost().getAlbumId(),
+                comment.getAuthor().getId(),
                 comment.getContent(),
                 comment.getCreatedAt()
         );
