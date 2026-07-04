@@ -12,9 +12,11 @@ import jakarta.persistence.Lob;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.OrderColumn;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -46,7 +48,15 @@ public class PhotoPost {
     @OrderBy("createdAt ASC")
     private List<PhotoComment> comments = new ArrayList<>();
 
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
     protected PhotoPost() {
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
     }
 
     public PhotoPost(String eventName, LocalDate activityDate, List<String> imageUrls) {
@@ -103,6 +113,10 @@ public class PhotoPost {
 
     public String getCoverImageUrl() {
         return images.isEmpty() ? null : images.get(0).getFileUrl();
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
 
     public void update(String eventName, LocalDate activityDate, String description) {

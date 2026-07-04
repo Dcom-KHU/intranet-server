@@ -50,6 +50,10 @@ public class User {
 
     private LocalDateTime withdrawnAt;
 
+    private LocalDateTime approvedAt;
+
+    private Long approvedByAdminId;
+
     @Column
     private String tempPassword;
 
@@ -129,6 +133,18 @@ public class User {
     /// 탈퇴시각조회
     public LocalDateTime getWithdrawnAt() {
         return this.withdrawnAt;
+    }
+
+    /// 가입 승인
+    public void approve(Long approvedByAdminId, LocalDateTime approvedAt) {
+        this.status = UserStatus.APPROVED;
+        this.approvedByAdminId = approvedByAdminId;
+        this.approvedAt = approvedAt;
+    }
+
+    /// 권한 변경
+    public void changeRole(UserRole role) {
+        this.role = role;
     }
 
 }
