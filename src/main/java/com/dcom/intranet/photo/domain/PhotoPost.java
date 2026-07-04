@@ -8,7 +8,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Lob;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.OrderColumn;
@@ -35,8 +34,7 @@ public class PhotoPost {
     @Column(nullable = false)
     private LocalDate activityDate;
 
-    @Lob
-    @Column
+    @Column(columnDefinition = "LONGTEXT")
     private String description;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
