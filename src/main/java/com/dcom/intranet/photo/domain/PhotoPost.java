@@ -1,9 +1,7 @@
 package com.dcom.intranet.photo.domain;
 
 import jakarta.persistence.CascadeType;
-import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -39,14 +37,10 @@ public class PhotoPost {
     @Column
     private String description;
 
-    @ElementCollection(fetch = FetchType.LAZY)
-    @CollectionTable(
-            name = "photo_post_images",
-            joinColumns = @JoinColumn(name = "album_id")
-    )
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JoinColumn(name = "album_id", nullable = false)
     @OrderColumn(name = "upload_order")
-    @Column(name = "image_url", nullable = false)
-    private List<String> imageUrls = new ArrayList<>();
+    private List<PhotoPostImage> images = new ArrayList<>();
 
     @OneToMany(mappedBy = "photoPost", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @OrderBy("createdAt ASC")
@@ -56,14 +50,21 @@ public class PhotoPost {
     }
 
     public PhotoPost(String eventName, LocalDate activityDate, List<String> imageUrls) {
-        this(eventName, activityDate, "", imageUrls);
+        this.eventName = eventName;
+        this.activityDate = activityDate;
+        this.description = "";
+        if (imageUrls != null) {
+            imageUrls.stream()
+                    .map(imageUrl -> new PhotoPostImage(imageUrl, imageUrl, imageUrl, imageUrl, 0L, null))
+                    .forEach(this.images::add);
+        }
     }
 
-    public PhotoPost(String eventName, LocalDate activityDate, String description, List<String> imageUrls) {
+    public PhotoPost(String eventName, LocalDate activityDate, String description, List<PhotoPostImage> images) {
         this.eventName = eventName;
         this.activityDate = activityDate;
         this.description = description == null ? "" : description;
-        this.imageUrls = imageUrls == null ? new ArrayList<>() : new ArrayList<>(imageUrls);
+        this.images = images == null ? new ArrayList<>() : new ArrayList<>(images);
     }
 
     public Long getAlbumId() {
@@ -83,7 +84,17 @@ public class PhotoPost {
     }
 
     public List<String> getImageUrls() {
-        return imageUrls == null ? List.of() : List.copyOf(imageUrls);
+        if (images == null) {
+            return List.of();
+        }
+
+        return images.stream()
+                .map(PhotoPostImage::getFileUrl)
+                .toList();
+    }
+
+    public List<PhotoPostImage> getImages() {
+        return images == null ? List.of() : List.copyOf(images);
     }
 
     public List<PhotoComment> getComments() {
@@ -91,7 +102,7 @@ public class PhotoPost {
     }
 
     public String getCoverImageUrl() {
-        return imageUrls.isEmpty() ? null : imageUrls.get(0);
+        return images.isEmpty() ? null : images.get(0).getFileUrl();
     }
 
     public void update(String eventName, LocalDate activityDate, String description) {
@@ -101,9 +112,18 @@ public class PhotoPost {
     }
 
     public void replaceImages(List<String> imageUrls) {
-        this.imageUrls.clear();
+        this.images.clear();
         if (imageUrls != null) {
-            this.imageUrls.addAll(imageUrls);
+            imageUrls.stream()
+                    .map(imageUrl -> new PhotoPostImage(imageUrl, imageUrl, imageUrl, imageUrl, 0L, null))
+                    .forEach(this.images::add);
+        }
+    }
+
+    public void replaceImageFiles(List<PhotoPostImage> images) {
+        this.images.clear();
+        if (images != null) {
+            this.images.addAll(images);
         }
     }
 }

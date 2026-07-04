@@ -51,11 +51,13 @@ public class PhotoPostFileStorageService {
                     java.nio.file.StandardCopyOption.REPLACE_EXISTING
             );
 
+            String fileUrl = targetPath.toString();
+
             return new StoredFile(
                     originalFileName,
                     storedFileName,
                     uploadRoot.relativize(targetPath).toString(),
-                    targetPath.toAbsolutePath().toString(),
+                    fileUrl,
                     file.getSize(),
                     file.getContentType()
             );
