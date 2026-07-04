@@ -101,16 +101,34 @@ erDiagram
         ENUM status "PENDING / APPROVED / WITHDRAWN"
         DATETIME created_at "가입 신청 일시"
         DATETIME last_login_at "최근 로그인 일시"
+        DATETIME withdrawn_at "탈퇴 일시"
+        DATETIME approved_at "승인 일시"
+        BIGINT approved_by_admin_id "승인 관리자 ID"
         VARCHAR temp_password "임시 비밀번호 해시"
         DATETIME temp_password_expires_at "임시 비밀번호 만료 일시"
     }
 
     EMAIL_VERIFICATIONS {
         BIGINT id PK "AUTO_INCREMENT"
+        VARCHAR login_id "로그인 ID"
         VARCHAR email "인증 대상 이메일"
-        VARCHAR code "인증 코드"
+        VARCHAR verification_code "인증 코드"
+        VARCHAR email_change_token "이메일 변경 토큰"
         DATETIME expires_at "만료 일시"
         BOOLEAN verified "인증 완료 여부"
+        BOOLEAN used "사용 여부"
+        DATETIME created_at "생성 일시"
+    }
+
+    EMAIL_CHANGE_VERIFICATIONS {
+        BIGINT id PK "AUTO_INCREMENT"
+        VARCHAR login_id "로그인 ID"
+        VARCHAR email "변경 대상 이메일"
+        VARCHAR verification_code "인증 코드"
+        VARCHAR email_change_token UK "이메일 변경 토큰"
+        DATETIME expires_at "만료 일시"
+        BOOLEAN verified "인증 완료 여부"
+        BOOLEAN used "사용 여부"
         DATETIME created_at "생성 일시"
     }
 
@@ -203,7 +221,6 @@ erDiagram
         VARCHAR file_url "파일 URL"
         BIGINT file_size "파일 크기"
         VARCHAR content_type "MIME 타입"
-        DATETIME created_at "생성 일시"
     }
 
     PHOTO_POSTS {
@@ -223,7 +240,6 @@ erDiagram
         BIGINT file_size "파일 크기"
         VARCHAR content_type "MIME 타입"
         INT upload_order "업로드 순서"
-        DATETIME created_at "생성 일시"
     }
 
     PHOTO_COMMENTS {
@@ -365,8 +381,8 @@ UNIQUE (subject_name, professor_name)
 주의 사항:
 
 - 최신 develop 기준 백엔드 코드는 별도 `NoticeFile` Entity 구조이다.
-- DB 기준은 `original_file_name`, `stored_file_name`, `object_key`, `file_url`, `file_size`, `content_type`, `created_at`을 저장하는 구조이다.
-- 현재 Java Entity 반영은 백엔드팀 작업 범위이다.
+- 최신 develop 기준 `original_file_name`, `stored_file_name`, `object_key`, `file_url`, `file_size`, `content_type`을 저장하는 구조이다.
+- 현재 Java Entity에는 `created_at`이 없으므로 SQL 초안에서도 제외한다.
 
 ### PHOTO_POSTS / PHOTO_POST_IMAGES / PHOTO_COMMENTS
 
@@ -375,8 +391,8 @@ UNIQUE (subject_name, professor_name)
 주의 사항:
 
 - 최신 develop 코드 기준 테이블명은 `photo_posts`, `photo_post_images`, `photo_comments`이다.
-- DB 기준으로 `photo_post_images`는 이미지별 메타데이터를 저장하는 테이블이다.
-- 현재 Java 구현은 `PhotoPost.imageUrls`의 `@ElementCollection` 구조이므로, 백엔드팀에서 별도 이미지 Entity 매핑 반영이 필요하다.
+- 최신 develop 기준 `photo_post_images`는 이미지별 메타데이터를 저장하는 테이블이다.
+- 현재 Java Entity에는 `created_at`이 없으므로 SQL 초안에서도 제외한다.
 
 ### LEGACY_MIGRATION_MAPS
 

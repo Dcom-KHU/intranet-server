@@ -13,7 +13,7 @@ public record InfoPostSummaryResponse(
         @Schema(description = "작성자")
         AuthorResponse author,
 
-        @Schema(description = "작성일", example = "2026.06.20.")
+        @Schema(description = "작성일", example = "2026.06.20")
         String date,
 
         @Schema(description = "첨부파일 존재 여부", example = "true")
