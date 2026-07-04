@@ -80,6 +80,17 @@ public class EmailService {
         return String.valueOf(code);
     }
 
+    /// 가입 승인 안내 메일 발송
+    public void sendApprovalEmail(String email, String name){
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(email);
+        message.setSubject("[D.com Intranet] 회원가입 승인 안내");
+        message.setText(name + "님, 회원가입이 승인되었습니다.\n\n"
+                + "로그인 후 서비스를 이용해주세요.");
+
+        mailSender.send(message);
+    }
+
     /// 임시 비밀번호 메일 발송
     public void sendTempPasswordEmail(String email, String tempPassword, int expirationMinutes){
         SimpleMailMessage message = new SimpleMailMessage();

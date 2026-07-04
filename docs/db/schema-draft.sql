@@ -20,6 +20,8 @@ CREATE TABLE users (
     created_at DATETIME NOT NULL,
     last_login_at DATETIME NULL,
     withdrawn_at DATETIME NULL,
+    approved_at DATETIME NULL,
+    approved_by_admin_id BIGINT NULL,
     temp_password VARCHAR(255) NULL,
     temp_password_expires_at DATETIME NULL,
     PRIMARY KEY (id),
@@ -42,6 +44,22 @@ CREATE TABLE email_verifications (
     UNIQUE KEY uk_email_verifications_email_change_token (email_change_token),
     KEY idx_email_verifications_email (email),
     KEY idx_email_verifications_login_id (login_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE email_change_verifications (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    login_id VARCHAR(50) NOT NULL,
+    email VARCHAR(100) NOT NULL,
+    verification_code VARCHAR(6) NOT NULL,
+    email_change_token VARCHAR(100) NULL,
+    expires_at DATETIME NOT NULL,
+    verified BOOLEAN NOT NULL DEFAULT FALSE,
+    used BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at DATETIME NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_email_change_verifications_token (email_change_token),
+    KEY idx_email_change_verifications_login_id (login_id),
+    KEY idx_email_change_verifications_email (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE refresh_tokens (
@@ -183,14 +201,13 @@ CREATE TABLE notice_files (
     file_url VARCHAR(500) NOT NULL,
     file_size BIGINT NOT NULL,
     content_type VARCHAR(100) NULL,
-    created_at DATETIME NOT NULL,
     PRIMARY KEY (notice_file_id),
     KEY idx_notice_files_notice_id (notice_id),
     KEY idx_notice_files_object_key (object_key),
     CONSTRAINT fk_notice_files_notice
         FOREIGN KEY (notice_id) REFERENCES notices (notice_id)
         ON DELETE CASCADE
-    -- REVIEW: Java Entity 반영은 백엔드팀 작업 범위다.
+    -- REVIEW: 최신 Java Entity 기준에는 notice_files.created_at이 없다.
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 최신 develop 코드 기준 PhotoPost 테이블이다.
@@ -199,9 +216,10 @@ CREATE TABLE photo_posts (
     event_name VARCHAR(100) NOT NULL,
     activity_date DATE NOT NULL,
     description LONGTEXT NULL,
+    created_at DATETIME NOT NULL,
     PRIMARY KEY (album_id),
     KEY idx_photo_posts_activity_date (activity_date)
-    -- REVIEW: 현재 PhotoPost Entity에는 작성자/admin_id와 생성/수정 시각 컬럼이 없다.
+    -- REVIEW: 현재 PhotoPost Entity에는 작성자/admin_id와 updated_at 컬럼이 없다.
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE photo_post_images (
@@ -214,7 +232,6 @@ CREATE TABLE photo_post_images (
     file_size BIGINT NOT NULL,
     content_type VARCHAR(100) NULL,
     upload_order INT NOT NULL,
-    created_at DATETIME NOT NULL,
     PRIMARY KEY (image_id),
     KEY idx_photo_post_images_album_id (album_id),
     KEY idx_photo_post_images_object_key (object_key),
@@ -222,7 +239,7 @@ CREATE TABLE photo_post_images (
     CONSTRAINT fk_photo_post_images_album
         FOREIGN KEY (album_id) REFERENCES photo_posts (album_id)
         ON DELETE CASCADE
-    -- REVIEW: 현재 Java 코드는 image_url ElementCollection 구조이므로, 백엔드팀에서 별도 Entity 매핑 반영이 필요하다.
+    -- REVIEW: 최신 Java Entity 기준에는 photo_post_images.created_at이 없다.
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE photo_comments (

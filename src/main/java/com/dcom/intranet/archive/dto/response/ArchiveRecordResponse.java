@@ -22,8 +22,8 @@ public class ArchiveRecordResponse {
     public ArchiveRecordResponse(ArchiveRecord record) {
         this.recordId = record.getId();
         this.examYear = record.getExamYear();
-        this.semester = record.getSemester().name();
-        this.examType = record.getExamType().name();
+        this.semester = record.getSemester() == null ? null : record.getSemester().name();
+        this.examType = record.getExamType() == null ? null : record.getExamType().name();
         this.content = record.getContent();
         this.createdAt = record.getCreatedAt();
         this.updatedAt = record.getUpdatedAt();
