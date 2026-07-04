@@ -29,15 +29,16 @@ public class ArchiveRecord {
     @JoinColumn(name = "author_id", nullable = false)
     private User author;
 
-    @Column(nullable = false)
+    // 기존 서버 데이터 이관 시 누락되어 있을 수 있어 nullable로 둠 (신규 등록은 API 요청 검증에서 필수로 강제)
+    @Column
     private Integer examYear;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(length = 20)
     private Semester semester;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(length = 20)
     private ExamType examType;
 
     // 설명글은 필요 사항이 아니니깐 'nullable = false' 따로 안씀

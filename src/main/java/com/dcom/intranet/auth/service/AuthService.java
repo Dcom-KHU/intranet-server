@@ -145,9 +145,11 @@ public class AuthService {
             throw new UnauthorizedException("로그인이 만료되었습니다. 다시 로그인해주세요.");
         }
 
-        /// 토큰에서 정보 추출
+        /// 토큰에서 loginId 추출 후 DB에서 현재 role 재조회 (권한 이양 등으로 role이 바뀐 경우를 반영)
         String loginId = jwtTokenProvider.getLoginId(request.getRefreshToken());
-        String role = jwtTokenProvider.getRole(request.getRefreshToken());
+        User user = userRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new UnauthorizedException("유효하지 않은 RefreshToken입니다."));
+        String role = user.getRole().name();
 
         /// 새 토큰 발급
         String newAccessToken = jwtTokenProvider.createAccessToken(loginId, role);
