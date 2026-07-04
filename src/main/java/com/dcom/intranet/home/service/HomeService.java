@@ -1,16 +1,40 @@
 package com.dcom.intranet.home.service;
 
+import com.dcom.intranet.archive.repository.ArchiveRecordRepository;
+import com.dcom.intranet.auth.domain.User;
+import com.dcom.intranet.auth.repository.UserRepository;
 import com.dcom.intranet.home.dto.ArchiveSummaryResponse;
 import com.dcom.intranet.home.dto.AuthorResponse;
 import com.dcom.intranet.home.dto.HomeDashboardResponse;
 import com.dcom.intranet.home.dto.InfoPostSummaryResponse;
 import com.dcom.intranet.home.dto.NoticeSummaryResponse;
 import com.dcom.intranet.home.dto.PhotoAlbumSummaryResponse;
-import java.util.List;
+import com.dcom.intranet.info.repository.InfoPostRepository;
+import com.dcom.intranet.notice.repository.NoticeRepository;
+import com.dcom.intranet.photo.repository.PhotoPostRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 @Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class HomeService {
+
+    private static final int RECENT_SIZE = 5;
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy.MM.dd");
+
+    private final NoticeRepository noticeRepository;
+    private final ArchiveRecordRepository archiveRecordRepository;
+    private final InfoPostRepository infoPostRepository;
+    private final PhotoPostRepository photoPostRepository;
+    private final UserRepository userRepository;
 
     public HomeDashboardResponse getHomeDashboard() {
         return new HomeDashboardResponse(
@@ -22,42 +46,68 @@ public class HomeService {
     }
 
     private List<NoticeSummaryResponse> recentNotices() {
-        return List.of(
-                new NoticeSummaryResponse(1L, "2026 D.COM 여름 프로젝트 팀 모집 안내", "ADMIN", "2026.06.20", true),
-                new NoticeSummaryResponse(2L, "정기 세미나 발표자 신청 안내", "ADMIN", "2026.06.14", false),
-                new NoticeSummaryResponse(3L, "동아리방 이용 수칙 변경 안내", "ADMIN", "2026.06.05", false),
-                new NoticeSummaryResponse(4L, "신입 부원 Git 기초 워크숍 일정", "ADMIN", "2026.05.29", true),
-                new NoticeSummaryResponse(5L, "기말고사 기간 활동 일정 조정 안내", "ADMIN", "2026.05.18", true)
-        );
+        Pageable pageable = PageRequest.of(0, RECENT_SIZE, Sort.by(Sort.Direction.DESC, "createdAt"));
+
+        return noticeRepository.findAll(pageable).getContent().stream()
+                .map(notice -> new NoticeSummaryResponse(
+                        notice.getNoticeId(),
+                        notice.getTitle(),
+                        resolveAuthorName(notice.getAuthorId()),
+                        notice.getCreatedAt().format(DATE_FORMATTER),
+                        !notice.getFiles().isEmpty()
+                ))
+                .toList();
     }
 
     private List<ArchiveSummaryResponse> recentArchives() {
-        return List.of(
-                new ArchiveSummaryResponse(1L, "오픈소스SW개발방법및도구", "이성원", new AuthorResponse("20230001", "하성준"), "2026.05.25"),
-                new ArchiveSummaryResponse(2L, "오픈소스SW개발방법및도구", "이성원", new AuthorResponse("20209999", "곽민서"), "2026.04.25"),
-                new ArchiveSummaryResponse(3L, "오픈소스SW개발방법및도구", "이성원", new AuthorResponse("20210012", "신정안"), "2025.05.05"),
-                new ArchiveSummaryResponse(4L, "자료구조", "박제만", new AuthorResponse("20220014", "최진영"), "2026.05.20"),
-                new ArchiveSummaryResponse(5L, "자료구조", "박제만", new AuthorResponse("20210032", "최진영"), "2026.05.15")
-        );
+        Pageable pageable = PageRequest.of(0, RECENT_SIZE, Sort.by(Sort.Direction.DESC, "createdAt"));
+
+        return archiveRecordRepository.findAll(pageable).getContent().stream()
+                .map(record -> new ArchiveSummaryResponse(
+                        record.getId(),
+                        record.getArchive().getSubjectName(),
+                        record.getArchive().getProfessorName(),
+                        new AuthorResponse(record.getAuthor().getStudentId(), record.getAuthor().getName()),
+                        record.getCreatedAt().format(DATE_FORMATTER)
+                ))
+                .toList();
     }
 
     private List<InfoPostSummaryResponse> recentInfoPosts() {
-        return List.of(
-                new InfoPostSummaryResponse(1L, "시간 복잡도 Big-O 핵심 정리 (면접 필수)", new AuthorResponse("20201234", "표지훈"), "2026.06.20.", true),
-                new InfoPostSummaryResponse(2L, "TCP 3-way handshake 동작 원리 정리", new AuthorResponse("20201111", "허남준"), "2026.06.21.", true),
-                new InfoPostSummaryResponse(3L, "운영체제: 프로세스 vs 스레드 완벽 비교", new AuthorResponse("20201333", "안유진"), "2026.06.22.", false),
-                new InfoPostSummaryResponse(4L, "DB 인덱스(B-Tree) 구조 이해하기", new AuthorResponse("20201444", "김선호"), "2026.06.23.", false),
-                new InfoPostSummaryResponse(5L, "동기/비동기 & Blocking/Non-blocking 차이", new AuthorResponse("20201555", "지창욱"), "2026.06.24.", true)
-        );
+        Pageable pageable = PageRequest.of(0, RECENT_SIZE, Sort.by(Sort.Direction.DESC, "createdAt"));
+
+        return infoPostRepository.findAll(pageable).getContent().stream()
+                .map(post -> new InfoPostSummaryResponse(
+                        post.getId(),
+                        post.getTitle(),
+                        new AuthorResponse(post.getAuthor().getStudentId(), post.getAuthor().getName()),
+                        post.getCreatedAt().format(DATE_FORMATTER),
+                        !post.getFiles().isEmpty()
+                ))
+                .toList();
     }
 
     private List<PhotoAlbumSummaryResponse> recentPhotoAlbums() {
-        return List.of(
-                new PhotoAlbumSummaryResponse(1L, "khuBg1", "2026-1 D.COM 커리어세션", "2026.05.16", 5),
-                new PhotoAlbumSummaryResponse(2L, "khuBg2", "2026-1 D.COM 정기 세미나", "2026.05.09", 8),
-                new PhotoAlbumSummaryResponse(3L, "khuBg3", "2026-1 D.COM 네트워킹 데이", "2026.04.26", 6),
-                new PhotoAlbumSummaryResponse(4L, "khuBg1", "2026-1 D.COM 프로젝트 발표회", "2026.04.12", 12),
-                new PhotoAlbumSummaryResponse(5L, "khuBg2", "2026-1 D.COM MT", "2026.03.29", 10)
-        );
+        Pageable pageable = PageRequest.of(0, RECENT_SIZE, Sort.by(Sort.Direction.DESC, "activityDate"));
+
+        return photoPostRepository.findAll(pageable).getContent().stream()
+                .map(photoPost -> new PhotoAlbumSummaryResponse(
+                        photoPost.getAlbumId(),
+                        photoPost.getCoverImageUrl(),
+                        photoPost.getEventName(),
+                        photoPost.getActivityDate().format(DATE_FORMATTER),
+                        photoPost.getImages().size()
+                ))
+                .toList();
+    }
+
+    private String resolveAuthorName(Long authorId) {
+        if (authorId == null) {
+            return "알 수 없음";
+        }
+
+        return userRepository.findById(authorId)
+                .map(User::getName)
+                .orElse("알 수 없음");
     }
 }
