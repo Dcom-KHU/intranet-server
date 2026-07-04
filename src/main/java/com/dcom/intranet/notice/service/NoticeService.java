@@ -132,7 +132,14 @@ public class NoticeService {
             files.stream()
                     .filter(file -> file != null && !file.isEmpty())
                     .map(noticeFileStorageService::store)
-                    .map(file -> new NoticeFile(file.getFileName(), file.getFileUrl()))
+                    .map(file -> new NoticeFile(
+                            file.getOriginalFileName(),
+                            file.getStoredFileName(),
+                            file.getObjectKey(),
+                            file.getFileUrl(),
+                            file.getFileSize(),
+                            file.getContentType()
+                    ))
                     .forEach(noticeFiles::add);
         }
 
