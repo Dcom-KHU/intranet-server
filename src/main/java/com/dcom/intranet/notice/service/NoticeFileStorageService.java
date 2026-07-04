@@ -51,9 +51,15 @@ public class NoticeFileStorageService {
                     java.nio.file.StandardCopyOption.REPLACE_EXISTING
             );
 
+            String fileUrl = targetPath.toString();
+
             return new StoredFile(
                     originalFileName,
-                    targetPath.toString()
+                    storedFileName,
+                    uploadRoot.relativize(targetPath).toString(),
+                    fileUrl,
+                    file.getSize(),
+                    file.getContentType()
             );
         } catch (IOException e) {
             throw new ResponseStatusException(
@@ -89,12 +95,27 @@ public class NoticeFileStorageService {
     @Getter
     public static class StoredFile {
 
-        private final String fileName;
+        private final String originalFileName;
+        private final String storedFileName;
+        private final String objectKey;
         private final String fileUrl;
+        private final Long fileSize;
+        private final String contentType;
 
-        public StoredFile(String fileName, String fileUrl) {
-            this.fileName = fileName;
+        public StoredFile(
+                String originalFileName,
+                String storedFileName,
+                String objectKey,
+                String fileUrl,
+                Long fileSize,
+                String contentType
+        ) {
+            this.originalFileName = originalFileName;
+            this.storedFileName = storedFileName;
+            this.objectKey = objectKey;
             this.fileUrl = fileUrl;
+            this.fileSize = fileSize;
+            this.contentType = contentType;
         }
     }
 }

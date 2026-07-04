@@ -4,6 +4,7 @@ import com.dcom.intranet.auth.domain.User;
 import com.dcom.intranet.auth.repository.UserRepository;
 import com.dcom.intranet.photo.domain.PhotoComment;
 import com.dcom.intranet.photo.domain.PhotoPost;
+import com.dcom.intranet.photo.domain.PhotoPostImage;
 import com.dcom.intranet.photo.dto.PhotoCommentCreateResponse;
 import com.dcom.intranet.photo.dto.PhotoCommentDeleteResponse;
 import com.dcom.intranet.photo.dto.PhotoCommentUpdateResponse;
@@ -65,13 +66,13 @@ public class PhotoPostService {
             PhotoPostCreateRequest request,
             List<MultipartFile> files
     ) {
-        List<String> imageUrls = storeImages(files);
+        List<PhotoPostImage> images = storeImages(files);
 
         PhotoPost photoPost = new PhotoPost(
                 request.eventName(),
                 request.activityDate(),
                 request.description(),
-                imageUrls
+                images
         );
 
         PhotoPost savedPhotoPost = photoPostRepository.save(photoPost);
@@ -98,9 +99,9 @@ public class PhotoPostService {
 
         if (hasFiles(files)) {
             List<String> oldImageUrls = new ArrayList<>(photoPost.getImageUrls());
-            List<String> newImageUrls = storeImages(files);
+            List<PhotoPostImage> newImages = storeImages(files);
 
-            photoPost.replaceImages(newImageUrls);
+            photoPost.replaceImageFiles(newImages);
             oldImageUrls.forEach(photoPostFileStorageService::delete);
         }
 
@@ -218,7 +219,7 @@ public class PhotoPostService {
         }
     }
 
-    private List<String> storeImages(List<MultipartFile> files) {
+    private List<PhotoPostImage> storeImages(List<MultipartFile> files) {
         if (!hasFiles(files)) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
@@ -226,13 +227,20 @@ public class PhotoPostService {
             );
         }
 
-        List<String> imageUrls = files.stream()
+        List<PhotoPostImage> images = files.stream()
                 .filter(file -> file != null && !file.isEmpty())
                 .map(photoPostFileStorageService::store)
-                .map(PhotoPostFileStorageService.StoredFile::getFileUrl)
+                .map(file -> new PhotoPostImage(
+                        file.getOriginalFileName(),
+                        file.getStoredFileName(),
+                        file.getObjectKey(),
+                        file.getFileUrl(),
+                        file.getFileSize(),
+                        file.getContentType()
+                ))
                 .toList();
 
-        return new ArrayList<>(imageUrls);
+        return new ArrayList<>(images);
     }
 
     private boolean hasFiles(List<MultipartFile> files) {
