@@ -2,6 +2,7 @@ package com.dcom.intranet.notice.service;
 
 import com.dcom.intranet.auth.domain.User;
 import com.dcom.intranet.auth.repository.UserRepository;
+import com.dcom.intranet.global.dto.AuthorResponse;
 import com.dcom.intranet.notice.domain.Notice;
 import com.dcom.intranet.notice.domain.NoticeFile;
 import com.dcom.intranet.notice.dto.NoticeCreateRequest;
@@ -43,7 +44,7 @@ public class NoticeService {
                 .map(notice -> new NoticeListResponse.NoticeSummary(
                         notice.getNoticeId(),
                         notice.getTitle(),
-                        notice.getAuthorId(),
+                        resolveAuthor(notice.getAuthorId()),
                         notice.getCreatedAt()
                 ));
 
@@ -54,7 +55,7 @@ public class NoticeService {
     public NoticeDetailResponse getNoticeDetail(Long noticeId) {
         Notice notice = findNotice(noticeId);
 
-        return NoticeDetailResponse.from(notice);
+        return NoticeDetailResponse.from(notice, resolveAuthor(notice.getAuthorId()));
     }
 
     @Transactional
@@ -123,6 +124,16 @@ public class NoticeService {
                         HttpStatus.NOT_FOUND,
                         "사용자를 찾을 수 없습니다."
                 ));
+    }
+
+    private AuthorResponse resolveAuthor(Long authorId) {
+        if (authorId == null) {
+            return new AuthorResponse(null, "알 수 없음");
+        }
+
+        return userRepository.findById(authorId)
+                .map(AuthorResponse::from)
+                .orElseGet(() -> new AuthorResponse(null, "알 수 없음"));
     }
 
     private List<NoticeFile> toNoticeFiles(List<MultipartFile> files) {

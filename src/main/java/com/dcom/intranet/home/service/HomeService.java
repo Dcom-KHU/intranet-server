@@ -1,10 +1,9 @@
 package com.dcom.intranet.home.service;
 
 import com.dcom.intranet.archive.repository.ArchiveRecordRepository;
-import com.dcom.intranet.auth.domain.User;
 import com.dcom.intranet.auth.repository.UserRepository;
+import com.dcom.intranet.global.dto.AuthorResponse;
 import com.dcom.intranet.home.dto.ArchiveSummaryResponse;
-import com.dcom.intranet.home.dto.AuthorResponse;
 import com.dcom.intranet.home.dto.HomeDashboardResponse;
 import com.dcom.intranet.home.dto.InfoPostSummaryResponse;
 import com.dcom.intranet.home.dto.NoticeSummaryResponse;
@@ -52,7 +51,7 @@ public class HomeService {
                 .map(notice -> new NoticeSummaryResponse(
                         notice.getNoticeId(),
                         notice.getTitle(),
-                        resolveAuthorName(notice.getAuthorId()),
+                        resolveAuthor(notice.getAuthorId()),
                         notice.getCreatedAt().format(DATE_FORMATTER),
                         !notice.getFiles().isEmpty()
                 ))
@@ -67,7 +66,7 @@ public class HomeService {
                         record.getId(),
                         record.getArchive().getSubjectName(),
                         record.getArchive().getProfessorName(),
-                        new AuthorResponse(record.getAuthor().getStudentId(), record.getAuthor().getName()),
+                        AuthorResponse.from(record.getAuthor()),
                         record.getCreatedAt().format(DATE_FORMATTER)
                 ))
                 .toList();
@@ -80,7 +79,7 @@ public class HomeService {
                 .map(post -> new InfoPostSummaryResponse(
                         post.getId(),
                         post.getTitle(),
-                        new AuthorResponse(post.getAuthor().getStudentId(), post.getAuthor().getName()),
+                        AuthorResponse.from(post.getAuthor()),
                         post.getCreatedAt().format(DATE_FORMATTER),
                         !post.getFiles().isEmpty()
                 ))
@@ -101,13 +100,13 @@ public class HomeService {
                 .toList();
     }
 
-    private String resolveAuthorName(Long authorId) {
+    private AuthorResponse resolveAuthor(Long authorId) {
         if (authorId == null) {
-            return "알 수 없음";
+            return new AuthorResponse(null, "알 수 없음");
         }
 
         return userRepository.findById(authorId)
-                .map(User::getName)
-                .orElse("알 수 없음");
+                .map(AuthorResponse::from)
+                .orElseGet(() -> new AuthorResponse(null, "알 수 없음"));
     }
 }

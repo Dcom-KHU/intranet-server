@@ -1,5 +1,6 @@
 package com.dcom.intranet.photo.dto;
 
+import com.dcom.intranet.global.dto.AuthorResponse;
 import com.dcom.intranet.photo.domain.PhotoComment;
 
 import java.time.LocalDateTime;
@@ -7,7 +8,7 @@ import java.time.LocalDateTime;
 public record PhotoCommentCreateResponse(
         Long commentId,
         Long albumId,
-        Long authorId,
+        AuthorResponse author,
         String content,
         LocalDateTime createdAt
 ) {
@@ -16,7 +17,7 @@ public record PhotoCommentCreateResponse(
         return new PhotoCommentCreateResponse(
                 comment.getCommentId(),
                 comment.getPhotoPost().getAlbumId(),
-                comment.getAuthor().getId(),
+                AuthorResponse.from(comment.getAuthor()),
                 comment.getContent(),
                 comment.getCreatedAt()
         );

@@ -1,5 +1,6 @@
 package com.dcom.intranet.photo.dto;
 
+import com.dcom.intranet.global.dto.AuthorResponse;
 import com.dcom.intranet.photo.domain.PhotoComment;
 import com.dcom.intranet.photo.domain.PhotoPost;
 
@@ -31,8 +32,7 @@ public record PhotoPostDetailResponse(
 
     public record CommentSummary(
             Long commentId,
-            Long authorId,
-            String authorName,
+            AuthorResponse author,
             String content,
             LocalDateTime createdAt,
             LocalDateTime updatedAt
@@ -41,8 +41,7 @@ public record PhotoPostDetailResponse(
         public static CommentSummary from(PhotoComment comment) {
             return new CommentSummary(
                     comment.getCommentId(),
-                    comment.getAuthor().getId(),
-                    comment.getAuthor().getName(),
+                    AuthorResponse.from(comment.getAuthor()),
                     comment.getContent(),
                     comment.getCreatedAt(),
                     comment.getUpdatedAt()

@@ -1,5 +1,6 @@
 package com.dcom.intranet.notice.dto;
 
+import com.dcom.intranet.global.dto.AuthorResponse;
 import com.dcom.intranet.notice.domain.Notice;
 
 import java.time.LocalDateTime;
@@ -9,17 +10,17 @@ public record NoticeDetailResponse(
         Long noticeId,
         String title,
         String content,
-        Long authorId,
+        AuthorResponse author,
         LocalDateTime createdAt,
         List<FileInfo> files
 ) {
 
-    public static NoticeDetailResponse from(Notice notice) {
+    public static NoticeDetailResponse from(Notice notice, AuthorResponse author) {
         return new NoticeDetailResponse(
                 notice.getNoticeId(),
                 notice.getTitle(),
                 notice.getContent(),
-                notice.getAuthorId(),
+                author,
                 notice.getCreatedAt(),
                 notice.getFiles().stream()
                         .map(file -> new FileInfo(file.getId(), file.getOriginalFileName(), file.getFileUrl()))
