@@ -14,6 +14,7 @@ public class ArchiveRecordResponse {
     private final Integer examYear;
     private final String semester;
     private final String examType;
+    private final ArchiveExamInfoResponse examInfo;
     private final String content;
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
@@ -25,6 +26,7 @@ public class ArchiveRecordResponse {
         this.examYear = record.getExamYear();
         this.semester = record.getSemester() == null ? null : record.getSemester().name();
         this.examType = record.getExamType() == null ? null : record.getExamType().name();
+        this.examInfo = ArchiveExamInfoResponse.from(record);
         this.content = record.getContent();
         this.createdAt = record.getCreatedAt();
         this.updatedAt = record.getUpdatedAt();
