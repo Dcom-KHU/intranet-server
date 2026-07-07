@@ -10,9 +10,10 @@ public class ArchiveFileResponse {
     private final String originalFileName;
     private final String fileUrl;
 
-    public ArchiveFileResponse(ArchiveFile file) {
+    public ArchiveFileResponse(Long archiveId, Long recordId, ArchiveFile file) {
         this.fileId = file.getId();
         this.originalFileName = file.getOriginalFileName();
-        this.fileUrl = file.getFileUrl();
+        this.fileUrl = "/api/archives/%d/records/%d/files/%d/download"
+                .formatted(archiveId, recordId, file.getId());
     }
 }

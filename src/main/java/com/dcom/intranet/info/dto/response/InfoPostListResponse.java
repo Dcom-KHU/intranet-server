@@ -1,5 +1,6 @@
 package com.dcom.intranet.info.dto.response;
 
+import com.dcom.intranet.global.dto.AuthorResponse;
 import com.dcom.intranet.info.domain.InfoPost;
 import lombok.Getter;
 
@@ -10,8 +11,7 @@ public class InfoPostListResponse {
 
     private final Long postId;
     private final String title;
-    private final Long authorId;
-    private final String authorName;
+    private final AuthorResponse author;
     private final LocalDateTime createdAt;
     private final boolean hasFiles;
     private final int fileCount;
@@ -20,8 +20,7 @@ public class InfoPostListResponse {
     public InfoPostListResponse(InfoPost post) {
         this.postId = post.getId();
         this.title = post.getTitle();
-        this.authorId = post.getAuthor().getId();
-        this.authorName = post.getAuthor().getName();
+        this.author = AuthorResponse.from(post.getAuthor());
         this.createdAt = post.getCreatedAt();
         this.hasFiles = !post.getFiles().isEmpty();
         this.fileCount = post.getFiles().size();

@@ -95,12 +95,15 @@ public final class SwaggerExamples {
                     "content": "2024년 1학기 자료구조 중간고사 족보입니다.",
                     "createdAt": "2026-06-30T23:59:00",
                     "updatedAt": null,
-                    "author": { "nickname": "하성준" },
+                    "author": {
+                      "studentNumber": "20201234",
+                      "name": "하성준"
+                    },
                     "files": [
                       {
                         "fileId": 3,
                         "originalFileName": "자료구조_중간.pdf",
-                        "fileUrl": "./uploads/archive/2026/06/sample.pdf"
+                        "fileUrl": "/api/archives/1/records/10/files/3/download"
                       }
                     ]
                   }
@@ -118,8 +121,10 @@ public final class SwaggerExamples {
               {
                 "postId": 1,
                 "title": "시간 복잡도 Big-O 핵심 정리",
-                "authorId": 1,
-                "authorName": "표지훈",
+                "author": {
+                  "studentNumber": "20201234",
+                  "name": "표지훈"
+                },
                 "createdAt": "2026-06-20T10:00:00",
                 "hasFiles": true,
                 "fileCount": 2,
@@ -145,8 +150,10 @@ public final class SwaggerExamples {
             "postId": 1,
             "title": "시간 복잡도 Big-O 핵심 정리",
             "content": "시간 복잡도는 알고리즘 성능을 평가하는 가장 기본적인 기준입니다.",
-            "authorId": 1,
-            "authorName": "표지훈",
+            "author": {
+              "studentNumber": "20201234",
+              "name": "표지훈"
+            },
             "createdAt": "2026-06-20T10:00:00",
             "updatedAt": null,
             "views": 11,
@@ -173,8 +180,10 @@ public final class SwaggerExamples {
             "postId": 1,
             "title": "시간 복잡도 Big-O 핵심 정리",
             "content": "시간 복잡도는 알고리즘 성능을 평가하는 기준입니다.",
-            "authorId": 1,
-            "authorName": "표지훈",
+            "author": {
+              "studentNumber": "20201234",
+              "name": "표지훈"
+            },
             "createdAt": "2026-07-01T10:00:00",
             "files": [
               {
@@ -268,8 +277,10 @@ public final class SwaggerExamples {
                 "commentId": 1,
                 "postId": 1,
                 "content": "좋은 정보 감사합니다!",
-                "authorId": 2,
-                "authorName": "카리나",
+                "author": {
+                  "studentNumber": "20211234",
+                  "name": "카리나"
+                },
                 "createdAt": "2026-07-02T00:30:00",
                 "updatedAt": null
               }
@@ -287,8 +298,10 @@ public final class SwaggerExamples {
             "commentId": 1,
             "postId": 1,
             "content": "좋은 정보 감사합니다!",
-            "authorId": 2,
-            "authorName": "카리나",
+            "author": {
+              "studentNumber": "20211234",
+              "name": "카리나"
+            },
             "createdAt": "2026-07-02T00:30:00",
             "updatedAt": null
           }
@@ -304,8 +317,10 @@ public final class SwaggerExamples {
             "commentId": 1,
             "postId": 1,
             "content": "수정된 댓글입니다.",
-            "authorId": 2,
-            "authorName": "카리나",
+            "author": {
+              "studentNumber": "20211234",
+              "name": "카리나"
+            },
             "createdAt": "2026-07-02T00:30:00",
             "updatedAt": "2026-07-02T00:40:00"
           }
@@ -357,7 +372,6 @@ public final class SwaggerExamples {
         }
         """;
 }
-
 
 
 

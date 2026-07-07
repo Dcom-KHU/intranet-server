@@ -1,5 +1,6 @@
 package com.dcom.intranet.notice.dto;
 
+import com.dcom.intranet.global.dto.AuthorResponse;
 import org.springframework.data.domain.Page;
 
 import java.time.LocalDateTime;
@@ -27,7 +28,7 @@ public record NoticeListResponse(
     public record NoticeSummary(
             Long noticeId,
             String title,
-            Long authorId,
+            AuthorResponse author,
             LocalDateTime createdAt
     ) {
     }

@@ -66,7 +66,10 @@ public class NoticeController {
                   {
                     "noticeId": 1,
                     "title": "7월 전체 회의 안내",
-                    "authorId": 1,
+                    "author": {
+                      "studentNumber": "20201234",
+                      "name": "표지훈"
+                    },
                     "createdAt": "2026-07-03T12:00:00"
                   }
                 ],
@@ -91,7 +94,10 @@ public class NoticeController {
                 "noticeId": 1,
                 "title": "7월 전체 회의 안내",
                 "content": "7월 전체 회의 일정을 안내합니다.",
-                "authorId": 1,
+                "author": {
+                  "studentNumber": "20201234",
+                  "name": "표지훈"
+                },
                 "createdAt": "2026-07-03T12:00:00",
                 "files": [
                   {

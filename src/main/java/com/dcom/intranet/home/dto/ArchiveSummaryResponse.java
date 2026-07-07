@@ -1,5 +1,6 @@
 package com.dcom.intranet.home.dto;
 
+import com.dcom.intranet.global.dto.AuthorResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "족보 요약")

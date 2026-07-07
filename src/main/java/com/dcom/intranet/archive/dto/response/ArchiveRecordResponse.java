@@ -1,6 +1,7 @@
 package com.dcom.intranet.archive.dto.response;
 
 import com.dcom.intranet.archive.domain.ArchiveRecord;
+import com.dcom.intranet.global.dto.AuthorResponse;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
@@ -16,7 +17,7 @@ public class ArchiveRecordResponse {
     private final String content;
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
-    private final ArchiveAuthorResponse author;
+    private final AuthorResponse author;
     private final List<ArchiveFileResponse> files;
 
     public ArchiveRecordResponse(ArchiveRecord record) {
@@ -27,9 +28,9 @@ public class ArchiveRecordResponse {
         this.content = record.getContent();
         this.createdAt = record.getCreatedAt();
         this.updatedAt = record.getUpdatedAt();
-        this.author = new ArchiveAuthorResponse(record.getAuthor());
+        this.author = AuthorResponse.from(record.getAuthor());
         this.files = record.getFiles().stream()
-                .map(ArchiveFileResponse::new)
+                .map(file -> new ArchiveFileResponse(record.getArchive().getId(), record.getId(), file))
                 .toList();
     }
 }
