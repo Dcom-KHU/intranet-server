@@ -92,12 +92,7 @@ public final class SwaggerExamples {
                     "examYear": 2024,
                     "semester": "FIRST",
                     "examType": "MIDTERM",
-                    "examInfo": {
-                      "examYear": 2024,
-                      "semester": "FIRST",
-                      "examType": "MIDTERM",
-                      "label": "2024년 1학기 중간고사"
-                    },
+                    "label": "2024년 1학기 중간고사",
                     "content": "2024년 1학기 자료구조 중간고사 족보입니다.",
                     "createdAt": "2026-06-30T23:59:00",
                     "updatedAt": null,
@@ -378,5 +373,4 @@ public final class SwaggerExamples {
         }
         """;
 }
-
 
