@@ -31,7 +31,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 || path.startsWith("/api/swagger-ui")
                 || path.equals("/api/swagger-ui.html")
                 || path.startsWith("/api/v3/api-docs")
-                || path.startsWith("/api/auth/");
+                || isPublicAuthPath(path);
     }
 
     @Override
@@ -75,6 +75,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             /// 헤더에서 "Bearer "의 7개 잘라내고 그 뒤로부터 토큰을 읽는다.
         }
         return null;
+    }
+
+    private boolean isPublicAuthPath(String path) {
+        return path.equals("/api/auth/signup")
+                || path.equals("/api/auth/login")
+                || path.equals("/api/auth/check-login-id")
+                || path.startsWith("/api/auth/email/")
+                || path.equals("/api/auth/refresh")
+                || path.equals("/api/auth/logout")
+                || path.startsWith("/api/auth/password/reset/");
     }
 
 }
