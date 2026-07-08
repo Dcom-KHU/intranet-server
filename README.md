@@ -33,11 +33,20 @@ Merge 현황
 * [x]`feature/auth`
 * [ ]`feature/admin`
 * [x]`feature/home`
+* [ ]`feature/database`
 * [ ]`feature/mypage`
 * [x]`feature/archive`
 * [x]`feature/info-board`
 * [x]`feature/announcement`
 * [ ]`feature/photo-album`
+
+## Database Branch
+
+* `feature/database`: DB 스키마, 엔티티 매핑, JPA 설정, 초기 데이터, MariaDB 로컬 실행 설정을 작업합니다.
+* 기본 개발 환경은 H2 메모리 DB를 사용합니다.
+* MySQL 연결 정보는 로컬 또는 운영 환경 설정 파일에서만 관리하며 Git에 커밋하지 않습니다.
+* 테이블, 컬럼, 인덱스, 제약조건 변경 시 관련 엔티티와 Repository 영향 범위를 함께 확인합니다.
+* DB 구조 변경이 API 응답이나 프론트 연동에 영향을 주는 경우 Pull Request에 변경 내용을 명시합니다.
 
 
 ## Development Rule
