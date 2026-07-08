@@ -233,7 +233,7 @@ class MyPageControllerTest {
         verify(mailSender).send(messageCaptor.capture());
         SimpleMailMessage message = messageCaptor.getValue();
         assertThat(message.getTo()).containsExactly("new-email-send1@dcom.org");
-        assertThat(message.getSubject()).isEqualTo("[D.com Intranet] 이메일 인증 코드");
+        assertThat(message.getSubject()).isEqualTo("[D.COM Intranet] 이메일 인증 코드");
         assertThat(message.getText()).contains("인증 코드 : " + verification.getVerificationCode());
         assertThat(message.getText()).contains("5분 내로 입력해주세요.");
     }
