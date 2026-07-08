@@ -36,10 +36,10 @@ public class AuthService {
         if (userRepository.existsByLoginId(request.getLoginId())){
             throw new ConflictException("이미 사용 중인 아이디입니다.");
         }
-        if (userRepository.existsByLoginId(request.getStudentId())){
+        if (userRepository.existsByStudentId(request.getStudentId())){
             throw new ConflictException("이미 가입된 학번입니다.");
         }
-        if (userRepository.existsByLoginId(request.getEmail())){
+        if (userRepository.existsByEmail(request.getEmail())){
             throw new ConflictException("이미 사용 중인 이메일입니다.");
         }
 
