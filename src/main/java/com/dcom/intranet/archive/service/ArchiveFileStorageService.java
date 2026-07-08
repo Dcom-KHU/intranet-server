@@ -2,29 +2,34 @@ package com.dcom.intranet.archive.service;
 
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
-import java.nio.file.*;
+import java.net.MalformedURLException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.util.UUID;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.net.MalformedURLException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 @Service
 public class ArchiveFileStorageService {
 
-    @Value("${file.upload-dir:./uploads/archive}")
-    private String uploadDir;
+    private static final String PUBLIC_UPLOAD_PREFIX = "/uploads/archive/";
+
+    private final Path uploadRoot;
+
+    public ArchiveFileStorageService(
+            @Value("${file.archive-upload-dir:./uploads/archive}") String uploadDir
+    ) {
+        this.uploadRoot = Path.of(uploadDir).toAbsolutePath().normalize();
+    }
 
     public StoredFile store(MultipartFile file) {
         if (file == null || file.isEmpty()) {
@@ -43,10 +48,9 @@ public class ArchiveFileStorageService {
                     + String.format("%02d", now.getMonthValue()) + "/"
                     + storedFileName;
 
-            Path directoryPath = Paths.get(uploadDir,
-                    String.valueOf(now.getYear()),
-                    String.format("%02d", now.getMonthValue())
-            );
+            Path directoryPath = uploadRoot
+                    .resolve(String.valueOf(now.getYear()))
+                    .resolve(String.format("%02d", now.getMonthValue()));
 
             Files.createDirectories(directoryPath);
 
@@ -58,7 +62,7 @@ public class ArchiveFileStorageService {
                     originalFileName,
                     storedFileName,
                     objectKey,
-                    filePath.toString(),
+                    "/uploads/" + objectKey,
                     file.getSize(),
                     file.getContentType()
             );
@@ -102,7 +106,7 @@ public class ArchiveFileStorageService {
         }
 
         try {
-            Files.deleteIfExists(Paths.get(fileUrl));
+            Files.deleteIfExists(resolvePath(fileUrl));
         } catch (IOException e) {
             throw new RuntimeException("파일 삭제에 실패했습니다.", e);
         }
@@ -110,7 +114,7 @@ public class ArchiveFileStorageService {
 
     public Resource loadAsResource(String fileUrl) {
         try {
-            Path filePath = Paths.get(fileUrl).normalize();
+            Path filePath = resolvePath(fileUrl);
             Resource resource = new UrlResource(filePath.toUri());
 
             if (!resource.exists() || !resource.isReadable()) {
@@ -127,5 +131,23 @@ public class ArchiveFileStorageService {
                     "파일 경로가 올바르지 않습니다."
             );
         }
+    }
+
+    private Path resolvePath(String fileUrl) {
+        if (fileUrl.startsWith(PUBLIC_UPLOAD_PREFIX)) {
+            String relativePath = fileUrl.substring(PUBLIC_UPLOAD_PREFIX.length());
+            Path resolvedPath = uploadRoot.resolve(relativePath).normalize();
+
+            if (!resolvedPath.startsWith(uploadRoot)) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "파일 경로가 올바르지 않습니다."
+                );
+            }
+
+            return resolvedPath;
+        }
+
+        return Path.of(fileUrl).normalize();
     }
 }
