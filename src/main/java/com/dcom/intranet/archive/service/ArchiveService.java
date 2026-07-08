@@ -52,40 +52,25 @@ public class ArchiveService {
         return new ArchivePageResponse<>(archives);
     }
 
-    public ArchivePageResponse<ArchiveProfessorGroupResponse> searchBySubjectName(
-            String subjectName,
+    public ArchivePageResponse<ArchiveListResponse> searchArchives(
+            String searchKeyword,
             int page,
             int size
     ) {
-        Pageable pageable = PageRequest.of(
-                page,
-                size,
-                Sort.by(Sort.Direction.ASC, "professorName")
-                        .and(Sort.by(Sort.Direction.DESC, "lastModifiedAt"))
-        );
+        String keyword = searchKeyword.trim();
 
-        Page<ArchiveProfessorGroupResponse> result =
-                archiveRepository.findBySubjectNameContaining(subjectName, pageable)
-                        .map(ArchiveProfessorGroupResponse::new);
-
-        return new ArchivePageResponse<>(result);
-    }
-
-    public ArchivePageResponse<ArchiveSubjectGroupResponse> searchByProfessorName(
-            String professorName,
-            int page,
-            int size
-    ) {
         Pageable pageable = PageRequest.of(
                 page,
                 size,
                 Sort.by(Sort.Direction.ASC, "subjectName")
+                        .and(Sort.by(Sort.Direction.ASC, "professorName"))
                         .and(Sort.by(Sort.Direction.DESC, "lastModifiedAt"))
         );
 
-        Page<ArchiveSubjectGroupResponse> result =
-                archiveRepository.findByProfessorNameContaining(professorName, pageable)
-                        .map(ArchiveSubjectGroupResponse::new);
+        Page<ArchiveListResponse> result =
+                archiveRepository
+                        .findBySubjectNameContainingOrProfessorNameContaining(keyword, keyword, pageable)
+                        .map(ArchiveListResponse::new);
 
         return new ArchivePageResponse<>(result);
     }

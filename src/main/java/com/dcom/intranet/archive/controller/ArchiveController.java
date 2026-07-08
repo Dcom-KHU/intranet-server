@@ -86,7 +86,7 @@ public class ArchiveController {
 
     @Operation(
             summary = "족보 검색",
-            description = "과목명 또는 교수명으로 족보 아카이브를 검색합니다."
+            description = "검색어와 일치하는 과목명 또는 교수명의 족보 아카이브를 검색합니다."
     )
     @ApiResponses({
             @ApiResponse(
@@ -118,12 +118,9 @@ public class ArchiveController {
             )
     })
     @GetMapping("/search")
-    public ResponseEntity<CommonResponse<?>> searchArchives(
-            @Parameter(description = "과목명", example = "자료구조")
-            @RequestParam(required = false) String subjectName,
-
-            @Parameter(description = "교수명", example = "박교수")
-            @RequestParam(required = false) String professorName,
+    public ResponseEntity<CommonResponse<ArchivePageResponse<ArchiveListResponse>>> searchArchives(
+            @Parameter(description = "검색어. 과목명 또는 교수명 기준 부분 일치 검색", example = "자료구조")
+            @RequestParam String searchKeyword,
 
             @Parameter(description = "페이지 번호", example = "0")
             @RequestParam(defaultValue = "0") int page,
@@ -131,23 +128,15 @@ public class ArchiveController {
             @Parameter(description = "페이지 크기", example = "10")
             @RequestParam(defaultValue = "10") int size
     ) {
-        if (subjectName != null && !subjectName.isBlank()) {
-            return ResponseEntity.ok(
-                    CommonResponse.success(
-                            archiveService.searchBySubjectName(subjectName, page, size)
-                    )
-            );
+        if (searchKeyword.isBlank()) {
+            throw new IllegalArgumentException("searchKeyword는 필수입니다.");
         }
 
-        if (professorName != null && !professorName.isBlank()) {
-            return ResponseEntity.ok(
-                    CommonResponse.success(
-                            archiveService.searchByProfessorName(professorName, page, size)
-                    )
-            );
-        }
-
-        throw new IllegalArgumentException("subjectName 또는 professorName 중 하나는 필요합니다.");
+        return ResponseEntity.ok(
+                CommonResponse.success(
+                        archiveService.searchArchives(searchKeyword, page, size)
+                )
+        );
     }
 
     @Operation(
