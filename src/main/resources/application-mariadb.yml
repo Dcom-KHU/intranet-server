@@ -22,3 +22,9 @@ spring:
   h2:
     console:
       enabled: false
+
+file:
+  upload-dir: /var/dcom/uploads/info
+  archive-upload-dir: /var/dcom/uploads/archive
+  notice-upload-dir: /var/dcom/uploads/notice
+  photo-upload-dir: /var/dcom/uploads/photo
