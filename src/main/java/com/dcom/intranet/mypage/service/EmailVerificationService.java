@@ -135,7 +135,7 @@ public class EmailVerificationService {
     private void sendVerificationEmail(String email, String verificationCode) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(email);
-        message.setSubject("[D.com Intranet] 이메일 인증 코드");
+        message.setSubject("[D.COM Intranet] 이메일 인증 코드");
         message.setText("인증 코드 : " + verificationCode + "\n\n"
                 + (EXPIRES_IN_SECONDS / 60) + "분 내로 입력해주세요. ");
         mailSender.send(message);

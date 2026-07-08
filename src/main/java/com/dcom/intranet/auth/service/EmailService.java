@@ -35,7 +35,7 @@ public class EmailService {
         /// 메일 발송
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(email);
-        message.setSubject("[D.com Intranet] 이메일 인증 코드");
+        message.setSubject("[D.COM Intranet] 이메일 인증 코드");
         message.setText("인증 코드 : " + code + "\n\n"
                 + EXPIRATION_MINUTES + "분 내로 입력해주세요. ");
         mailSender.send(message);
@@ -84,7 +84,7 @@ public class EmailService {
     public void sendApprovalEmail(String email, String name){
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(email);
-        message.setSubject("[D.com Intranet] 회원가입 승인 안내");
+        message.setSubject("[D.COM Intranet] 회원가입 승인 안내");
         message.setText(name + "님, 회원가입이 승인되었습니다.\n\n"
                 + "로그인 후 서비스를 이용해주세요.");
 
@@ -95,7 +95,7 @@ public class EmailService {
     public void sendTempPasswordEmail(String email, String tempPassword, int expirationMinutes){
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(email);
-        message.setSubject("[D.com Intranet] 임시 비밀번호 안내");
+        message.setSubject("[D.COM Intranet] 임시 비밀번호 안내");
         message.setText("임시 비밀번호: " + tempPassword + "\n\n"
         + expirationMinutes + "분 내로 로그인하여 비밀번호를 변경해주세요.\n"
         + "로그인 후 반드시 비밀번호를 변경해주세요.");
