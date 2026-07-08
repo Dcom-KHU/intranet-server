@@ -1279,6 +1279,11 @@
             "type": "string",
             "description": "전체 학번",
             "example": "2026123456"
+          },
+          "requirePasswordChange": {
+            "type": "boolean",
+            "description": "유효한 임시 비밀번호가 있어 비밀번호 변경이 필요한지 여부",
+            "example": false
           }
         },
         "description": "회원정보 조회 응답 데이터"

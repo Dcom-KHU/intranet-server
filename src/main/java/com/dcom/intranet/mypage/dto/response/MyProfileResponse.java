@@ -18,7 +18,10 @@ public record MyProfileResponse(
         String phoneNumber,
 
         @Schema(description = "전체 학번", example = "2026123456")
-        String studentId
+        String studentId,
+
+        @Schema(description = "유효한 임시 비밀번호가 있어 비밀번호 변경이 필요한지 여부", example = "false")
+        boolean requirePasswordChange
 ) {
 
     public static MyProfileResponse from(User user) {
@@ -27,7 +30,8 @@ public record MyProfileResponse(
                 user.getEmail(),
                 user.getName(),
                 user.getPhoneNumber(),
-                user.getStudentId()
+                user.getStudentId(),
+                user.isTempPasswordValid()
         );
     }
 }

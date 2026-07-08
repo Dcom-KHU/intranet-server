@@ -110,7 +110,8 @@ class MyPageControllerTest {
                 .andExpect(jsonPath("$.data.email").value("member1@dcom.org"))
                 .andExpect(jsonPath("$.data.name").value("홍길동"))
                 .andExpect(jsonPath("$.data.phoneNumber").value("010-1234-5678"))
-                .andExpect(jsonPath("$.data.studentId").value("20240001"));
+                .andExpect(jsonPath("$.data.studentId").value("20240001"))
+                .andExpect(jsonPath("$.data.requirePasswordChange").value(false));
     }
 
     @Test
@@ -126,7 +127,8 @@ class MyPageControllerTest {
                 .andExpect(jsonPath("$.data.email").exists())
                 .andExpect(jsonPath("$.data.name").exists())
                 .andExpect(jsonPath("$.data.phoneNumber").exists())
-                .andExpect(jsonPath("$.data.studentId").exists());
+                .andExpect(jsonPath("$.data.studentId").exists())
+                .andExpect(jsonPath("$.data.requirePasswordChange").exists());
     }
 
     @Test
@@ -140,6 +142,34 @@ class MyPageControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.userId").doesNotExist())
                 .andExpect(jsonPath("$.data.password").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("Profile response returns requirePasswordChange true when temp password is valid")
+    void profileResponseReturnsRequirePasswordChangeTrueWhenTempPasswordIsValid() throws Exception {
+        User user = saveUser("memberTemp1", UserStatus.APPROVED, UserRole.USER);
+        user.setTempPassword(passwordEncoder.encode("temporary-password"), 30);
+        userRepository.save(user);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+
+        mockMvc.perform(get("/api/users/me")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.requirePasswordChange").value(true));
+    }
+
+    @Test
+    @DisplayName("Auth me response returns requirePasswordChange true when temp password is valid")
+    void authMeResponseReturnsRequirePasswordChangeTrueWhenTempPasswordIsValid() throws Exception {
+        User user = saveUser("memberTemp2", UserStatus.APPROVED, UserRole.USER);
+        user.setTempPassword(passwordEncoder.encode("temporary-password"), 30);
+        userRepository.save(user);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+
+        mockMvc.perform(get("/api/auth/me")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.requirePasswordChange").value(true));
     }
 
     @Test
