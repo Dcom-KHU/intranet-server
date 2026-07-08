@@ -16,12 +16,14 @@ import java.util.UUID;
 @Service
 public class NoticeFileStorageService {
 
+    private static final String PUBLIC_UPLOAD_PREFIX = "/uploads/notice/";
+
     private final Path uploadRoot;
 
     public NoticeFileStorageService(
             @Value("${file.notice-upload-dir:./uploads/notice}") String uploadDir
     ) {
-        this.uploadRoot = Path.of(uploadDir);
+        this.uploadRoot = Path.of(uploadDir).toAbsolutePath().normalize();
     }
 
     public StoredFile store(MultipartFile file) {
@@ -51,13 +53,13 @@ public class NoticeFileStorageService {
                     java.nio.file.StandardCopyOption.REPLACE_EXISTING
             );
 
-            String fileUrl = targetPath.toString();
+            String objectKey = toRelativePath(targetPath);
 
             return new StoredFile(
                     originalFileName,
                     storedFileName,
-                    uploadRoot.relativize(targetPath).toString(),
-                    fileUrl,
+                    objectKey,
+                    PUBLIC_UPLOAD_PREFIX + objectKey,
                     file.getSize(),
                     file.getContentType()
             );
@@ -75,13 +77,38 @@ public class NoticeFileStorageService {
         }
 
         try {
-            Files.deleteIfExists(Path.of(fileUrl));
+            Files.deleteIfExists(resolvePath(fileUrl));
         } catch (IOException e) {
             throw new ResponseStatusException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     "공지사항 첨부파일 삭제 중 오류가 발생했습니다."
             );
         }
+    }
+
+    private String toRelativePath(Path targetPath) {
+        return uploadRoot.relativize(targetPath)
+                .toString()
+                .replace('\\', '/');
+    }
+
+    private Path resolvePath(String fileUrl) {
+        if (fileUrl.startsWith(PUBLIC_UPLOAD_PREFIX)) {
+            Path resolvedPath = uploadRoot
+                    .resolve(fileUrl.substring(PUBLIC_UPLOAD_PREFIX.length()))
+                    .normalize();
+
+            if (!resolvedPath.startsWith(uploadRoot)) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "파일 경로가 올바르지 않습니다."
+                );
+            }
+
+            return resolvedPath;
+        }
+
+        return Path.of(fileUrl).normalize();
     }
 
     private String extractExtension(String originalFileName) {
