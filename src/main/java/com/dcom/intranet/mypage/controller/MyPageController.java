@@ -92,7 +92,7 @@ public class MyPageController {
 
     @Operation(
             summary = "내가 쓴 글 목록 조회",
-            description = "인증된 사용자가 본인이 작성한 정보 공유 게시글, 족보 글, 활동 사진 게시글 목록을 조회한다.",
+            description = "인증된 사용자가 본인이 작성한 정보 공유 게시글, 족보 글, 활동 사진 게시글, 공지사항 목록을 조회한다. 공지사항 필터는 관리자만 사용할 수 있다.",
             responses = {
                     @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
@@ -103,6 +103,11 @@ public class MyPageController {
                             responseCode = "401",
                             description = "인증 실패",
                             content = @Content(schema = @Schema(implementation = UnauthorizedApiResponse.class))
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "403",
+                            description = "공지사항 조회 권한 없음",
+                            content = @Content(schema = @Schema(implementation = ForbiddenApiResponse.class))
                     )
             }
     )
@@ -111,7 +116,7 @@ public class MyPageController {
             Authentication authentication,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @Parameter(description = "라우팅 타입: info-posts, archives, photo-posts")
+            @Parameter(description = "라우팅 타입: info-posts, archives, photo-posts, notices (notices는 관리자만 가능)")
             @RequestParam(required = false) String type
     ) {
         MyWrittenPostListResponse response = myPageService.getMyPosts(

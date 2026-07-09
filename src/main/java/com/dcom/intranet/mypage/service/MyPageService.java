@@ -30,6 +30,8 @@ import java.time.LocalDateTime;
 @Service
 public class MyPageService {
 
+    private static final String NOTICES = "notices";
+
     private final UserRepository userRepository;
     private final EmailVerificationService emailVerificationService;
     private final PasswordEncoder passwordEncoder;
@@ -59,7 +61,11 @@ public class MyPageService {
     @Transactional(readOnly = true)
     public MyWrittenPostListResponse getMyPosts(String loginId, int page, int size, String type) {
         User user = getApprovedUser(loginId);
-        return myWrittenPostReader.read(user.getId(), page, size, MyPageRouteType.normalize(type));
+        String normalizedType = MyPageRouteType.normalize(type);
+        if (NOTICES.equals(normalizedType) && !user.isAdmin()) {
+            throw new MyPageApiException(HttpStatus.FORBIDDEN, "공지사항은 관리자만 조회할 수 있습니다.");
+        }
+        return myWrittenPostReader.read(user.getId(), page, size, normalizedType);
     }
 
     @Transactional(readOnly = true)

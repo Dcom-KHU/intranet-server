@@ -14,6 +14,7 @@ public final class MyPageRouteType {
             case "INFO_POST" -> "info-posts";
             case "ARCHIVE" -> "archives";
             case "PHOTO_ALBUM", "PHOTO_COMMENT" -> "photo-posts";
+            case "NOTICE" -> "notices";
             default -> type;
         };
     }
