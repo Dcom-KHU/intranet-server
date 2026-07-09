@@ -678,6 +678,35 @@ class MyPageControllerTest {
     }
 
     @Test
+    @DisplayName("Password change with valid temp password does not require current password")
+    void passwordChangeWithValidTempPasswordDoesNotRequireCurrentPassword() throws Exception {
+        User user = saveUser("passwordTemp", UserStatus.APPROVED, UserRole.USER);
+        user.setTempPassword(passwordEncoder.encode("temporary-password"), 30);
+        userRepository.save(user);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+
+        mockMvc.perform(patch("/api/users/me/password")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "newPassword": "%s"
+                                }
+                                """.formatted(NEW_PASSWORD)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.message").value(SUCCESS_MESSAGE))
+                .andExpect(jsonPath("$.data.message").value("비밀번호가 변경되었습니다."));
+
+        User updatedUser = userRepository.findByLoginId("passwordTemp").orElseThrow();
+        assertThat(passwordEncoder.matches(NEW_PASSWORD, updatedUser.getPassword())).isTrue();
+        assertThat(updatedUser.isTempPasswordValid()).isFalse();
+        assertThat(updatedUser.getTempPassword()).isNull();
+        assertThat(updatedUser.getTempPasswordExpiresAt()).isNull();
+    }
+
+    @Test
     @DisplayName("Password change with wrong current password returns 400 common envelope")
     void passwordChangeWithWrongCurrentPasswordReturns400CommonEnvelope() throws Exception {
         User user = saveUser("password2", UserStatus.APPROVED, UserRole.USER);
@@ -835,7 +864,9 @@ class MyPageControllerTest {
         myWrittenPostReader.givenResponse(new MyWrittenPostListResponse(
                 List.of(new MyWrittenPostResponse(
                         11L,
+                        22L,
                         "오픈소스SW개발방법및도구",
+                        "최진영",
                         "ARCHIVE",
                         LocalDateTime.of(2026, 5, 25, 10, 30)
                 )),
@@ -853,8 +884,10 @@ class MyPageControllerTest {
                 .andExpect(jsonPath("$.message").value(SUCCESS_MESSAGE))
                 .andExpect(jsonPath("$.data.total").value(1))
                 .andExpect(jsonPath("$.data.posts[0].id").value(11))
-                .andExpect(jsonPath("$.data.posts[0].number").value(1))
+                .andExpect(jsonPath("$.data.posts[0].recordId").value(22))
+                .andExpect(jsonPath("$.data.posts[0].number").doesNotExist())
                 .andExpect(jsonPath("$.data.posts[0].title").value("오픈소스SW개발방법및도구"))
+                .andExpect(jsonPath("$.data.posts[0].professor").value("최진영"))
                 .andExpect(jsonPath("$.data.posts[0].type").value("archives"))
                 .andExpect(jsonPath("$.data.posts[0].createdAt").value("2026-05-25T10:30:00"))
                 .andExpect(jsonPath("$.data.postList").doesNotExist())
@@ -886,6 +919,53 @@ class MyPageControllerTest {
         assertThat(myWrittenPostReader.lastUserId()).isEqualTo(user.getId());
         assertThat(myWrittenPostReader.lastPage()).isEqualTo(0);
         assertThat(myWrittenPostReader.lastSize()).isEqualTo(10);
+        assertThat(myWrittenPostReader.lastType()).isNull();
+    }
+
+    @Test
+    @DisplayName("My written posts list passes notices type for admin")
+    void myWrittenPostsListPassesNoticesTypeForAdmin() throws Exception {
+        User admin = saveUser("postsNoticeAdmin", UserStatus.APPROVED, UserRole.ADMIN);
+        String token = jwtTokenProvider.createAccessToken(admin.getLoginId(), admin.getRole().name());
+        myWrittenPostReader.givenResponse(new MyWrittenPostListResponse(
+                List.of(new MyWrittenPostResponse(
+                        41L,
+                        "공지사항",
+                        "notices",
+                        LocalDateTime.of(2026, 7, 9, 9, 0)
+                )),
+                new PageInfoResponse(0, 10, 1, 1L)
+        ));
+
+        mockMvc.perform(get("/api/users/me/posts")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .param("type", "notices"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.posts[0].id").value(41))
+                .andExpect(jsonPath("$.data.posts[0].number").doesNotExist())
+                .andExpect(jsonPath("$.data.posts[0].type").value("notices"));
+
+        assertThat(myWrittenPostReader.lastUserId()).isEqualTo(admin.getId());
+        assertThat(myWrittenPostReader.lastType()).isEqualTo("notices");
+    }
+
+    @Test
+    @DisplayName("My written posts list with notices type returns 403 for user")
+    void myWrittenPostsListWithNoticesTypeReturns403ForUser() throws Exception {
+        User user = saveUser("postsNoticeUser", UserStatus.APPROVED, UserRole.USER);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+
+        mockMvc.perform(get("/api/users/me/posts")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .param("type", "notices"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value(403))
+                .andExpect(jsonPath("$.message").value("공지사항은 관리자만 조회할 수 있습니다."))
+                .andExpect(jsonPath("$.data").value(nullValue()));
+
+        assertThat(myWrittenPostReader.lastUserId()).isNull();
         assertThat(myWrittenPostReader.lastType()).isNull();
     }
 

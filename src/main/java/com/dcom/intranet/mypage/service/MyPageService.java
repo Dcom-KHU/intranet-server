@@ -30,6 +30,8 @@ import java.time.LocalDateTime;
 @Service
 public class MyPageService {
 
+    private static final String NOTICES = "notices";
+
     private final UserRepository userRepository;
     private final EmailVerificationService emailVerificationService;
     private final PasswordEncoder passwordEncoder;
@@ -59,7 +61,11 @@ public class MyPageService {
     @Transactional(readOnly = true)
     public MyWrittenPostListResponse getMyPosts(String loginId, int page, int size, String type) {
         User user = getApprovedUser(loginId);
-        return myWrittenPostReader.read(user.getId(), page, size, MyPageRouteType.normalize(type));
+        String normalizedType = MyPageRouteType.normalize(type);
+        if (NOTICES.equals(normalizedType) && !user.isAdmin()) {
+            throw new MyPageApiException(HttpStatus.FORBIDDEN, "공지사항은 관리자만 조회할 수 있습니다.");
+        }
+        return myWrittenPostReader.read(user.getId(), page, size, normalizedType);
     }
 
     @Transactional(readOnly = true)
@@ -114,8 +120,13 @@ public class MyPageService {
     public PasswordChangeResponse changePassword(String loginId, PasswordChangeRequest request) {
         User user = getApprovedUser(loginId);
 
-        if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
-            throw new MyPageApiException(HttpStatus.BAD_REQUEST, "현재 비밀번호가 올바르지 않습니다.");
+        if (!user.isTempPasswordValid()) {
+            if (!StringUtils.hasText(request.currentPassword())) {
+                throw new MyPageApiException(HttpStatus.BAD_REQUEST, "요청값이 올바르지 않습니다.");
+            }
+            if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
+                throw new MyPageApiException(HttpStatus.BAD_REQUEST, "현재 비밀번호가 올바르지 않습니다.");
+            }
         }
 
         user.changePassword(passwordEncoder.encode(request.newPassword()));

@@ -35,6 +35,9 @@ public class MeResponse {
     @Schema(description = "가입 상태", example = "APPROVED")
     private UserStatus status;
 
+    @Schema(description = "임시 비밀번호 변경 필요 여부", example = "false")
+    private boolean requirePasswordChange;
+
     public static MeResponse from(User user){
         return MeResponse.builder()
                 .userId(user.getId())
@@ -45,6 +48,7 @@ public class MeResponse {
                 .phoneNumber(user.getPhoneNumber())
                 .role(user.getRole())
                 .status(user.getStatus())
+                .requirePasswordChange(user.isTempPasswordValid())
                 .build();
     }
 }

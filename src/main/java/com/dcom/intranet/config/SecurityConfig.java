@@ -106,6 +106,7 @@ public class SecurityConfig {
 
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:5173",
+                "http://localhost:5174",
                 "https://dev-intranet.dcom.club"
         ));
 

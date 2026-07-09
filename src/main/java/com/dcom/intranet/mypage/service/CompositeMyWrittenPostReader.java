@@ -14,6 +14,7 @@ import com.dcom.intranet.mypage.dto.response.MyWrittenPostResponse;
 import com.dcom.intranet.mypage.dto.response.MyWrittenPostTargetResponse;
 import com.dcom.intranet.mypage.dto.response.PageInfoResponse;
 import com.dcom.intranet.mypage.exception.MyPageApiException;
+import com.dcom.intranet.notice.repository.NoticeRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,9 +28,11 @@ public class CompositeMyWrittenPostReader implements MyWrittenPostReader {
 
     private static final String INFO_POSTS = "info-posts";
     private static final String ARCHIVES = "archives";
+    private static final String NOTICES = "notices";
 
     private final InfoPostRepository infoPostRepository;
     private final ArchiveRecordRepository archiveRecordRepository;
+    private final NoticeRepository noticeRepository;
     private final UserRepository userRepository;
     private final InfoPostService infoPostService;
     private final ArchiveService archiveService;
@@ -39,10 +42,12 @@ public class CompositeMyWrittenPostReader implements MyWrittenPostReader {
             ArchiveRecordRepository archiveRecordRepository,
             UserRepository userRepository,
             InfoPostService infoPostService,
-            ArchiveService archiveService
+            ArchiveService archiveService,
+            NoticeRepository noticeRepository
     ) {
         this.infoPostRepository = infoPostRepository;
         this.archiveRecordRepository = archiveRecordRepository;
+        this.noticeRepository = noticeRepository;
         this.userRepository = userRepository;
         this.infoPostService = infoPostService;
         this.archiveService = archiveService;
@@ -54,6 +59,7 @@ public class CompositeMyWrittenPostReader implements MyWrittenPostReader {
         List<MyWrittenPostResponse> posts = switch (type == null ? "" : type) {
             case INFO_POSTS -> readInfoPosts(userId);
             case ARCHIVES -> readArchiveRecords(userId);
+            case NOTICES -> readNotices(userId);
             case "" -> readAllPosts(userId);
             default -> List.of();
         };
@@ -99,7 +105,7 @@ public class CompositeMyWrittenPostReader implements MyWrittenPostReader {
     }
 
     private List<MyWrittenPostResponse> readAllPosts(Long userId) {
-        return sortByCreatedAtDesc(concat(readInfoPosts(userId), readArchiveRecords(userId)));
+        return sortByCreatedAtDesc(concat(concat(readInfoPosts(userId), readArchiveRecords(userId)), readNotices(userId)));
     }
 
     private List<MyWrittenPostResponse> readInfoPosts(Long userId) {
@@ -118,10 +124,24 @@ public class CompositeMyWrittenPostReader implements MyWrittenPostReader {
         return archiveRecordRepository.findByAuthorId(userId)
                 .stream()
                 .map(record -> new MyWrittenPostResponse(
+                        record.getArchive().getId(),
                         record.getId(),
-                        archiveTitle(record),
+                        record.getArchive().getSubjectName(),
+                        record.getArchive().getProfessorName(),
                         ARCHIVES,
                         record.getCreatedAt()
+                ))
+                .toList();
+    }
+
+    private List<MyWrittenPostResponse> readNotices(Long userId) {
+        return noticeRepository.findByAuthorId(userId)
+                .stream()
+                .map(notice -> new MyWrittenPostResponse(
+                        notice.getNoticeId(),
+                        notice.getTitle(),
+                        NOTICES,
+                        notice.getCreatedAt()
                 ))
                 .toList();
     }
@@ -147,10 +167,6 @@ public class CompositeMyWrittenPostReader implements MyWrittenPostReader {
     private User findUser(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new MyPageApiException(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."));
-    }
-
-    private String archiveTitle(ArchiveRecord record) {
-        return record.getArchive().getSubjectName() + " / " + record.getArchive().getProfessorName();
     }
 
     private String requireType(String type) {
