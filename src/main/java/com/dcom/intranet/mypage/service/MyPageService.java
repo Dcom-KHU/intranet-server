@@ -114,8 +114,13 @@ public class MyPageService {
     public PasswordChangeResponse changePassword(String loginId, PasswordChangeRequest request) {
         User user = getApprovedUser(loginId);
 
-        if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
-            throw new MyPageApiException(HttpStatus.BAD_REQUEST, "현재 비밀번호가 올바르지 않습니다.");
+        if (!user.isTempPasswordValid()) {
+            if (!StringUtils.hasText(request.currentPassword())) {
+                throw new MyPageApiException(HttpStatus.BAD_REQUEST, "요청값이 올바르지 않습니다.");
+            }
+            if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
+                throw new MyPageApiException(HttpStatus.BAD_REQUEST, "현재 비밀번호가 올바르지 않습니다.");
+            }
         }
 
         user.changePassword(passwordEncoder.encode(request.newPassword()));

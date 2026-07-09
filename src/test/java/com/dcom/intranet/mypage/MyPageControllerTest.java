@@ -678,6 +678,35 @@ class MyPageControllerTest {
     }
 
     @Test
+    @DisplayName("Password change with valid temp password does not require current password")
+    void passwordChangeWithValidTempPasswordDoesNotRequireCurrentPassword() throws Exception {
+        User user = saveUser("passwordTemp", UserStatus.APPROVED, UserRole.USER);
+        user.setTempPassword(passwordEncoder.encode("temporary-password"), 30);
+        userRepository.save(user);
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+
+        mockMvc.perform(patch("/api/users/me/password")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "newPassword": "%s"
+                                }
+                                """.formatted(NEW_PASSWORD)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.message").value(SUCCESS_MESSAGE))
+                .andExpect(jsonPath("$.data.message").value("비밀번호가 변경되었습니다."));
+
+        User updatedUser = userRepository.findByLoginId("passwordTemp").orElseThrow();
+        assertThat(passwordEncoder.matches(NEW_PASSWORD, updatedUser.getPassword())).isTrue();
+        assertThat(updatedUser.isTempPasswordValid()).isFalse();
+        assertThat(updatedUser.getTempPassword()).isNull();
+        assertThat(updatedUser.getTempPasswordExpiresAt()).isNull();
+    }
+
+    @Test
     @DisplayName("Password change with wrong current password returns 400 common envelope")
     void passwordChangeWithWrongCurrentPasswordReturns400CommonEnvelope() throws Exception {
         User user = saveUser("password2", UserStatus.APPROVED, UserRole.USER);
