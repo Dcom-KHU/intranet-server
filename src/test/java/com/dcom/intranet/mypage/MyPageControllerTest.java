@@ -864,7 +864,9 @@ class MyPageControllerTest {
         myWrittenPostReader.givenResponse(new MyWrittenPostListResponse(
                 List.of(new MyWrittenPostResponse(
                         11L,
+                        22L,
                         "오픈소스SW개발방법및도구",
+                        "최진영",
                         "ARCHIVE",
                         LocalDateTime.of(2026, 5, 25, 10, 30)
                 )),
@@ -882,8 +884,10 @@ class MyPageControllerTest {
                 .andExpect(jsonPath("$.message").value(SUCCESS_MESSAGE))
                 .andExpect(jsonPath("$.data.total").value(1))
                 .andExpect(jsonPath("$.data.posts[0].id").value(11))
-                .andExpect(jsonPath("$.data.posts[0].number").value(1))
+                .andExpect(jsonPath("$.data.posts[0].recordId").value(22))
+                .andExpect(jsonPath("$.data.posts[0].number").doesNotExist())
                 .andExpect(jsonPath("$.data.posts[0].title").value("오픈소스SW개발방법및도구"))
+                .andExpect(jsonPath("$.data.posts[0].professor").value("최진영"))
                 .andExpect(jsonPath("$.data.posts[0].type").value("archives"))
                 .andExpect(jsonPath("$.data.posts[0].createdAt").value("2026-05-25T10:30:00"))
                 .andExpect(jsonPath("$.data.postList").doesNotExist())
@@ -939,6 +943,7 @@ class MyPageControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.total").value(1))
                 .andExpect(jsonPath("$.data.posts[0].id").value(41))
+                .andExpect(jsonPath("$.data.posts[0].number").doesNotExist())
                 .andExpect(jsonPath("$.data.posts[0].type").value("notices"));
 
         assertThat(myWrittenPostReader.lastUserId()).isEqualTo(admin.getId());

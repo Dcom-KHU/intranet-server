@@ -124,8 +124,10 @@ public class CompositeMyWrittenPostReader implements MyWrittenPostReader {
         return archiveRecordRepository.findByAuthorId(userId)
                 .stream()
                 .map(record -> new MyWrittenPostResponse(
+                        record.getArchive().getId(),
                         record.getId(),
-                        archiveTitle(record),
+                        record.getArchive().getSubjectName(),
+                        record.getArchive().getProfessorName(),
                         ARCHIVES,
                         record.getCreatedAt()
                 ))
@@ -165,10 +167,6 @@ public class CompositeMyWrittenPostReader implements MyWrittenPostReader {
     private User findUser(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new MyPageApiException(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."));
-    }
-
-    private String archiveTitle(ArchiveRecord record) {
-        return record.getArchive().getSubjectName() + " / " + record.getArchive().getProfessorName();
     }
 
     private String requireType(String type) {
