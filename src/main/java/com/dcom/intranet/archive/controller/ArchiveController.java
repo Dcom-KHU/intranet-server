@@ -62,49 +62,20 @@ public class ArchiveController {
 
     @Operation(
             summary = "족보 목록 조회",
-            description = "최근 수정일 기준으로 족보 아카이브 목록을 조회합니다."
-    )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "조회 성공"),
-            @ApiResponse(responseCode = "401", description = "인증 필요")
-    })
-    @GetMapping
-    public ResponseEntity<CommonResponse<ArchivePageResponse<ArchiveListResponse>>> getArchives(
-            @Parameter(description = "페이지 번호", example = "0")
-            @RequestParam(defaultValue = "0") int page,
+            description = """
+                최근 수정일 기준으로 족보 아카이브 목록을 조회합니다.
 
-            @Parameter(description = "페이지 크기", example = "10")
-            @RequestParam(defaultValue = "10") int size
-    ) {
-        ArchivePageResponse<ArchiveListResponse> response =
-                archiveService.getArchives(page, size);
-
-        return ResponseEntity.ok(
-                CommonResponse.success(response)
-        );
-    }
-
-    @Operation(
-            summary = "족보 검색",
-            description = "검색어와 일치하는 과목명 또는 교수명의 족보 아카이브를 검색합니다."
+                searchKeyword가 있으면 과목명 또는 교수명 기준으로 부분 일치 검색합니다.
+                """
     )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
-                    description = "검색 성공",
+                    description = "조회 성공",
                     content = @Content(
                             mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = CommonResponse.class),
                             examples = @ExampleObject(value = SwaggerExamples.SUCCESS_200)
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "검색 조건 누락",
-                    content = @Content(
-                            mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = CommonResponse.class),
-                            examples = @ExampleObject(value = SwaggerExamples.BAD_REQUEST_400)
                     )
             ),
             @ApiResponse(
@@ -117,25 +88,22 @@ public class ArchiveController {
                     )
             )
     })
-    @GetMapping("/search")
-    public ResponseEntity<CommonResponse<ArchivePageResponse<ArchiveListResponse>>> searchArchives(
-            @Parameter(description = "검색어. 과목명 또는 교수명 기준 부분 일치 검색", example = "자료구조")
-            @RequestParam String searchKeyword,
-
+    @GetMapping
+    public ResponseEntity<CommonResponse<ArchivePageResponse<ArchiveListResponse>>> getArchives(
             @Parameter(description = "페이지 번호", example = "0")
             @RequestParam(defaultValue = "0") int page,
 
             @Parameter(description = "페이지 크기", example = "10")
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+
+            @Parameter(description = "검색어. 과목명 또는 교수명 기준 부분 일치 검색", example = "자료구조")
+            @RequestParam(required = false) String searchKeyword
     ) {
-        if (searchKeyword.isBlank()) {
-            throw new IllegalArgumentException("searchKeyword는 필수입니다.");
-        }
+        ArchivePageResponse<ArchiveListResponse> response =
+                archiveService.getArchives(page, size, searchKeyword);
 
         return ResponseEntity.ok(
-                CommonResponse.success(
-                        archiveService.searchArchives(searchKeyword, page, size)
-                )
+                CommonResponse.success(response)
         );
     }
 
