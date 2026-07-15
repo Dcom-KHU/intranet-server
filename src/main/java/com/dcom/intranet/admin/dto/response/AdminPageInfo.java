@@ -6,18 +6,14 @@ public record AdminPageInfo(
         int page,
         int size,
         long totalElements,
-        int totalPages,
-        boolean first,
-        boolean last
+        int totalPages
 ) {
     public static AdminPageInfo from(Page<?> page) {
         return new AdminPageInfo(
                 page.getNumber(),
                 page.getSize(),
                 page.getTotalElements(),
-                page.getTotalPages(),
-                page.isFirst(),
-                page.isLast()
+                page.getTotalPages()
         );
     }
 }
