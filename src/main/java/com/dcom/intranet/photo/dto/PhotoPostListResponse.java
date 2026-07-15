@@ -17,9 +17,7 @@ public record PhotoPostListResponse(
                         page.getNumber(),
                         page.getSize(),
                         page.getTotalElements(),
-                        page.getTotalPages(),
-                        page.isFirst(),
-                        page.isLast()
+                        page.getTotalPages()
                 )
         );
     }
@@ -36,9 +34,7 @@ public record PhotoPostListResponse(
             int page,
             int size,
             long totalElements,
-            int totalPages,
-            boolean first,
-            boolean last
+            int totalPages
     ) {
     }
 }

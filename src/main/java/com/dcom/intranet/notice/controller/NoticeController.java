@@ -77,9 +77,7 @@ public class NoticeController {
                   "page": 0,
                   "size": 10,
                   "totalElements": 1,
-                  "totalPages": 1,
-                  "first": true,
-                  "last": true
+                  "totalPages": 1
                 }
               }
             }

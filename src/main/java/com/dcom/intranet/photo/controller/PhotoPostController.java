@@ -4,6 +4,7 @@ import com.dcom.intranet.global.response.CommonResponse;
 import com.dcom.intranet.photo.dto.PhotoCommentCreateRequest;
 import com.dcom.intranet.photo.dto.PhotoCommentCreateResponse;
 import com.dcom.intranet.photo.dto.PhotoCommentDeleteResponse;
+import com.dcom.intranet.photo.dto.PhotoCommentListResponse;
 import com.dcom.intranet.photo.dto.PhotoCommentUpdateResponse;
 import com.dcom.intranet.photo.dto.PhotoPostCreateResponse;
 import com.dcom.intranet.photo.dto.PhotoPostCreateRequest;
@@ -77,9 +78,7 @@ public class PhotoPostController {
                   "page": 0,
                   "size": 8,
                   "totalElements": 1,
-                  "totalPages": 1,
-                  "first": true,
-                  "last": true
+                  "totalPages": 1
                 }
               }
             }
@@ -183,6 +182,25 @@ public class PhotoPostController {
                 "commentId": 1,
                 "content": "수정된 댓글 내용",
                 "updatedAt": "2026-07-03T13:00:00"
+              }
+            }
+            """;
+
+    private static final String COMMENT_LIST_SUCCESS_200_EXAMPLE = """
+            {
+              "success": true,
+              "status": 200,
+              "message": "요청이 성공적으로 처리되었습니다.",
+              "data": {
+                "comments": [
+                  {
+                    "commentId": 1,
+                    "albumId": 1,
+                    "authorId": 10,
+                    "content": "댓글 내용",
+                    "createdAt": "2026-07-03T12:00:00"
+                  }
+                ]
               }
             }
             """;
@@ -377,6 +395,20 @@ public class PhotoPostController {
         );
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(CommonResponse.success(201, "댓글이 작성되었습니다.", response));
+    }
+
+    @Operation(summary = "사진첩 댓글 목록 조회", description = "사진첩에 작성된 댓글 목록을 조회합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = CommonResponse.class), examples = @ExampleObject(value = COMMENT_LIST_SUCCESS_200_EXAMPLE))),
+            @ApiResponse(responseCode = "401", description = "인증 필요", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = CommonResponse.class), examples = @ExampleObject(value = UNAUTHORIZED_401_EXAMPLE))),
+            @ApiResponse(responseCode = "404", description = "사진첩 없음", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = CommonResponse.class), examples = @ExampleObject(value = NOT_FOUND_404_EXAMPLE)))
+    })
+    @GetMapping("/{albumId}/comments")
+    public ResponseEntity<CommonResponse<PhotoCommentListResponse>> getCommentList(
+            @Parameter(description = "사진첩 ID", example = "1")
+            @PathVariable Long albumId
+    ) {
+        return ResponseEntity.ok(CommonResponse.success(photoPostService.getCommentList(albumId)));
     }
 
     @Operation(summary = "댓글 수정", description = "사진첩 댓글을 수정합니다. 댓글 작성자만 수정할 수 있습니다.")

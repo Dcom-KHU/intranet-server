@@ -7,6 +7,7 @@ import com.dcom.intranet.photo.domain.PhotoPost;
 import com.dcom.intranet.photo.domain.PhotoPostImage;
 import com.dcom.intranet.photo.dto.PhotoCommentCreateResponse;
 import com.dcom.intranet.photo.dto.PhotoCommentDeleteResponse;
+import com.dcom.intranet.photo.dto.PhotoCommentListResponse;
 import com.dcom.intranet.photo.dto.PhotoCommentUpdateResponse;
 import com.dcom.intranet.photo.dto.PhotoPostCreateRequest;
 import com.dcom.intranet.photo.dto.PhotoPostCreateResponse;
@@ -59,6 +60,19 @@ public class PhotoPostService {
                 ));
 
         return PhotoPostDetailResponse.from(photoPost);
+    }
+
+    @Transactional(readOnly = true)
+    public PhotoCommentListResponse getCommentList(Long albumId) {
+        if (!photoPostRepository.existsById(albumId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "사진첩을 찾을 수 없습니다."
+            );
+        }
+
+        List<PhotoComment> comments = photoCommentRepository.findByPhotoPostAlbumIdOrderByCreatedAtAsc(albumId);
+        return PhotoCommentListResponse.from(comments);
     }
 
     @Transactional
