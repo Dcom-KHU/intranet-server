@@ -39,17 +39,39 @@ public class ArchiveService {
     private final ArchiveFileStorageService archiveFileStorageService;
     private final ArchiveRecordRepository archiveRecordRepository;
 
-    public ArchivePageResponse<ArchiveListResponse> getArchives(int page, int size) {
+    public ArchivePageResponse<ArchiveListResponse> getArchives(
+            int page,
+            int size,
+            String searchKeyword
+    ) {
         Pageable pageable = PageRequest.of(
                 page,
                 size,
                 Sort.by(Sort.Direction.DESC, "lastModifiedAt")
         );
 
-        Page<ArchiveListResponse> archives = archiveRepository.findAll(pageable)
-                .map(ArchiveListResponse::new);
+        Page<Archive> archives;
 
-        return new ArchivePageResponse<>(archives);
+        if (searchKeyword != null && !searchKeyword.isBlank()) {
+            String keyword = searchKeyword.trim();
+
+            archives = archiveRepository.findBySubjectNameContainingOrProfessorNameContaining(
+                    keyword,
+                    keyword,
+                    pageable
+            );
+        } else {
+            archives = archiveRepository.findAll(pageable);
+        }
+
+        Page<ArchiveListResponse> responsePage =
+                archives.map(ArchiveListResponse::new);
+
+        return new ArchivePageResponse<>(responsePage);
+    }
+
+    public ArchivePageResponse<ArchiveListResponse> getArchives(int page, int size) {
+        return getArchives(page, size, null);
     }
 
     public ArchivePageResponse<ArchiveListResponse> searchArchives(
@@ -57,22 +79,7 @@ public class ArchiveService {
             int page,
             int size
     ) {
-        String keyword = searchKeyword.trim();
-
-        Pageable pageable = PageRequest.of(
-                page,
-                size,
-                Sort.by(Sort.Direction.ASC, "subjectName")
-                        .and(Sort.by(Sort.Direction.ASC, "professorName"))
-                        .and(Sort.by(Sort.Direction.DESC, "lastModifiedAt"))
-        );
-
-        Page<ArchiveListResponse> result =
-                archiveRepository
-                        .findBySubjectNameContainingOrProfessorNameContaining(keyword, keyword, pageable)
-                        .map(ArchiveListResponse::new);
-
-        return new ArchivePageResponse<>(result);
+        return getArchives(page, size, searchKeyword);
     }
 
     public ArchiveDetailResponse getArchiveDetail(Long archiveId) {

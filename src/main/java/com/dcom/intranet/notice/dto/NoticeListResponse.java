@@ -18,9 +18,7 @@ public record NoticeListResponse(
                         page.getNumber(),
                         page.getSize(),
                         page.getTotalElements(),
-                        page.getTotalPages(),
-                        page.isFirst(),
-                        page.isLast()
+                        page.getTotalPages()
                 )
         );
     }
@@ -37,9 +35,7 @@ public record NoticeListResponse(
             int page,
             int size,
             long totalElements,
-            int totalPages,
-            boolean first,
-            boolean last
+            int totalPages
     ) {
     }
 }
