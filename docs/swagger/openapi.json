@@ -12,11 +12,3828 @@
   ],
   "tags": [
     {
+      "name": "Archive",
+      "description": "족보 아카이브 API"
+    },
+    {
+      "name": "Information Board",
+      "description": "정보공유 게시판 API"
+    },
+    {
+      "name": "공지사항",
+      "description": "공지사항 API"
+    },
+    {
+      "name": "관리자",
+      "description": "관리자 콘솔 API"
+    },
+    {
+      "name": "인증",
+      "description": "회원가입, 로그인, 토큰 관리 등 인증 관련 API"
+    },
+    {
+      "name": "사진첩",
+      "description": "사진첩 API"
+    },
+    {
+      "name": "정보공유 게시판 댓글",
+      "description": "정보공유 게시판 댓글 API"
+    },
+    {
       "name": "Home",
       "description": "메인 페이지 API"
     }
   ],
   "paths": {
+    "/api/photo-posts/{albumId}": {
+      "get": {
+        "tags": [
+          "사진첩"
+        ],
+        "summary": "사진첩 상세 조회",
+        "description": "사진 목록, 설명, 활동 날짜, 댓글을 포함한 사진첩 상세 정보를 조회합니다.",
+        "operationId": "getPhotoPostDetail",
+        "parameters": [
+          {
+            "name": "albumId",
+            "in": "path",
+            "description": "사진첩 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "사진첩 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "요청한 리소스를 찾을 수 없습니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "인증이 필요합니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": true,
+                  "status": 200,
+                  "message": "요청이 성공적으로 처리되었습니다.",
+                  "data": {
+                    "albumId": 1,
+                    "eventName": "신입생 환영회",
+                    "activityDate": "2026-07-03",
+                    "imageList": [
+                      "/uploads/photo/2026/07/photo1.jpg",
+                      "/uploads/photo/2026/07/photo2.jpg"
+                    ],
+                    "description": "신입생 환영회 사진입니다.",
+                    "comments": [
+                      {
+                        "commentId": 1,
+                        "author": {
+                          "studentNumber": "20211234",
+                          "name": "홍길동"
+                        },
+                        "content": "좋은 사진 감사합니다.",
+                        "createdAt": "2026-07-03T12:00:00",
+                        "updatedAt": null
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "사진첩"
+        ],
+        "summary": "사진첩 수정",
+        "description": "사진첩을 수정합니다. ADMIN만 수정할 수 있으며 요청 형식은 multipart/form-data입니다.\nfiles를 전달하면 기존 사진 전체를 교체하고, 첫 번째 사진이 대표 사진으로 사용됩니다.\nfiles를 생략하면 기존 사진을 유지하고 행사명, 활동일자, 설명만 수정합니다.\n",
+        "operationId": "updatePhotoPost",
+        "parameters": [
+          {
+            "name": "albumId",
+            "in": "path",
+            "description": "사진첩 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 1
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/PhotoPostUpdateMultipartRequest"
+              },
+              "encoding": {
+                "request": {
+                  "contentType": "application/json"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "404": {
+            "description": "사진첩 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "요청한 리소스를 찾을 수 없습니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "인증이 필요합니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "수정 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": true,
+                  "status": 200,
+                  "message": "요청이 성공적으로 처리되었습니다.",
+                  "data": {
+                    "albumId": 1,
+                    "eventName": "신입생 환영회 수정",
+                    "activityDate": "2026-07-04",
+                    "coverImageUrl": "/uploads/photo/2026/07/cover-updated.jpg",
+                    "imageUrls": [
+                      "/uploads/photo/2026/07/photo-updated1.jpg"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "잘못된 요청입니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "관리자 권한 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 403,
+                  "message": "권한이 없습니다.",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "사진첩"
+        ],
+        "summary": "사진첩 삭제",
+        "description": "사진첩을 삭제합니다. ADMIN만 삭제할 수 있습니다.",
+        "operationId": "deletePhotoPost",
+        "parameters": [
+          {
+            "name": "albumId",
+            "in": "path",
+            "description": "사진첩 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "삭제 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": true,
+                  "status": 200,
+                  "message": "요청이 성공적으로 처리되었습니다.",
+                  "data": {
+                    "message": "사진첩이 삭제되었습니다."
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "사진첩 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "요청한 리소스를 찾을 수 없습니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "인증이 필요합니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "관리자 권한 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 403,
+                  "message": "권한이 없습니다.",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/photo-posts/{albumId}/comments/{commentId}": {
+      "put": {
+        "tags": [
+          "사진첩"
+        ],
+        "summary": "댓글 수정",
+        "description": "사진첩 댓글을 수정합니다. 댓글 작성자만 수정할 수 있습니다.",
+        "operationId": "updateComment",
+        "parameters": [
+          {
+            "name": "albumId",
+            "in": "path",
+            "description": "사진첩 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 1
+          },
+          {
+            "name": "commentId",
+            "in": "path",
+            "description": "댓글 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 1
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PhotoCommentCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "수정 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": true,
+                  "status": 200,
+                  "message": "요청이 성공적으로 처리되었습니다.",
+                  "data": {
+                    "commentId": 1,
+                    "content": "수정된 댓글 내용",
+                    "updatedAt": "2026-07-03T13:00:00"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "댓글 작성자만 수정 가능",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 403,
+                  "message": "권한이 없습니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "사진첩 댓글 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "요청한 리소스를 찾을 수 없습니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "인증이 필요합니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "잘못된 요청입니다.",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "사진첩"
+        ],
+        "summary": "댓글 삭제",
+        "description": "사진첩 댓글을 삭제합니다. 댓글 작성자 또는 ADMIN만 삭제할 수 있습니다.",
+        "operationId": "deleteComment",
+        "parameters": [
+          {
+            "name": "albumId",
+            "in": "path",
+            "description": "사진첩 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 1
+          },
+          {
+            "name": "commentId",
+            "in": "path",
+            "description": "댓글 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "사진첩 댓글 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "요청한 리소스를 찾을 수 없습니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "인증이 필요합니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "삭제 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": true,
+                  "status": 200,
+                  "message": "요청이 성공적으로 처리되었습니다.",
+                  "data": {
+                    "message": "댓글이 삭제되었습니다."
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "댓글 작성자 또는 관리자만 삭제 가능",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 403,
+                  "message": "권한이 없습니다.",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/notice/{noticeId}": {
+      "get": {
+        "tags": [
+          "공지사항"
+        ],
+        "summary": "공지사항 상세 조회",
+        "description": "특정 공지사항의 상세 정보를 조회합니다.",
+        "operationId": "getNoticeDetail",
+        "parameters": [
+          {
+            "name": "noticeId",
+            "in": "path",
+            "description": "공지사항 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": true,
+                  "status": 200,
+                  "message": "요청이 성공적으로 처리되었습니다.",
+                  "data": {
+                    "noticeId": 1,
+                    "title": "7월 전체 회의 안내",
+                    "content": "7월 전체 회의 일정을 안내합니다.",
+                    "author": {
+                      "studentNumber": "20201234",
+                      "name": "표지훈"
+                    },
+                    "createdAt": "2026-07-03T12:00:00",
+                    "files": [
+                      {
+                        "fileId": 1,
+                        "originalFileName": "notice.pdf",
+                        "fileUrl": "/uploads/notice/2026/07/notice.pdf"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "공지사항 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "공지사항을 찾을 수 없습니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "인증이 필요합니다.",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "공지사항"
+        ],
+        "summary": "공지사항 수정",
+        "description": "공지사항을 수정합니다. ADMIN만 수정할 수 있으며, 첨부파일은 선택입니다.\n기존 파일 중 삭제할 파일은 request.deleteFileIds에 담습니다.\nfiles가 있으면 기존 파일을 유지한 상태에서 새 파일이 추가됩니다.\n",
+        "operationId": "updateNotice",
+        "parameters": [
+          {
+            "name": "noticeId",
+            "in": "path",
+            "description": "공지사항 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 1
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/NoticeUpdateMultipartRequest"
+              },
+              "encoding": {
+                "request": {
+                  "contentType": "application/json"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "404": {
+            "description": "공지사항 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "공지사항을 찾을 수 없습니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "수정 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": true,
+                  "status": 200,
+                  "message": "공지사항이 수정되었습니다.",
+                  "data": {
+                    "noticeId": 1,
+                    "title": "7월 전체 회의 안내 수정",
+                    "updatedAt": "2026-07-03T13:00:00"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "인증이 필요합니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "잘못된 요청입니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "관리자 권한 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 403,
+                  "message": "권한이 없습니다.",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "공지사항"
+        ],
+        "summary": "공지사항 삭제",
+        "description": "공지사항을 삭제합니다. ADMIN만 삭제할 수 있습니다.",
+        "operationId": "deleteNotice",
+        "parameters": [
+          {
+            "name": "noticeId",
+            "in": "path",
+            "description": "공지사항 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "공지사항 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "공지사항을 찾을 수 없습니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "인증이 필요합니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "삭제 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": true,
+                  "status": 200,
+                  "message": "요청이 성공적으로 처리되었습니다.",
+                  "data": {
+                    "message": "공지사항이 삭제되었습니다."
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "관리자 권한 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 403,
+                  "message": "권한이 없습니다.",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/info-posts/{postId}": {
+      "get": {
+        "tags": [
+          "Information Board"
+        ],
+        "summary": "정보공유 게시글 상세 조회",
+        "description": "특정 정보공유 게시글의 상세 정보를 조회합니다. 상세 조회 시 조회수가 증가합니다.",
+        "operationId": "getPostDetail",
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "description": "게시글 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "게시글 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "요청한 리소스를 찾을 수 없습니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "인증이 필요합니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "게시글 상세 조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": true,
+                  "status": 200,
+                  "message": "요청이 성공적으로 처리되었습니다.",
+                  "data": {
+                    "postId": 1,
+                    "title": "시간 복잡도 Big-O 핵심 정리",
+                    "content": "시간 복잡도는 알고리즘 성능을 평가하는 가장 기본적인 기준입니다.",
+                    "author": {
+                      "studentNumber": "20201234",
+                      "name": "표지훈"
+                    },
+                    "createdAt": "2026-06-20T10:00:00",
+                    "updatedAt": null,
+                    "views": 11,
+                    "files": [
+                      {
+                        "fileId": 1,
+                        "originalFileName": "big-o-summary.pdf",
+                        "fileUrl": "./uploads/info/2026/07/sample.pdf",
+                        "fileSize": 1000,
+                        "contentType": "application/pdf"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Information Board"
+        ],
+        "summary": "정보공유 게시글 수정",
+        "description": "정보공유 게시글을 수정합니다.\n\n작성자만 수정할 수 있습니다.\nrequest 파트에는 JSON 문자열을 넣고,\nfiles 파트에는 새로 추가할 첨부파일을 넣습니다.\n기존 파일 중 삭제할 파일은 deleteFileIds로 전달합니다.\n",
+        "operationId": "updatePost",
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "description": "게시글 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 1
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "required": [
+                  "request"
+                ],
+                "type": "object",
+                "properties": {
+                  "request": {
+                    "type": "string"
+                  },
+                  "files": {
+                    "type": "array",
+                    "description": "새로 추가할 첨부파일 목록",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "게시글 수정 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": true,
+                  "status": 200,
+                  "message": "게시글이 수정되었습니다.",
+                  "data": {
+                    "postId": 1,
+                    "title": "시간 복잡도 Big-O 핵심 정리 수정",
+                    "content": "수정된 본문입니다.",
+                    "updatedAt": "2026-07-01T23:30:00",
+                    "files": [
+                      {
+                        "fileId": 1,
+                        "originalFileName": "big-o-summary.pdf",
+                        "fileUrl": "./uploads/info/2026/07/sample.pdf",
+                        "fileSize": 1000,
+                        "contentType": "application/pdf"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "수정 권한 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 403,
+                  "message": "작성자만 수정할 수 있습니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "게시글 또는 사용자 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "정보 공유 게시글을 찾을 수 없습니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "잘못된 요청입니다.",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Information Board"
+        ],
+        "summary": "정보공유 게시글 삭제",
+        "description": "정보공유 게시글을 삭제합니다.\n\n작성자 또는 ADMIN만 삭제할 수 있습니다.\n삭제는 물리 삭제로 처리하며, 게시글 DB row와 첨부파일 메타데이터,\n로컬 저장소의 실제 첨부파일을 함께 삭제합니다.\n",
+        "operationId": "deletePost",
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "description": "게시글 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "게시글 삭제 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": true,
+                  "status": 200,
+                  "message": "게시글이 삭제되었습니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "삭제 권한 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 403,
+                  "message": "작성자 또는 관리자만 삭제할 수 있습니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "게시글 또는 사용자 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "정보 공유 게시글을 찾을 수 없습니다.",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/info-posts/{postId}/comments/{commentId}": {
+      "put": {
+        "tags": [
+          "정보공유 게시판 댓글"
+        ],
+        "summary": "정보공유 댓글 수정",
+        "description": "댓글을 수정합니다. 댓글 작성자만 수정할 수 있습니다.",
+        "operationId": "updateComment_1",
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "description": "게시글 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 1
+          },
+          {
+            "name": "commentId",
+            "in": "path",
+            "description": "댓글 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 1
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InfoCommentUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "403": {
+            "description": "수정 권한 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 403,
+                  "message": "작성자만 댓글을 수정할 수 있습니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "댓글 수정 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": true,
+                  "status": 200,
+                  "message": "댓글이 수정되었습니다.",
+                  "data": {
+                    "commentId": 1,
+                    "postId": 1,
+                    "content": "수정된 댓글입니다.",
+                    "author": {
+                      "studentNumber": "20211234",
+                      "name": "카리나"
+                    },
+                    "createdAt": "2026-07-02T00:30:00",
+                    "updatedAt": "2026-07-02T00:40:00"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "게시글, 댓글 또는 사용자 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "댓글을 찾을 수 없습니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "댓글 내용은 필수입니다.",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "정보공유 게시판 댓글"
+        ],
+        "summary": "정보공유 댓글 삭제",
+        "description": "댓글을 삭제합니다. 댓글 작성자 또는 ADMIN만 삭제할 수 있습니다.",
+        "operationId": "deleteComment_1",
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "description": "게시글 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 1
+          },
+          {
+            "name": "commentId",
+            "in": "path",
+            "description": "댓글 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "403": {
+            "description": "삭제 권한 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 403,
+                  "message": "작성자 또는 관리자만 댓글을 삭제할 수 있습니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "댓글 삭제 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": true,
+                  "status": 200,
+                  "message": "댓글이 삭제되었습니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "게시글, 댓글 또는 사용자 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "댓글을 찾을 수 없습니다.",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/archives/{archiveId}/records/{recordId}": {
+      "put": {
+        "tags": [
+          "Archive"
+        ],
+        "summary": "족보 수정",
+        "description": "족보 레코드를 수정합니다.\n\nrequest 파트에는 JSON 문자열을 넣고, files 파트에는 새로 추가할 첨부파일을 넣습니다.\n기존 파일 중 삭제할 파일은 request.deleteFileIds에 담습니다.\nfiles가 있으면 기존 파일을 유지한 상태에서 새 파일이 추가됩니다.\n",
+        "operationId": "updateRecord",
+        "parameters": [
+          {
+            "name": "archiveId",
+            "in": "path",
+            "description": "아카이브 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 1
+          },
+          {
+            "name": "recordId",
+            "in": "path",
+            "description": "족보 레코드 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 10
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/ArchiveUpdateMultipartRequest"
+              },
+              "encoding": {
+                "request": {
+                  "contentType": "application/json"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "족보 수정 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": true,
+                  "status": 200,
+                  "message": "수정되었습니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "수정 권한 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 403,
+                  "message": "작성자 또는 관리자만 수정/삭제할 수 있습니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "잘못된 요청입니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "족보 또는 사용자 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "요청한 리소스를 찾을 수 없습니다.",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Archive"
+        ],
+        "summary": "족보 삭제",
+        "description": "작성자 또는 관리자가 족보 레코드를 삭제합니다. 연결된 첨부파일 DB 데이터와 로컬 저장소 파일도 함께 삭제됩니다.",
+        "operationId": "deleteRecord",
+        "parameters": [
+          {
+            "name": "archiveId",
+            "in": "path",
+            "description": "아카이브 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 1
+          },
+          {
+            "name": "recordId",
+            "in": "path",
+            "description": "족보 레코드 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 10
+          }
+        ],
+        "responses": {
+          "403": {
+            "description": "삭제 권한 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 403,
+                  "message": "작성자 또는 관리자만 수정/삭제할 수 있습니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "삭제 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": true,
+                  "status": 200,
+                  "message": "삭제되었습니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "족보 또는 사용자 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "요청한 리소스를 찾을 수 없습니다.",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/me/email/verification/verify": {
+      "post": {
+        "tags": [
+          "my-page-controller"
+        ],
+        "summary": "이메일 변경 인증 확인",
+        "description": "새 이메일과 인증 코드를 검증하고 회원정보 수정에서 사용할 이메일 변경 토큰을 발급한다.",
+        "operationId": "verifyEmailVerification",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailVerificationVerifyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "이메일 변경 인증 성공",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailVerificationVerifyApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청값 오류 또는 인증 코드 불일치",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestApiResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 실패",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedApiResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "인증 코드 만료",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoneApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/me/email/verification/send": {
+      "post": {
+        "tags": [
+          "my-page-controller"
+        ],
+        "summary": "이메일 변경 인증 메일 발송",
+        "description": "새 이메일에 대한 변경 인증 코드를 생성한다. 실제 메일 발송은 추후 메일 서비스 연동 시 연결한다.",
+        "operationId": "sendEmailVerification",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailVerificationSendRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "이메일 변경 인증 코드 생성 성공",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailVerificationSendApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청값 오류",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestApiResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 실패",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedApiResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "이미 사용 중인 이메일",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictApiResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "진행 중인 인증 요청 존재",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/photo-posts": {
+      "get": {
+        "tags": [
+          "사진첩"
+        ],
+        "summary": "사진첩 목록 조회",
+        "description": "사진첩 목록을 조회합니다. 대표 이미지는 첫 번째 업로드 사진이며, 기본 페이지 크기는 8개입니다.",
+        "operationId": "getPhotoPostList",
+        "parameters": [
+          {
+            "name": "pageable",
+            "in": "query",
+            "description": "페이지 정보. 기본 size는 8입니다.",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Pageable"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": true,
+                  "status": 200,
+                  "message": "요청이 성공적으로 처리되었습니다.",
+                  "data": {
+                    "albumList": [
+                      {
+                        "albumId": 1,
+                        "coverImageUrl": "/uploads/photo/2026/07/cover.jpg",
+                        "eventName": "신입생 환영회",
+                        "activityDate": "2026-07-03"
+                      }
+                    ],
+                    "pageInfo": {
+                      "page": 0,
+                      "size": 8,
+                      "totalElements": 1,
+                      "totalPages": 1,
+                      "first": true,
+                      "last": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "인증이 필요합니다.",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "사진첩"
+        ],
+        "summary": "사진첩 등록",
+        "description": "사진첩을 등록합니다. ADMIN만 등록할 수 있으며 요청 형식은 multipart/form-data입니다. 첫 번째 사진이 대표 사진으로 사용됩니다.",
+        "operationId": "createPhotoPost",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/PhotoPostCreateMultipartRequest"
+              },
+              "encoding": {
+                "request": {
+                  "contentType": "application/json"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "인증이 필요합니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "등록 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": true,
+                  "status": 201,
+                  "message": "사진첩이 등록되었습니다.",
+                  "data": {
+                    "albumId": 1,
+                    "eventName": "신입생 환영회",
+                    "activityDate": "2026-07-03",
+                    "coverImageUrl": "/uploads/photo/2026/07/cover.jpg",
+                    "imageUrls": [
+                      "/uploads/photo/2026/07/photo1.jpg",
+                      "/uploads/photo/2026/07/photo2.jpg"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "잘못된 요청입니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "관리자 권한 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 403,
+                  "message": "권한이 없습니다.",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/photo-posts/{albumId}/comments": {
+      "post": {
+        "tags": [
+          "사진첩"
+        ],
+        "summary": "댓글 작성",
+        "description": "사진첩에 댓글을 작성합니다.",
+        "operationId": "createComment",
+        "parameters": [
+          {
+            "name": "albumId",
+            "in": "path",
+            "description": "사진첩 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 1
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PhotoCommentCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "작성 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": true,
+                  "status": 201,
+                  "message": "댓글이 작성되었습니다.",
+                  "data": {
+                    "commentId": 1,
+                    "content": "댓글 내용",
+                    "createdAt": "2026-07-03T12:00:00"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "사진첩 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "요청한 리소스를 찾을 수 없습니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "인증이 필요합니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "잘못된 요청입니다.",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/notice": {
+      "get": {
+        "tags": [
+          "공지사항"
+        ],
+        "summary": "공지사항 목록 조회",
+        "description": "공지사항 목록을 조회합니다. title 값이 있으면 제목으로 검색합니다.",
+        "operationId": "getNoticeList",
+        "parameters": [
+          {
+            "name": "title",
+            "in": "query",
+            "description": "검색할 공지사항 제목",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "회의"
+          },
+          {
+            "name": "pageable",
+            "in": "query",
+            "description": "페이지 정보",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Pageable"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": true,
+                  "status": 200,
+                  "message": "요청이 성공적으로 처리되었습니다.",
+                  "data": {
+                    "noticeList": [
+                      {
+                        "noticeId": 1,
+                        "title": "7월 전체 회의 안내",
+                        "author": {
+                          "studentNumber": "20201234",
+                          "name": "표지훈"
+                        },
+                        "createdAt": "2026-07-03T12:00:00"
+                      }
+                    ],
+                    "pageInfo": {
+                      "page": 0,
+                      "size": 10,
+                      "totalElements": 1,
+                      "totalPages": 1,
+                      "first": true,
+                      "last": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "인증이 필요합니다.",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "공지사항"
+        ],
+        "summary": "공지사항 작성",
+        "description": "공지사항을 작성합니다. ADMIN만 작성할 수 있으며, 첨부파일은 선택입니다.",
+        "operationId": "createNotice",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/NoticeCreateMultipartRequest"
+              },
+              "encoding": {
+                "request": {
+                  "contentType": "application/json"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "작성 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": true,
+                  "status": 201,
+                  "message": "공지사항이 작성되었습니다.",
+                  "data": {
+                    "noticeId": 1,
+                    "title": "7월 전체 회의 안내",
+                    "content": "7월 전체 회의 일정을 안내합니다.",
+                    "createdAt": "2026-07-03T12:00:00"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "인증이 필요합니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "잘못된 요청입니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "관리자 권한 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 403,
+                  "message": "권한이 없습니다.",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/info-posts": {
+      "get": {
+        "tags": [
+          "Information Board"
+        ],
+        "summary": "정보공유 게시글 목록 조회",
+        "description": "정보공유 게시글 목록을 조회합니다.\n\nkeyword가 있으면 제목 또는 본문 기준으로 검색합니다.\nsort 값은 latest, oldest, views를 지원합니다.\n기본 정렬은 latest입니다.\n",
+        "operationId": "getPosts",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "페이지 번호",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            },
+            "example": 0
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "페이지 크기",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            },
+            "example": 10
+          },
+          {
+            "name": "keyword",
+            "in": "query",
+            "description": "검색어. 제목 또는 본문 기준 검색",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "시간 복잡도"
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "정렬 기준. latest, oldest, views",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "latest"
+            },
+            "example": "latest"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "게시글 목록 조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": true,
+                  "status": 200,
+                  "message": "요청이 성공적으로 처리되었습니다.",
+                  "data": {
+                    "postList": [
+                      {
+                        "postId": 1,
+                        "title": "시간 복잡도 Big-O 핵심 정리",
+                        "author": {
+                          "studentNumber": "20201234",
+                          "name": "표지훈"
+                        },
+                        "createdAt": "2026-06-20T10:00:00",
+                        "hasFiles": true,
+                        "fileCount": 2,
+                        "views": 10
+                      }
+                    ],
+                    "pageInfo": {
+                      "page": 0,
+                      "size": 10,
+                      "totalPages": 1,
+                      "totalElements": 1
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "인증이 필요합니다.",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Information Board"
+        ],
+        "summary": "정보공유 게시글 작성",
+        "description": "정보공유 게시글을 작성합니다.\n\nrequest 파트에는 JSON 문자열을 넣고,\nfiles 파트에는 첨부파일을 넣습니다.\nfiles는 선택입니다.\n",
+        "operationId": "createPost",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "required": [
+                  "request"
+                ],
+                "type": "object",
+                "properties": {
+                  "request": {
+                    "type": "string"
+                  },
+                  "files": {
+                    "type": "array",
+                    "description": "첨부파일 목록",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "게시글 작성 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": true,
+                  "status": 201,
+                  "message": "게시글이 작성되었습니다.",
+                  "data": {
+                    "postId": 1,
+                    "title": "시간 복잡도 Big-O 핵심 정리",
+                    "content": "시간 복잡도는 알고리즘 성능을 평가하는 기준입니다.",
+                    "author": {
+                      "studentNumber": "20201234",
+                      "name": "표지훈"
+                    },
+                    "createdAt": "2026-07-01T10:00:00",
+                    "files": [
+                      {
+                        "fileId": 1,
+                        "originalFileName": "big-o-summary.pdf",
+                        "fileUrl": "./uploads/info/2026/07/sample.pdf",
+                        "fileSize": 1000,
+                        "contentType": "application/pdf"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "인증이 필요합니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "사용자 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "정보 공유 게시글을 찾을 수 없습니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "잘못된 요청입니다.",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/info-posts/{postId}/comments": {
+      "get": {
+        "tags": [
+          "정보공유 게시판 댓글"
+        ],
+        "summary": "정보공유 댓글 목록 조회",
+        "description": "특정 정보공유 게시글에 연결된 댓글 목록을 조회합니다.",
+        "operationId": "getComments",
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "description": "게시글 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "인증이 필요합니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "게시글 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "정보 공유 게시글을 찾을 수 없습니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "댓글 목록 조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": true,
+                  "status": 200,
+                  "message": "요청이 성공적으로 처리되었습니다.",
+                  "data": {
+                    "comments": [
+                      {
+                        "commentId": 1,
+                        "postId": 1,
+                        "content": "좋은 정보 감사합니다!",
+                        "author": {
+                          "studentNumber": "20211234",
+                          "name": "카리나"
+                        },
+                        "createdAt": "2026-07-02T00:30:00",
+                        "updatedAt": null
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "정보공유 게시판 댓글"
+        ],
+        "summary": "정보공유 댓글 작성",
+        "description": "특정 정보공유 게시글에 댓글을 작성합니다.",
+        "operationId": "createComment_1",
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "description": "게시글 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 1
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InfoCommentCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "댓글 작성 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": true,
+                  "status": 201,
+                  "message": "댓글이 작성되었습니다.",
+                  "data": {
+                    "commentId": 1,
+                    "postId": 1,
+                    "content": "좋은 정보 감사합니다!",
+                    "author": {
+                      "studentNumber": "20211234",
+                      "name": "카리나"
+                    },
+                    "createdAt": "2026-07-02T00:30:00",
+                    "updatedAt": null
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "인증이 필요합니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "게시글 또는 사용자 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "정보 공유 게시글을 찾을 수 없습니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "댓글 내용은 필수입니다.",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/signup": {
+      "post": {
+        "tags": [
+          "인증"
+        ],
+        "summary": "회원가입",
+        "description": "회원가입을 요청합니다. 인증이 필요없는 API입니다.\n\n- 아이디, 학번, 이메일은 각각 다른 회원과 중복될 수 없습니다. 중복 시 409를 반환합니다.\n- 이메일은 도메인 제한이 없으며, 가입 전 /api/auth/email/send, /api/auth/email/verify로 인증을 완료해야 합니다. 인증되지 않은 이메일로 가입을 시도하면 400을 반환합니다.\n- 가입 직후 상태는 항상 PENDING(관리자 승인 대기)이며, 관리자가 승인해야 로그인할 수 있습니다.\n",
+        "operationId": "signup",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "회원가입 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignupResponse"
+                },
+                "example": {
+                  "userId": 1,
+                  "loginId": "dcom2024",
+                  "studentId": "20241234",
+                  "email": "dcom2024@example.com",
+                  "status": "PENDING"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "필수값 누락, 이메일 형식 오류 또는 이메일 인증 미완료",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "이메일 인증이 완료되지 않았습니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "아이디, 학번 또는 이메일 중복",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 409,
+                  "message": "이미 사용 중인 아이디입니다.",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "tags": [
+          "인증"
+        ],
+        "summary": "토큰 재발급",
+        "description": "Refresh Token으로 Access Token과 Refresh Token을 재발급받아 로그인 상태를 유지합니다. 재발급 시 기존 Refresh Token은 폐기되고 새 Refresh Token이 발급됩니다(Rotation).",
+        "operationId": "refresh",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Refresh Token이 존재하지 않거나 만료됨",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "유효하지 않은 RefreshToken입니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "재발급 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefreshResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/password": {
+      "post": {
+        "tags": [
+          "인증"
+        ],
+        "summary": "비밀번호 재설정",
+        "description": "임시 비밀번호로 로그인한 뒤, 발급받은 Access Token으로 인증하여 새 비밀번호를 설정합니다. 비밀번호 변경이 완료되면 임시 비밀번호는 폐기됩니다.",
+        "operationId": "resetPassword",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordResetRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "재설정 성공",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "비밀번호가 변경되었습니다."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요 (토큰 없음 또는 만료/위조된 토큰)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "인증이 필요합니다.",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/password/reset/send": {
+      "post": {
+        "tags": [
+          "인증"
+        ],
+        "summary": "임시 비밀번호 발송",
+        "description": "가입된 이메일로 임시 비밀번호를 발송합니다. 발급된 임시 비밀번호는 30분(1800초)간 유효하며, 이 비밀번호로 로그인하면 /api/auth/login 응답의 requirePasswordChange가 true로 내려갑니다.",
+        "operationId": "sendTempPassword",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailSendRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "발송 성공",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "임시 비밀번호가 발송되었습니다.",
+                  "expiresIn": 1800
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "해당 이메일로 가입된 회원 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "해당 이메일로 가입된 회원이 없습니다.",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "tags": [
+          "인증"
+        ],
+        "summary": "로그아웃",
+        "description": "전달받은 Refresh Token을 DB에서 삭제하여 무효화합니다. 존재하지 않는 Refresh Token이 와도 에러 없이 200으로 응답합니다.",
+        "operationId": "logout",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "로그아웃 성공",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "로그아웃 되었습니다."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": [
+          "인증"
+        ],
+        "summary": "로그인",
+        "description": "아이디와 비밀번호로 로그인합니다. 인증이 필요없는 API입니다.\n\n- 정식 비밀번호 또는 발급 후 30분 이내인 임시 비밀번호로 로그인할 수 있습니다. 임시 비밀번호로 로그인에 성공하면 응답의 requirePasswordChange가 true가 되며, 이 경우 /api/auth/password로 새 비밀번호를 설정해야 합니다.\n- 이메일 미인증 상태에서는 애초에 회원가입이 완료되지 않으므로 로그인 대상이 될 수 없습니다.\n- 관리자 승인 대기(PENDING), 탈퇴(WITHDRAWN) 상태의 회원은 로그인이 차단되며 403을 반환합니다.\n- 가입이 거절된 회원은 계정 자체가 삭제되므로, 아이디/비밀번호 불일치와 동일하게 401을 반환합니다.\n",
+        "operationId": "login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "403": {
+            "description": "승인 대기 또는 탈퇴 상태로 로그인 차단",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 403,
+                  "message": "승인되지 않은 회원입니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "로그인 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                },
+                "example": {
+                  "accessToken": "eyJhbGciOiJIUzI1NiJ9.xxxxx.yyyyy",
+                  "refreshToken": "eyJhbGciOiJIUzI1NiJ9.aaaaa.bbbbb",
+                  "userId": 1,
+                  "role": "USER",
+                  "status": "APPROVED",
+                  "requirePasswordChange": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "아이디 또는 비밀번호 불일치",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "아이디 또는 비밀번호가 올바르지 않습니다.",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/email/verify": {
+      "post": {
+        "tags": [
+          "인증"
+        ],
+        "summary": "이메일 인증코드 확인",
+        "description": "발송된 인증코드를 확인하여 이메일 인증을 완료합니다. 회원가입 이전 단계에서 호출되므로 아직 사용자 계정이 없고, 응답에도 별도의 인증 상태(state)나 userId는 포함되지 않습니다. 인증이 완료된 이메일은 /api/auth/signup 요청 시 이메일 인증 완료 여부 확인에 사용됩니다.",
+        "operationId": "verifyEmail",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailVerifyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "인증 요청 없음, 코드 만료, 이미 인증됨 또는 코드 불일치",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "인증 코드가 올바르지 않습니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "인증 성공",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "이메일 인증이 완료되었습니다.",
+                  "email": "dcom2024@example.com"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/email/send": {
+      "post": {
+        "tags": [
+          "인증"
+        ],
+        "summary": "이메일 인증코드 발송",
+        "description": "가입하려는 이메일로 6자리 인증코드를 발송합니다. 발급된 인증코드는 5분(300초)간 유효합니다.",
+        "operationId": "sendEmail",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailSendRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "이메일 형식 오류",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "이메일 형식이 올바르지 않습니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "발송 성공",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "인증코드가 발송되었습니다.",
+                  "expiresIn": 300
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/archives": {
+      "get": {
+        "tags": [
+          "Archive"
+        ],
+        "summary": "족보 목록 조회",
+        "description": "최근 수정일 기준으로 족보 아카이브 목록을 조회합니다.",
+        "operationId": "getArchives",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "페이지 번호",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            },
+            "example": 0
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "페이지 크기",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            },
+            "example": 10
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponseArchivePageResponseArchiveListResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "조회 성공",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponseArchivePageResponseArchiveListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Archive"
+        ],
+        "summary": "족보 등록",
+        "description": "족보를 등록합니다.\n\n메인 화면 등록 시 subjectName, professorName을 사용합니다.\n상세 화면 등록 시 archiveId를 사용합니다.\nrequest 파트에는 JSON 문자열을 넣고, files 파트에는 첨부파일을 넣습니다.\n",
+        "operationId": "createArchive",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/ArchiveCreateMultipartRequest"
+              },
+              "encoding": {
+                "request": {
+                  "contentType": "application/json"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "404": {
+            "description": "사용자 또는 아카이브 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "요청한 리소스를 찾을 수 없습니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "족보 등록 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": true,
+                  "status": 201,
+                  "message": "생성되었습니다.",
+                  "data": {}
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "인증이 필요합니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "잘못된 요청입니다.",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/me/withdraw": {
+      "patch": {
+        "tags": [
+          "my-page-controller"
+        ],
+        "summary": "회원 탈퇴",
+        "description": "인증된 사용자의 회원 상태를 WITHDRAWN으로 변경한다.",
+        "operationId": "withdraw",
+        "responses": {
+          "200": {
+            "description": "회원 탈퇴 성공",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberWithdrawApiResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 실패",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/me/settings": {
+      "patch": {
+        "tags": [
+          "my-page-controller"
+        ],
+        "summary": "회원정보 수정",
+        "description": "인증된 사용자의 이름, 전화번호를 수정하고 검증된 이메일 변경 토큰이 있으면 이메일도 변경한다.",
+        "operationId": "updateMyProfile",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MyProfileUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "회원정보 수정 성공",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyProfileUpdateApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청값 오류 또는 이메일 변경 토큰 오류",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestApiResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 실패",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedApiResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "이미 사용 중인 이메일",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictApiResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "이메일 변경 토큰 만료",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoneApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/me/password": {
+      "patch": {
+        "tags": [
+          "my-page-controller"
+        ],
+        "summary": "비밀번호 변경",
+        "description": "인증된 사용자의 현재 비밀번호를 확인한 뒤 새 비밀번호로 변경한다.",
+        "operationId": "changePassword",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordChangeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "비밀번호 변경 성공",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasswordChangeApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청값 오류 또는 현재 비밀번호 불일치",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestApiResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 실패",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/users/{userId}/transfer-admin": {
+      "patch": {
+        "tags": [
+          "관리자"
+        ],
+        "summary": "관리자 권한 이양",
+        "description": "path의 userId(기존 관리자 본인)가 targetUserId에게 관리자 권한을 이양합니다. 기존 관리자는 USER로 전환됩니다.",
+        "operationId": "transferAdmin",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminTransferAdminRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponseAdminTransferAdminResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/users/{userId}/reject": {
+      "patch": {
+        "tags": [
+          "관리자"
+        ],
+        "summary": "가입 거절",
+        "description": "PENDING 회원을 거절합니다. 거절된 회원 정보는 DB에서 물리 삭제됩니다.",
+        "operationId": "rejectUser",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponseAdminUserRejectResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/users/{userId}/approve": {
+      "patch": {
+        "tags": [
+          "관리자"
+        ],
+        "summary": "가입 승인",
+        "description": "PENDING 회원을 승인 처리하고 승인 안내 메일을 발송합니다.",
+        "operationId": "approveUser",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponseAdminUserApproveResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/me": {
+      "get": {
+        "tags": [
+          "my-page-controller"
+        ],
+        "summary": "회원정보 조회",
+        "description": "인증된 사용자의 회원정보를 조회한다.",
+        "operationId": "getMyProfile",
+        "responses": {
+          "200": {
+            "description": "회원정보 조회 성공",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyProfileApiResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 실패",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/me/posts": {
+      "get": {
+        "tags": [
+          "my-page-controller"
+        ],
+        "summary": "내가 쓴 글 목록 조회",
+        "description": "인증된 사용자가 본인이 작성한 정보 공유 게시글, 족보 글, 활동 사진 게시글 목록을 조회한다.",
+        "operationId": "getMyPosts",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "라우팅 타입: info-posts, archives, photo-posts",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "내가 쓴 글 목록 조회 성공",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyWrittenPostListApiResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 실패",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/me/posts/{postId}": {
+      "get": {
+        "tags": [
+          "my-page-controller"
+        ],
+        "summary": "내가 쓴 글 상세 이동",
+        "description": "인증된 사용자가 본인이 작성한 글을 선택하면 상세 페이지 이동 대상 정보를 반환한다.",
+        "operationId": "getMyPostTarget",
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "라우팅 타입: info-posts, archives, photo-posts",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "내가 쓴 글 상세 이동 대상 조회 성공",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyWrittenPostTargetApiResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 실패",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedApiResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "작성한 글 없음",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundApiResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "my-page-controller"
+        ],
+        "summary": "내가 쓴 글 삭제",
+        "description": "인증된 사용자가 본인이 작성한 글을 삭제한다.",
+        "operationId": "deleteMyPost",
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "라우팅 타입: info-posts, archives, photo-posts",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "내가 쓴 글 삭제 성공",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyWrittenPostDeleteApiResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 실패",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedApiResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "삭제 권한 없음",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenApiResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "작성한 글 없음",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/me/comments": {
+      "get": {
+        "tags": [
+          "my-page-controller"
+        ],
+        "summary": "내가 쓴 댓글 목록 조회",
+        "description": "인증된 사용자가 본인이 작성한 정보 공유 게시글, 활동 사진 댓글 목록을 조회한다.",
+        "operationId": "getMyComments",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "라우팅 타입: info-posts, photo-posts",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "내가 쓴 댓글 목록 조회 성공",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyWrittenCommentListApiResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 실패",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/me/comments/{commentId}": {
+      "get": {
+        "tags": [
+          "my-page-controller"
+        ],
+        "summary": "내가 쓴 댓글 상세 이동",
+        "description": "인증된 사용자가 본인이 작성한 댓글을 선택하면 원본 상세 페이지 이동 대상 정보를 반환한다.",
+        "operationId": "getMyCommentTarget",
+        "parameters": [
+          {
+            "name": "commentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "라우팅 타입: info-posts, photo-posts",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "내가 쓴 댓글 상세 이동 대상 조회 성공",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyWrittenCommentTargetApiResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 실패",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedApiResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "작성한 댓글 없음",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundApiResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "my-page-controller"
+        ],
+        "summary": "내가 쓴 댓글 삭제",
+        "description": "인증된 사용자가 본인이 작성한 댓글을 삭제한다.",
+        "operationId": "deleteMyComment",
+        "parameters": [
+          {
+            "name": "commentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "라우팅 타입: info-posts, photo-posts",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "내가 쓴 댓글 삭제 성공",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyWrittenCommentDeleteApiResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 실패",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedApiResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "삭제 권한 없음",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenApiResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "작성한 댓글 없음",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/home": {
       "get": {
         "tags": [
@@ -48,10 +3865,1885 @@
           }
         }
       }
+    },
+    "/api/auth/me": {
+      "get": {
+        "tags": [
+          "인증"
+        ],
+        "summary": "내 정보 조회",
+        "description": "Access Token으로 로그인 상태의 사용자 정보를 조회합니다. 앱 초기 진입 시 보유한 토큰이 유효한지 확인하는 용도로 사용합니다.",
+        "operationId": "me",
+        "responses": {
+          "200": {
+            "description": "조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요 (토큰 없음 또는 만료/위조된 토큰)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "인증이 필요합니다.",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/check-login-id": {
+      "get": {
+        "tags": [
+          "인증"
+        ],
+        "summary": "아이디 중복 확인",
+        "description": "입력한 로그인 아이디가 이미 사용 중인지 확인합니다. 인증이 필요없는 API이며, 중복되어도 에러가 아닌 200과 isAvailable=false로 응답합니다.",
+        "operationId": "checkLoginId",
+        "parameters": [
+          {
+            "name": "loginId",
+            "in": "query",
+            "description": "중복 확인할 로그인 아이디",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "dcom2024"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "확인 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckLoginIdResponse"
+                },
+                "example": {
+                  "isAvailable": true,
+                  "message": "사용가능한 아이디입니다."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/archives/{archiveId}": {
+      "get": {
+        "tags": [
+          "Archive"
+        ],
+        "summary": "족보 상세 조회",
+        "description": "특정 족보 아카이브의 상세 정보를 조회합니다.",
+        "operationId": "getArchiveDetail",
+        "parameters": [
+          {
+            "name": "archiveId",
+            "in": "path",
+            "description": "아카이브 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "아카이브 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "요청한 리소스를 찾을 수 없습니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "상세 조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": true,
+                  "status": 200,
+                  "message": "요청이 성공적으로 처리되었습니다.",
+                  "data": {
+                    "archiveId": 1,
+                    "subjectName": "자료구조",
+                    "professorName": "박교수",
+                    "records": [
+                      {
+                        "recordId": 10,
+                        "examYear": 2024,
+                        "semester": "FIRST",
+                        "examType": "MIDTERM",
+                        "label": "2024년 1학기 중간고사",
+                        "content": "2024년 1학기 자료구조 중간고사 족보입니다.",
+                        "createdAt": "2026-06-30T23:59:00",
+                        "updatedAt": null,
+                        "author": {
+                          "studentNumber": "20201234",
+                          "name": "하성준"
+                        },
+                        "files": [
+                          {
+                            "fileId": 3,
+                            "originalFileName": "자료구조_중간.pdf",
+                            "fileUrl": "/api/archives/1/records/10/files/3/download"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "인증이 필요합니다.",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/archives/{archiveId}/records/{recordId}/files/{fileId}/download": {
+      "get": {
+        "tags": [
+          "Archive"
+        ],
+        "summary": "족보 파일 다운로드",
+        "description": "특정 족보 레코드에 첨부된 파일을 다운로드합니다. 파일 다운로드 API는 JSON 공통 응답이 아닌 파일 바이너리 응답을 반환합니다.",
+        "operationId": "downloadFile",
+        "parameters": [
+          {
+            "name": "archiveId",
+            "in": "path",
+            "description": "아카이브 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 1
+          },
+          {
+            "name": "recordId",
+            "in": "path",
+            "description": "족보 레코드 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 10
+          },
+          {
+            "name": "fileId",
+            "in": "path",
+            "description": "첨부파일 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 3
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "아카이브, 족보 레코드 또는 파일을 찾을 수 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 404,
+                  "message": "요청한 리소스를 찾을 수 없습니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "파일 다운로드 성공",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/archives/search": {
+      "get": {
+        "tags": [
+          "Archive"
+        ],
+        "summary": "족보 검색",
+        "description": "검색어와 일치하는 과목명 또는 교수명의 족보 아카이브를 검색합니다.",
+        "operationId": "searchArchives",
+        "parameters": [
+          {
+            "name": "searchKeyword",
+            "in": "query",
+            "description": "검색어. 과목명 또는 교수명 기준 부분 일치 검색",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "자료구조"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "페이지 번호",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            },
+            "example": 0
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "페이지 크기",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            },
+            "example": 10
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 401,
+                  "message": "인증이 필요합니다.",
+                  "data": null
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "검색 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": true,
+                  "status": 200,
+                  "message": "요청이 성공적으로 처리되었습니다.",
+                  "data": {}
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "검색 조건 누락",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                },
+                "example": {
+                  "success": false,
+                  "status": 400,
+                  "message": "잘못된 요청입니다.",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/users": {
+      "get": {
+        "tags": [
+          "관리자"
+        ],
+        "summary": "회원 목록 조회",
+        "description": "학번, 최근 접속일 기준 정렬을 지원하는 전체 회원 목록을 조회합니다.",
+        "operationId": "getUserList",
+        "parameters": [
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageable",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Pageable"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponseAdminUserListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/users/{userId}": {
+      "get": {
+        "tags": [
+          "관리자"
+        ],
+        "summary": "회원 상세 조회",
+        "description": "관리자용 회원 상세 정보를 조회합니다.",
+        "operationId": "getUserDetail",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponseAdminUserDetailResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/users/pending": {
+      "get": {
+        "tags": [
+          "관리자"
+        ],
+        "summary": "가입 승인 대상 조회",
+        "description": "PENDING 상태인 회원 목록을 조회합니다.",
+        "operationId": "getPendingUsers",
+        "parameters": [
+          {
+            "name": "pageable",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Pageable"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponseAdminPendingUserListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/me": {
+      "get": {
+        "tags": [
+          "관리자"
+        ],
+        "summary": "관리자 콘솔 접근 확인",
+        "description": "관리자 콘솔에 접근 가능한지 확인합니다.",
+        "operationId": "me_1",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponseAdminMeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/dashboard": {
+      "get": {
+        "tags": [
+          "관리자"
+        ],
+        "summary": "관리자 대시보드 조회",
+        "description": "승인 대기 수, 전체 회원 수 등 요약 정보를 조회합니다.",
+        "operationId": "getDashboard",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponseAdminDashboardResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "PhotoPostUpdateMultipartRequest": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "string",
+            "description": "사진첩 수정 요청 JSON 문자열",
+            "example": "{\"eventName\":\"신입생 환영회 수정\",\"activityDate\":\"2026-07-04\",\"description\":\"수정된 사진첩 설명입니다.\"}"
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "새 사진 목록. 전달하면 기존 사진 전체를 교체하며 첫 번째 사진이 대표 사진으로 사용됩니다.",
+              "format": "binary"
+            }
+          }
+        },
+        "description": "사진첩 수정 multipart/form-data 요청"
+      },
+      "CommonResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "요청 성공 여부",
+            "example": true
+          },
+          "status": {
+            "type": "integer",
+            "description": "HTTP 상태 코드",
+            "format": "int32",
+            "example": 200
+          },
+          "message": {
+            "type": "string",
+            "description": "응답 메시지",
+            "example": "요청이 성공적으로 처리되었습니다."
+          },
+          "data": {
+            "type": "object",
+            "description": "응답 데이터"
+          }
+        },
+        "description": "공통 API 응답"
+      },
+      "PhotoCommentCreateRequest": {
+        "required": [
+          "content"
+        ],
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string"
+          }
+        }
+      },
+      "NoticeUpdateMultipartRequest": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "string",
+            "description": "공지사항 수정 요청 JSON 문자열",
+            "example": "{\"title\":\"7월 전체 회의 안내 수정\",\"content\":\"수정된 회의 일정을 안내합니다.\",\"deleteFileIds\":[]}"
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "새로 추가할 첨부파일",
+              "format": "binary"
+            }
+          }
+        },
+        "description": "공지사항 수정 multipart/form-data 요청"
+      },
+      "InfoCommentUpdateRequest": {
+        "required": [
+          "content"
+        ],
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string"
+          }
+        }
+      },
+      "ArchiveUpdateMultipartRequest": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "string",
+            "description": "족보 수정 요청 JSON 문자열",
+            "example": "{\"examYear\":2024,\"semester\":\"FIRST\",\"examType\":\"FINAL\",\"content\":\"수정된 족보 내용입니다.\",\"deleteFileIds\":[]}"
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "새로 추가할 첨부파일",
+              "format": "binary"
+            }
+          }
+        },
+        "description": "족보 수정 multipart/form-data 요청"
+      },
+      "EmailVerificationVerifyApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "요청 성공 여부",
+            "example": true
+          },
+          "status": {
+            "type": "integer",
+            "description": "HTTP 상태 코드",
+            "format": "int32",
+            "example": 200
+          },
+          "message": {
+            "type": "string",
+            "description": "응답 메시지",
+            "example": "요청에 성공했습니다."
+          },
+          "data": {
+            "$ref": "#/components/schemas/EmailVerificationVerifyResponse"
+          }
+        },
+        "description": "이메일 변경 인증 확인 성공 응답"
+      },
+      "EmailVerificationVerifyResponse": {
+        "type": "object",
+        "properties": {
+          "emailChangeToken": {
+            "type": "string",
+            "description": "회원정보 수정 API에서 사용할 이메일 변경 토큰",
+            "example": "generated-email-change-token"
+          },
+          "message": {
+            "type": "string",
+            "description": "처리 메시지",
+            "example": "이메일 변경 인증이 완료되었습니다."
+          },
+          "verifiedEmail": {
+            "type": "string",
+            "description": "인증 완료된 이메일",
+            "example": "newhong@khu.ac.kr"
+          }
+        },
+        "description": "이메일 변경 인증 확인 응답 데이터"
+      },
+      "BadRequestApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "요청 성공 여부",
+            "example": false
+          },
+          "status": {
+            "type": "integer",
+            "description": "HTTP 상태 코드",
+            "format": "int32",
+            "example": 400
+          },
+          "message": {
+            "type": "string",
+            "description": "응답 메시지",
+            "example": "요청값이 올바르지 않습니다."
+          },
+          "data": {
+            "type": "object",
+            "description": "응답 데이터",
+            "nullable": true
+          }
+        },
+        "description": "요청값 오류 응답"
+      },
+      "UnauthorizedApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "요청 성공 여부",
+            "example": false
+          },
+          "status": {
+            "type": "integer",
+            "description": "HTTP 상태 코드",
+            "format": "int32",
+            "example": 401
+          },
+          "message": {
+            "type": "string",
+            "description": "응답 메시지",
+            "example": "인증이 필요합니다."
+          },
+          "data": {
+            "type": "object",
+            "description": "응답 데이터",
+            "nullable": true
+          }
+        },
+        "description": "인증 실패 응답"
+      },
+      "GoneApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "요청 성공 여부",
+            "example": false
+          },
+          "status": {
+            "type": "integer",
+            "description": "HTTP 상태 코드",
+            "format": "int32",
+            "example": 410
+          },
+          "message": {
+            "type": "string",
+            "description": "응답 메시지",
+            "example": "이메일 인증이 만료되었습니다."
+          },
+          "data": {
+            "type": "object",
+            "description": "응답 데이터",
+            "nullable": true
+          }
+        },
+        "description": "만료 응답"
+      },
+      "EmailVerificationVerifyRequest": {
+        "required": [
+          "newEmail",
+          "verificationCode"
+        ],
+        "type": "object",
+        "properties": {
+          "newEmail": {
+            "type": "string",
+            "description": "새 이메일",
+            "example": "newhong@khu.ac.kr"
+          },
+          "verificationCode": {
+            "type": "string",
+            "description": "인증 코드",
+            "example": "123456"
+          }
+        },
+        "description": "이메일 변경 인증 확인 요청"
+      },
+      "EmailVerificationSendApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "요청 성공 여부",
+            "example": true
+          },
+          "status": {
+            "type": "integer",
+            "description": "HTTP 상태 코드",
+            "format": "int32",
+            "example": 200
+          },
+          "message": {
+            "type": "string",
+            "description": "응답 메시지",
+            "example": "요청에 성공했습니다."
+          },
+          "data": {
+            "$ref": "#/components/schemas/EmailVerificationSendResponse"
+          }
+        },
+        "description": "이메일 변경 인증 메일 발송 성공 응답"
+      },
+      "EmailVerificationSendResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "처리 메시지",
+            "example": "이메일 변경 인증 코드가 생성되었습니다."
+          },
+          "expiresIn": {
+            "type": "integer",
+            "description": "인증 코드 만료까지 남은 초",
+            "format": "int64",
+            "example": 300
+          }
+        },
+        "description": "이메일 변경 인증 메일 발송 응답 데이터"
+      },
+      "ConflictApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "요청 성공 여부",
+            "example": false
+          },
+          "status": {
+            "type": "integer",
+            "description": "HTTP 상태 코드",
+            "format": "int32",
+            "example": 409
+          },
+          "message": {
+            "type": "string",
+            "description": "응답 메시지",
+            "example": "이미 사용 중인 이메일입니다."
+          },
+          "data": {
+            "type": "object",
+            "description": "응답 데이터",
+            "nullable": true
+          }
+        },
+        "description": "충돌 응답"
+      },
+      "TooManyRequestsApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "요청 성공 여부",
+            "example": false
+          },
+          "status": {
+            "type": "integer",
+            "description": "HTTP 상태 코드",
+            "format": "int32",
+            "example": 429
+          },
+          "message": {
+            "type": "string",
+            "description": "응답 메시지",
+            "example": "이미 진행 중인 이메일 인증 요청이 있습니다."
+          },
+          "data": {
+            "type": "object",
+            "description": "응답 데이터",
+            "nullable": true
+          }
+        },
+        "description": "재요청 제한 응답"
+      },
+      "EmailVerificationSendRequest": {
+        "required": [
+          "newEmail"
+        ],
+        "type": "object",
+        "properties": {
+          "newEmail": {
+            "type": "string",
+            "description": "새 이메일",
+            "example": "newhong@khu.ac.kr"
+          }
+        },
+        "description": "이메일 변경 인증 메일 발송 요청"
+      },
+      "PhotoPostCreateMultipartRequest": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "string",
+            "description": "사진첩 등록 요청 JSON 문자열",
+            "example": "{\"eventName\":\"신입생 환영회\",\"activityDate\":\"2026-07-03\",\"description\":\"신입생 환영회 사진입니다.\"}"
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "사진 목록. 첫 번째 사진이 대표 사진으로 사용됩니다.",
+              "format": "binary"
+            }
+          }
+        },
+        "description": "사진첩 등록 multipart/form-data 요청"
+      },
+      "NoticeCreateMultipartRequest": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "string",
+            "description": "공지사항 작성 요청 JSON 문자열",
+            "example": "{\"title\":\"7월 전체 회의 안내\",\"content\":\"7월 전체 회의 일정을 안내합니다.\"}"
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "첨부파일",
+              "format": "binary"
+            }
+          }
+        },
+        "description": "공지사항 작성 multipart/form-data 요청"
+      },
+      "InfoCommentCreateRequest": {
+        "required": [
+          "content"
+        ],
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string"
+          }
+        }
+      },
+      "SignupRequest": {
+        "required": [
+          "email",
+          "loginId",
+          "name",
+          "password",
+          "phoneNumber",
+          "studentId"
+        ],
+        "type": "object",
+        "properties": {
+          "loginId": {
+            "type": "string",
+            "description": "로그인 아이디. 다른 회원과 중복될 수 없음",
+            "example": "dcom2024"
+          },
+          "password": {
+            "type": "string",
+            "description": "비밀번호",
+            "example": "password1234!"
+          },
+          "name": {
+            "type": "string",
+            "description": "이름",
+            "example": "하성준"
+          },
+          "studentId": {
+            "type": "string",
+            "description": "학번. 다른 회원과 중복될 수 없음",
+            "example": "20241234"
+          },
+          "email": {
+            "type": "string",
+            "description": "이메일. 도메인 제한 없음. /api/auth/email/verify로 인증을 완료한 이메일이어야 함",
+            "example": "dcom2024@example.com"
+          },
+          "phoneNumber": {
+            "type": "string",
+            "description": "전화번호",
+            "example": "010-1234-5678"
+          }
+        },
+        "description": "회원가입 요청"
+      },
+      "SignupResponse": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "description": "사용자 ID",
+            "format": "int64",
+            "example": 1
+          },
+          "loginId": {
+            "type": "string",
+            "description": "로그인 아이디",
+            "example": "dcom2024"
+          },
+          "studentId": {
+            "type": "string",
+            "description": "학번",
+            "example": "20241234"
+          },
+          "email": {
+            "type": "string",
+            "description": "이메일",
+            "example": "dcom2024@example.com"
+          },
+          "status": {
+            "type": "string",
+            "description": "가입 상태. 가입 직후에는 항상 관리자 승인 대기(PENDING) 상태",
+            "example": "PENDING",
+            "enum": [
+              "PENDING",
+              "APPROVED",
+              "WITHDRAWN"
+            ]
+          }
+        },
+        "description": "회원가입 응답"
+      },
+      "RefreshRequest": {
+        "required": [
+          "refreshToken"
+        ],
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string",
+            "description": "로그인 시 발급받은 Refresh Token",
+            "example": "eyJhbGciOiJIUzI1NiJ9.aaaaa.bbbbb"
+          }
+        },
+        "description": "토큰 재발급 / 로그아웃 요청"
+      },
+      "RefreshResponse": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "description": "새로 발급된 Access Token",
+            "example": "eyJhbGciOiJIUzI1NiJ9.xxxxx.yyyyy"
+          },
+          "refreshToken": {
+            "type": "string",
+            "description": "새로 발급된 Refresh Token. 기존 Refresh Token은 폐기됨(Rotation)",
+            "example": "eyJhbGciOiJIUzI1NiJ9.aaaaa.bbbbb"
+          },
+          "expiresIn": {
+            "type": "integer",
+            "description": "Access Token 만료까지 남은 시간(초)",
+            "format": "int64",
+            "example": 1800
+          }
+        },
+        "description": "토큰 재발급 응답"
+      },
+      "PasswordResetRequest": {
+        "required": [
+          "newPassword"
+        ],
+        "type": "object",
+        "properties": {
+          "newPassword": {
+            "type": "string",
+            "description": "새로 설정할 비밀번호",
+            "example": "newPassword1234!"
+          }
+        },
+        "description": "비밀번호 재설정 요청"
+      },
+      "EmailSendRequest": {
+        "required": [
+          "email"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "인증코드 또는 임시 비밀번호를 받을 이메일",
+            "example": "dcom2024@example.com"
+          }
+        },
+        "description": "이메일 인증코드 발송 / 임시 비밀번호 발송 요청"
+      },
+      "LoginRequest": {
+        "required": [
+          "loginId",
+          "password"
+        ],
+        "type": "object",
+        "properties": {
+          "loginId": {
+            "type": "string",
+            "description": "로그인 아이디",
+            "example": "dcom2024"
+          },
+          "password": {
+            "type": "string",
+            "description": "비밀번호. 정식 비밀번호 또는 발급 후 30분 이내인 임시 비밀번호",
+            "example": "password1234!"
+          }
+        },
+        "description": "로그인 요청"
+      },
+      "LoginResponse": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "description": "Access Token",
+            "example": "eyJhbGciOiJIUzI1NiJ9.xxxxx.yyyyy"
+          },
+          "refreshToken": {
+            "type": "string",
+            "description": "Refresh Token",
+            "example": "eyJhbGciOiJIUzI1NiJ9.aaaaa.bbbbb"
+          },
+          "userId": {
+            "type": "integer",
+            "description": "사용자 ID",
+            "format": "int64",
+            "example": 1
+          },
+          "role": {
+            "type": "string",
+            "description": "권한",
+            "example": "USER",
+            "enum": [
+              "USER",
+              "ADMIN"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "description": "가입 상태. APPROVED 상태만 로그인이 허용됨",
+            "example": "APPROVED",
+            "enum": [
+              "PENDING",
+              "APPROVED",
+              "WITHDRAWN"
+            ]
+          },
+          "requirePasswordChange": {
+            "type": "boolean",
+            "description": "임시 비밀번호로 로그인했는지 여부. true인 경우 /api/auth/password로 새 비밀번호를 설정해야 함",
+            "example": false
+          }
+        },
+        "description": "로그인 응답"
+      },
+      "EmailVerifyRequest": {
+        "required": [
+          "email",
+          "verificationCode"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "인증코드를 발송받은 이메일",
+            "example": "dcom2024@example.com"
+          },
+          "verificationCode": {
+            "type": "string",
+            "description": "이메일로 발송된 6자리 인증 코드. 발급 후 5분간 유효",
+            "example": "482913"
+          }
+        },
+        "description": "이메일 인증코드 확인 요청"
+      },
+      "ArchiveCreateMultipartRequest": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "string",
+            "description": "족보 등록 요청 JSON 문자열",
+            "example": "{\"subjectName\":\"자료구조\",\"professorName\":\"박교수\",\"records\":[{\"examYear\":2024,\"semester\":\"FIRST\",\"examType\":\"MIDTERM\",\"content\":\"Swagger 테스트 족보입니다.\",\"fileIndexes\":[]}]}"
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "첨부파일",
+              "format": "binary"
+            }
+          }
+        },
+        "description": "족보 등록 multipart/form-data 요청"
+      },
+      "MemberWithdrawApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "요청 성공 여부",
+            "example": true
+          },
+          "status": {
+            "type": "integer",
+            "description": "HTTP 상태 코드",
+            "format": "int32",
+            "example": 200
+          },
+          "message": {
+            "type": "string",
+            "description": "응답 메시지",
+            "example": "요청에 성공했습니다."
+          },
+          "data": {
+            "$ref": "#/components/schemas/MemberWithdrawResponse"
+          }
+        },
+        "description": "회원 탈퇴 성공 응답"
+      },
+      "MemberWithdrawResponse": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "description": "회원 ID",
+            "format": "int64",
+            "example": 1
+          },
+          "status": {
+            "type": "string",
+            "description": "회원 상태",
+            "example": "WITHDRAWN",
+            "enum": [
+              "PENDING",
+              "APPROVED",
+              "WITHDRAWN"
+            ]
+          },
+          "withdrawnAt": {
+            "type": "string",
+            "description": "탈퇴 일시",
+            "format": "date-time",
+            "example": "2026-07-01T10:30:00+09:00"
+          }
+        },
+        "description": "회원 탈퇴 응답 데이터"
+      },
+      "MyProfileUpdateApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "요청 성공 여부",
+            "example": true
+          },
+          "status": {
+            "type": "integer",
+            "description": "HTTP 상태 코드",
+            "format": "int32",
+            "example": 200
+          },
+          "message": {
+            "type": "string",
+            "description": "응답 메시지",
+            "example": "요청에 성공했습니다."
+          },
+          "data": {
+            "$ref": "#/components/schemas/MyProfileUpdateResponse"
+          }
+        },
+        "description": "회원정보 수정 성공 응답"
+      },
+      "MyProfileUpdateResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "이름",
+            "example": "홍길동"
+          },
+          "studentId": {
+            "type": "string",
+            "description": "전체 학번",
+            "example": "2026123456"
+          },
+          "email": {
+            "type": "string",
+            "description": "이메일",
+            "example": "newhong@khu.ac.kr"
+          },
+          "phoneNumber": {
+            "type": "string",
+            "description": "전화번호",
+            "example": "010-9999-8888"
+          },
+          "message": {
+            "type": "string",
+            "description": "처리 메시지",
+            "example": "회원정보가 수정되었습니다."
+          }
+        },
+        "description": "회원정보 수정 응답 데이터"
+      },
+      "MyProfileUpdateRequest": {
+        "required": [
+          "name",
+          "phoneNumber"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "이름",
+            "example": "홍길동"
+          },
+          "phoneNumber": {
+            "type": "string",
+            "description": "전화번호",
+            "example": "010-9999-8888"
+          },
+          "emailChangeToken": {
+            "type": "string",
+            "description": "이메일 변경 인증 확인 API에서 발급받은 토큰",
+            "example": "generated-email-change-token"
+          }
+        },
+        "description": "회원정보 수정 요청"
+      },
+      "PasswordChangeApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "요청 성공 여부",
+            "example": true
+          },
+          "status": {
+            "type": "integer",
+            "description": "HTTP 상태 코드",
+            "format": "int32",
+            "example": 200
+          },
+          "message": {
+            "type": "string",
+            "description": "응답 메시지",
+            "example": "요청에 성공했습니다."
+          },
+          "data": {
+            "$ref": "#/components/schemas/PasswordChangeResponse"
+          }
+        },
+        "description": "비밀번호 변경 성공 응답"
+      },
+      "PasswordChangeResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "처리 메시지",
+            "example": "비밀번호가 변경되었습니다."
+          }
+        },
+        "description": "비밀번호 변경 응답 데이터"
+      },
+      "PasswordChangeRequest": {
+        "required": [
+          "currentPassword",
+          "newPassword"
+        ],
+        "type": "object",
+        "properties": {
+          "currentPassword": {
+            "type": "string",
+            "description": "현재 비밀번호",
+            "example": "current-password"
+          },
+          "newPassword": {
+            "type": "string",
+            "description": "새 비밀번호",
+            "example": "changed-password"
+          }
+        },
+        "description": "비밀번호 변경 요청"
+      },
+      "AdminTransferAdminRequest": {
+        "required": [
+          "confirm",
+          "targetUserId"
+        ],
+        "type": "object",
+        "properties": {
+          "confirm": {
+            "type": "boolean"
+          },
+          "targetUserId": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "AdminTransferAdminResponse": {
+        "type": "object",
+        "properties": {
+          "previousAdminUserId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "newAdminUserId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "previousAdminRole": {
+            "type": "string",
+            "enum": [
+              "USER",
+              "ADMIN"
+            ]
+          },
+          "newAdminRole": {
+            "type": "string",
+            "enum": [
+              "USER",
+              "ADMIN"
+            ]
+          },
+          "transferredAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "응답 데이터"
+      },
+      "CommonResponseAdminTransferAdminResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "요청 성공 여부",
+            "example": true
+          },
+          "status": {
+            "type": "integer",
+            "description": "HTTP 상태 코드",
+            "format": "int32",
+            "example": 200
+          },
+          "message": {
+            "type": "string",
+            "description": "응답 메시지",
+            "example": "요청이 성공적으로 처리되었습니다."
+          },
+          "data": {
+            "$ref": "#/components/schemas/AdminTransferAdminResponse"
+          }
+        },
+        "description": "공통 API 응답"
+      },
+      "AdminUserRejectResponse": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "status": {
+            "type": "string"
+          },
+          "rejectedByAdminId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "rejectedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "응답 데이터"
+      },
+      "CommonResponseAdminUserRejectResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "요청 성공 여부",
+            "example": true
+          },
+          "status": {
+            "type": "integer",
+            "description": "HTTP 상태 코드",
+            "format": "int32",
+            "example": 200
+          },
+          "message": {
+            "type": "string",
+            "description": "응답 메시지",
+            "example": "요청이 성공적으로 처리되었습니다."
+          },
+          "data": {
+            "$ref": "#/components/schemas/AdminUserRejectResponse"
+          }
+        },
+        "description": "공통 API 응답"
+      },
+      "AdminUserApproveResponse": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "APPROVED",
+              "WITHDRAWN"
+            ]
+          },
+          "approvedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "approvedByAdminId": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "description": "응답 데이터"
+      },
+      "CommonResponseAdminUserApproveResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "요청 성공 여부",
+            "example": true
+          },
+          "status": {
+            "type": "integer",
+            "description": "HTTP 상태 코드",
+            "format": "int32",
+            "example": 200
+          },
+          "message": {
+            "type": "string",
+            "description": "응답 메시지",
+            "example": "요청이 성공적으로 처리되었습니다."
+          },
+          "data": {
+            "$ref": "#/components/schemas/AdminUserApproveResponse"
+          }
+        },
+        "description": "공통 API 응답"
+      },
+      "MyProfileApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "요청 성공 여부",
+            "example": true
+          },
+          "status": {
+            "type": "integer",
+            "description": "HTTP 상태 코드",
+            "format": "int32",
+            "example": 200
+          },
+          "message": {
+            "type": "string",
+            "description": "응답 메시지",
+            "example": "요청에 성공했습니다."
+          },
+          "data": {
+            "$ref": "#/components/schemas/MyProfileResponse"
+          }
+        },
+        "description": "회원정보 조회 성공 응답"
+      },
+      "MyProfileResponse": {
+        "type": "object",
+        "properties": {
+          "loginId": {
+            "type": "string",
+            "description": "로그인 ID",
+            "example": "hongil123"
+          },
+          "email": {
+            "type": "string",
+            "description": "이메일",
+            "example": "honghong@khu.ac.kr"
+          },
+          "name": {
+            "type": "string",
+            "description": "이름",
+            "example": "홍길동"
+          },
+          "phoneNumber": {
+            "type": "string",
+            "description": "전화번호",
+            "example": "010-1234-4567"
+          },
+          "studentId": {
+            "type": "string",
+            "description": "전체 학번",
+            "example": "2026123456"
+          }
+        },
+        "description": "회원정보 조회 응답 데이터"
+      },
+      "MyWrittenPostListApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "요청 성공 여부",
+            "example": true
+          },
+          "status": {
+            "type": "integer",
+            "description": "HTTP 상태 코드",
+            "format": "int32",
+            "example": 200
+          },
+          "message": {
+            "type": "string",
+            "description": "응답 메시지",
+            "example": "요청에 성공했습니다."
+          },
+          "data": {
+            "$ref": "#/components/schemas/MyWrittenPostListResponse"
+          }
+        },
+        "description": "내가 쓴 글 목록 조회 성공 응답"
+      },
+      "MyWrittenPostListResponse": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "description": "전체 요소 수",
+            "format": "int64",
+            "example": 1
+          },
+          "posts": {
+            "type": "array",
+            "description": "내가 쓴 글 목록",
+            "items": {
+              "$ref": "#/components/schemas/MyWrittenPostResponse"
+            }
+          }
+        },
+        "description": "내가 쓴 글 목록 조회 응답 데이터"
+      },
+      "MyWrittenPostResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "게시글 ID",
+            "format": "int64",
+            "example": 1
+          },
+          "number": {
+            "type": "integer",
+            "description": "목록 순번",
+            "format": "int32",
+            "example": 1
+          },
+          "title": {
+            "type": "string",
+            "description": "제목",
+            "example": "오픈소스SW개발방법및도구"
+          },
+          "type": {
+            "type": "string",
+            "description": "게시글 라우팅 타입",
+            "example": "archives"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "작성일시",
+            "format": "date-time"
+          }
+        },
+        "description": "내가 쓴 글 목록 항목"
+      },
+      "MyWrittenPostTargetApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "요청 성공 여부",
+            "example": true
+          },
+          "status": {
+            "type": "integer",
+            "description": "HTTP 상태 코드",
+            "format": "int32",
+            "example": 200
+          },
+          "message": {
+            "type": "string",
+            "description": "응답 메시지",
+            "example": "요청에 성공했습니다."
+          },
+          "data": {
+            "$ref": "#/components/schemas/MyWrittenPostTargetResponse"
+          }
+        },
+        "description": "내가 쓴 글 상세 이동 성공 응답"
+      },
+      "MyWrittenPostTargetResponse": {
+        "type": "object",
+        "properties": {
+          "targetType": {
+            "type": "string",
+            "description": "상세 페이지 이동 대상 URL segment",
+            "example": "archives"
+          },
+          "targetId": {
+            "type": "integer",
+            "description": "상세 페이지 이동 대상 ID",
+            "format": "int64",
+            "example": 1
+          }
+        },
+        "description": "내가 쓴 글 상세 이동 응답 데이터"
+      },
+      "NotFoundApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "요청 성공 여부",
+            "example": false
+          },
+          "status": {
+            "type": "integer",
+            "description": "HTTP 상태 코드",
+            "format": "int32",
+            "example": 404
+          },
+          "message": {
+            "type": "string",
+            "description": "응답 메시지",
+            "example": "작성한 글을 찾을 수 없습니다."
+          },
+          "data": {
+            "type": "object",
+            "description": "응답 데이터",
+            "nullable": true
+          }
+        },
+        "description": "리소스 없음 응답"
+      },
+      "MyWrittenCommentListApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "요청 성공 여부",
+            "example": true
+          },
+          "status": {
+            "type": "integer",
+            "description": "HTTP 상태 코드",
+            "format": "int32",
+            "example": 200
+          },
+          "message": {
+            "type": "string",
+            "description": "응답 메시지",
+            "example": "요청에 성공했습니다."
+          },
+          "data": {
+            "$ref": "#/components/schemas/MyWrittenCommentListResponse"
+          }
+        },
+        "description": "내가 쓴 댓글 목록 조회 성공 응답"
+      },
+      "MyWrittenCommentListResponse": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "description": "전체 요소 수",
+            "format": "int64",
+            "example": 1
+          },
+          "comments": {
+            "type": "array",
+            "description": "내가 쓴 댓글 목록",
+            "items": {
+              "$ref": "#/components/schemas/MyWrittenCommentResponse"
+            }
+          }
+        },
+        "description": "내가 쓴 댓글 목록 조회 응답 데이터"
+      },
+      "MyWrittenCommentResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "댓글 ID",
+            "format": "int64",
+            "example": 101
+          },
+          "number": {
+            "type": "integer",
+            "description": "목록 순번",
+            "format": "int32",
+            "example": 1
+          },
+          "type": {
+            "type": "string",
+            "description": "댓글 대상 라우팅 타입",
+            "example": "info-posts"
+          },
+          "targetId": {
+            "type": "integer",
+            "description": "댓글 대상 ID",
+            "format": "int64",
+            "example": 12
+          },
+          "targetTitle": {
+            "type": "string",
+            "description": "댓글 대상 제목",
+            "example": "React 참고 자료 모음"
+          },
+          "content": {
+            "type": "string",
+            "description": "댓글 내용",
+            "example": "좋은 자료 감사합니다."
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "작성일시",
+            "format": "date-time"
+          }
+        },
+        "description": "내가 쓴 댓글 목록 항목"
+      },
+      "MyWrittenCommentTargetApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "요청 성공 여부",
+            "example": true
+          },
+          "status": {
+            "type": "integer",
+            "description": "HTTP 상태 코드",
+            "format": "int32",
+            "example": 200
+          },
+          "message": {
+            "type": "string",
+            "description": "응답 메시지",
+            "example": "요청에 성공했습니다."
+          },
+          "data": {
+            "$ref": "#/components/schemas/MyWrittenCommentTargetResponse"
+          }
+        },
+        "description": "내가 쓴 댓글 상세 이동 성공 응답"
+      },
+      "MyWrittenCommentTargetResponse": {
+        "type": "object",
+        "properties": {
+          "targetType": {
+            "type": "string",
+            "description": "상세 페이지 이동 대상 URL segment",
+            "example": "info-posts"
+          },
+          "targetId": {
+            "type": "integer",
+            "description": "상세 페이지 이동 대상 ID",
+            "format": "int64",
+            "example": 12
+          },
+          "commentId": {
+            "type": "integer",
+            "description": "댓글 ID",
+            "format": "int64",
+            "example": 101
+          }
+        },
+        "description": "내가 쓴 댓글 상세 이동 응답 데이터"
+      },
+      "Pageable": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "minimum": 0,
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "minimum": 1,
+            "type": "integer",
+            "format": "int32"
+          },
+          "sort": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
       "HomeErrorResponse": {
         "type": "object",
         "properties": {
@@ -115,12 +5807,12 @@
           "studentNumber": {
             "type": "string",
             "description": "학번",
-            "example": "20230001"
+            "example": "20201234"
           },
           "name": {
             "type": "string",
             "description": "이름",
-            "example": "하성준"
+            "example": "표지훈"
           }
         },
         "description": "작성자 요약"
@@ -204,7 +5896,7 @@
           "date": {
             "type": "string",
             "description": "작성일",
-            "example": "2026.06.20."
+            "example": "2026.06.20"
           },
           "hasAttachment": {
             "type": "boolean",
@@ -229,9 +5921,7 @@
             "example": "2026 D.COM 여름 프로젝트 팀 모집 안내"
           },
           "author": {
-            "type": "string",
-            "description": "작성자",
-            "example": "ADMIN"
+            "$ref": "#/components/schemas/AuthorResponse"
           },
           "date": {
             "type": "string",
@@ -278,6 +5968,689 @@
           }
         },
         "description": "활동 사진 앨범 요약"
+      },
+      "MeResponse": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "description": "사용자 ID",
+            "format": "int64",
+            "example": 1
+          },
+          "loginId": {
+            "type": "string",
+            "description": "로그인 아이디",
+            "example": "dcom2024"
+          },
+          "name": {
+            "type": "string",
+            "description": "이름",
+            "example": "하성준"
+          },
+          "studentId": {
+            "type": "string",
+            "description": "학번",
+            "example": "20241234"
+          },
+          "email": {
+            "type": "string",
+            "description": "이메일",
+            "example": "dcom2024@example.com"
+          },
+          "phoneNumber": {
+            "type": "string",
+            "description": "전화번호",
+            "example": "010-1234-5678"
+          },
+          "role": {
+            "type": "string",
+            "description": "권한",
+            "example": "USER",
+            "enum": [
+              "USER",
+              "ADMIN"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "description": "가입 상태",
+            "example": "APPROVED",
+            "enum": [
+              "PENDING",
+              "APPROVED",
+              "WITHDRAWN"
+            ]
+          }
+        },
+        "description": "내 정보 조회 응답"
+      },
+      "CheckLoginIdResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "결과 메시지",
+            "example": "사용가능한 아이디입니다."
+          },
+          "available": {
+            "type": "boolean"
+          }
+        },
+        "description": "아이디 중복 확인 응답"
+      },
+      "ArchiveListResponse": {
+        "type": "object",
+        "properties": {
+          "archiveId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "subjectName": {
+            "type": "string"
+          },
+          "professorName": {
+            "type": "string"
+          },
+          "recordCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lastModifiedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ArchivePageResponseArchiveListResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ArchiveListResponse"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "description": "응답 데이터"
+      },
+      "CommonResponseArchivePageResponseArchiveListResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "요청 성공 여부",
+            "example": true
+          },
+          "status": {
+            "type": "integer",
+            "description": "HTTP 상태 코드",
+            "format": "int32",
+            "example": 200
+          },
+          "message": {
+            "type": "string",
+            "description": "응답 메시지",
+            "example": "요청이 성공적으로 처리되었습니다."
+          },
+          "data": {
+            "$ref": "#/components/schemas/ArchivePageResponseArchiveListResponse"
+          }
+        },
+        "description": "공통 API 응답"
+      },
+      "AdminPageInfo": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "first": {
+            "type": "boolean"
+          },
+          "last": {
+            "type": "boolean"
+          }
+        }
+      },
+      "AdminUserListResponse": {
+        "type": "object",
+        "properties": {
+          "userList": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserSummary"
+            }
+          },
+          "pageInfo": {
+            "$ref": "#/components/schemas/AdminPageInfo"
+          }
+        },
+        "description": "응답 데이터"
+      },
+      "CommonResponseAdminUserListResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "요청 성공 여부",
+            "example": true
+          },
+          "status": {
+            "type": "integer",
+            "description": "HTTP 상태 코드",
+            "format": "int32",
+            "example": 200
+          },
+          "message": {
+            "type": "string",
+            "description": "응답 메시지",
+            "example": "요청이 성공적으로 처리되었습니다."
+          },
+          "data": {
+            "$ref": "#/components/schemas/AdminUserListResponse"
+          }
+        },
+        "description": "공통 API 응답"
+      },
+      "UserSummary": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "loginId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "studentId": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "USER",
+              "ADMIN"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "APPROVED",
+              "WITHDRAWN"
+            ]
+          },
+          "lastLoginAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "AdminUserDetailResponse": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "loginId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "studentId": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "phoneNumber": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "USER",
+              "ADMIN"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "APPROVED",
+              "WITHDRAWN"
+            ]
+          },
+          "lastLoginAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "응답 데이터"
+      },
+      "CommonResponseAdminUserDetailResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "요청 성공 여부",
+            "example": true
+          },
+          "status": {
+            "type": "integer",
+            "description": "HTTP 상태 코드",
+            "format": "int32",
+            "example": 200
+          },
+          "message": {
+            "type": "string",
+            "description": "응답 메시지",
+            "example": "요청이 성공적으로 처리되었습니다."
+          },
+          "data": {
+            "$ref": "#/components/schemas/AdminUserDetailResponse"
+          }
+        },
+        "description": "공통 API 응답"
+      },
+      "AdminPendingUserListResponse": {
+        "type": "object",
+        "properties": {
+          "pendingUserList": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PendingUserSummary"
+            }
+          },
+          "pageInfo": {
+            "$ref": "#/components/schemas/AdminPageInfo"
+          }
+        },
+        "description": "응답 데이터"
+      },
+      "CommonResponseAdminPendingUserListResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "요청 성공 여부",
+            "example": true
+          },
+          "status": {
+            "type": "integer",
+            "description": "HTTP 상태 코드",
+            "format": "int32",
+            "example": 200
+          },
+          "message": {
+            "type": "string",
+            "description": "응답 메시지",
+            "example": "요청이 성공적으로 처리되었습니다."
+          },
+          "data": {
+            "$ref": "#/components/schemas/AdminPendingUserListResponse"
+          }
+        },
+        "description": "공통 API 응답"
+      },
+      "PendingUserSummary": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "loginId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "studentId": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "phoneNumber": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "AdminMeResponse": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "USER",
+              "ADMIN"
+            ]
+          },
+          "accessible": {
+            "type": "boolean"
+          }
+        },
+        "description": "응답 데이터"
+      },
+      "CommonResponseAdminMeResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "요청 성공 여부",
+            "example": true
+          },
+          "status": {
+            "type": "integer",
+            "description": "HTTP 상태 코드",
+            "format": "int32",
+            "example": 200
+          },
+          "message": {
+            "type": "string",
+            "description": "응답 메시지",
+            "example": "요청이 성공적으로 처리되었습니다."
+          },
+          "data": {
+            "$ref": "#/components/schemas/AdminMeResponse"
+          }
+        },
+        "description": "공통 API 응답"
+      },
+      "AdminDashboardResponse": {
+        "type": "object",
+        "properties": {
+          "pendingUserCount": {
+            "type": "integer",
+            "description": "승인 대기 회원 수",
+            "format": "int64",
+            "example": 3
+          },
+          "totalUserCount": {
+            "type": "integer",
+            "description": "전체 회원 수",
+            "format": "int64",
+            "example": 128
+          },
+          "recentSignupRequests": {
+            "type": "array",
+            "description": "최근 가입 신청 목록 (최대 5명, 최신순)",
+            "items": {
+              "$ref": "#/components/schemas/SignupRequestSummary"
+            }
+          },
+          "recentActiveMembers": {
+            "type": "array",
+            "description": "최근 접속 회원 목록 (최대 3명, 최신 접속일순)",
+            "items": {
+              "$ref": "#/components/schemas/RecentActiveMember"
+            }
+          },
+          "postCounts": {
+            "$ref": "#/components/schemas/PostCounts"
+          }
+        },
+        "description": "관리자 대시보드 응답"
+      },
+      "CommonResponseAdminDashboardResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "요청 성공 여부",
+            "example": true
+          },
+          "status": {
+            "type": "integer",
+            "description": "HTTP 상태 코드",
+            "format": "int32",
+            "example": 200
+          },
+          "message": {
+            "type": "string",
+            "description": "응답 메시지",
+            "example": "요청이 성공적으로 처리되었습니다."
+          },
+          "data": {
+            "$ref": "#/components/schemas/AdminDashboardResponse"
+          }
+        },
+        "description": "공통 API 응답"
+      },
+      "PostCounts": {
+        "type": "object",
+        "properties": {
+          "noticeCount": {
+            "type": "integer",
+            "description": "공지사항 개수",
+            "format": "int64",
+            "example": 12
+          },
+          "archiveCount": {
+            "type": "integer",
+            "description": "족보 개수",
+            "format": "int64",
+            "example": 45
+          },
+          "infoPostCount": {
+            "type": "integer",
+            "description": "정보공유 게시글 개수",
+            "format": "int64",
+            "example": 30
+          },
+          "photoPostCount": {
+            "type": "integer",
+            "description": "사진첩 개수",
+            "format": "int64",
+            "example": 8
+          }
+        },
+        "description": "게시판별 게시글 개수"
+      },
+      "RecentActiveMember": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "description": "회원 ID",
+            "format": "int64",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "description": "이름",
+            "example": "하성준"
+          },
+          "studentId": {
+            "type": "string",
+            "description": "학번",
+            "example": "20230001"
+          },
+          "lastLoginAt": {
+            "type": "string",
+            "description": "최근 접속일",
+            "format": "date-time"
+          }
+        },
+        "description": "최근 접속 회원 요약"
+      },
+      "SignupRequestSummary": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "description": "회원 ID",
+            "format": "int64",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "description": "이름",
+            "example": "하성준"
+          },
+          "studentId": {
+            "type": "string",
+            "description": "학번",
+            "example": "20230001"
+          },
+          "email": {
+            "type": "string",
+            "description": "이메일",
+            "example": "example@khu.ac.kr"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "가입 신청일",
+            "format": "date-time"
+          }
+        },
+        "description": "가입 신청 요약"
+      },
+      "MyWrittenPostDeleteApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "요청 성공 여부",
+            "example": true
+          },
+          "status": {
+            "type": "integer",
+            "description": "HTTP 상태 코드",
+            "format": "int32",
+            "example": 200
+          },
+          "message": {
+            "type": "string",
+            "description": "응답 메시지",
+            "example": "요청에 성공했습니다."
+          },
+          "data": {
+            "$ref": "#/components/schemas/MyWrittenPostDeleteResponse"
+          }
+        },
+        "description": "내가 쓴 글 삭제 성공 응답"
+      },
+      "MyWrittenPostDeleteResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "처리 메시지",
+            "example": "작성한 글이 삭제되었습니다."
+          }
+        },
+        "description": "내가 쓴 글 삭제 응답 데이터"
+      },
+      "ForbiddenApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "요청 성공 여부",
+            "example": false
+          },
+          "status": {
+            "type": "integer",
+            "description": "HTTP 상태 코드",
+            "format": "int32",
+            "example": 403
+          },
+          "message": {
+            "type": "string",
+            "description": "응답 메시지",
+            "example": "삭제 권한이 없습니다."
+          },
+          "data": {
+            "type": "object",
+            "description": "응답 데이터",
+            "nullable": true
+          }
+        },
+        "description": "권한 없음 응답"
+      },
+      "MyWrittenCommentDeleteApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "요청 성공 여부",
+            "example": true
+          },
+          "status": {
+            "type": "integer",
+            "description": "HTTP 상태 코드",
+            "format": "int32",
+            "example": 200
+          },
+          "message": {
+            "type": "string",
+            "description": "응답 메시지",
+            "example": "요청에 성공했습니다."
+          },
+          "data": {
+            "$ref": "#/components/schemas/MyWrittenCommentDeleteResponse"
+          }
+        },
+        "description": "내가 쓴 댓글 삭제 성공 응답"
+      },
+      "MyWrittenCommentDeleteResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "처리 메시지",
+            "example": "작성한 댓글이 삭제되었습니다."
+          }
+        },
+        "description": "내가 쓴 댓글 삭제 응답 데이터"
       }
     }
   }

@@ -111,3 +111,72 @@ GET /api/home
 - `recentAnnouncements`
 
 `recentArchives` 항목은 `semester`를 포함하지 않고, `author` 객체와 `yyyy.MM.dd` 형식의 `date`를 제공합니다.
+
+## Admin Dashboard API
+
+프론트에서 연결할 엔드포인트:
+
+```http
+GET /api/admin/dashboard
+```
+
+관리자(ADMIN) 권한이 있는 계정의 토큰이 필요합니다.
+
+응답 최상위 필드:
+
+- `success`
+- `status`
+- `message`
+- `data`
+
+성공 응답의 대시보드 데이터는 `data` 안에 들어갑니다.
+
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "요청에 성공했습니다.",
+  "data": {
+    "pendingUserCount": 3,
+    "totalUserCount": 128,
+    "recentSignupRequests": [
+      {
+        "userId": 1,
+        "name": "하성준",
+        "studentId": "20230001",
+        "email": "example@khu.ac.kr",
+        "createdAt": "2026-07-14T10:00:00"
+      }
+    ],
+    "recentActiveMembers": [
+      {
+        "userId": 2,
+        "name": "곽민서",
+        "studentId": "20209999",
+        "lastLoginAt": "2026-07-15T09:30:00"
+      }
+    ],
+    "postCounts": {
+      "noticeCount": 12,
+      "archiveCount": 45,
+      "infoPostCount": 30,
+      "photoPostCount": 8
+    }
+  }
+}
+```
+
+- `recentSignupRequests`: 승인 대기 중인 회원 목록, 최대 5명까지 최신 가입 신청순
+- `recentActiveMembers`: 최근 접속일순 최대 3명
+- `postCounts`: 게시판별 전체 게시글 개수 (공지사항 / 족보 / 정보공유 게시글 / 사진첩)
+
+명세에 포함된 응답 상태:
+
+- `200`: 요청 성공
+- `401`: 인증 필요
+- `403`: 관리자 권한 없음
+
+응답에서 제외한 필드:
+
+- `memberSummary` (`pendingUserCount`와 중복되어 제거)
+- `recentContents` (최근 게시글 목록 대신 게시판별 개수(`postCounts`)만 제공)
