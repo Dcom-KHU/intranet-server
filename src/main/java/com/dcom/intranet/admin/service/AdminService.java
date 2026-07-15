@@ -9,7 +9,6 @@ import com.dcom.intranet.admin.dto.response.AdminUserApproveResponse;
 import com.dcom.intranet.admin.dto.response.AdminUserDetailResponse;
 import com.dcom.intranet.admin.dto.response.AdminUserListResponse;
 import com.dcom.intranet.admin.dto.response.AdminUserRejectResponse;
-import com.dcom.intranet.archive.domain.Archive;
 import com.dcom.intranet.archive.repository.ArchiveRepository;
 import com.dcom.intranet.auth.domain.User;
 import com.dcom.intranet.auth.domain.UserRole;
@@ -17,15 +16,12 @@ import com.dcom.intranet.auth.domain.UserStatus;
 import com.dcom.intranet.auth.repository.UserRepository;
 import com.dcom.intranet.auth.service.EmailService;
 import com.dcom.intranet.global.exception.BadRequestException;
-import com.dcom.intranet.notice.domain.Notice;
+import com.dcom.intranet.info.repository.InfoPostRepository;
 import com.dcom.intranet.notice.repository.NoticeRepository;
-import com.dcom.intranet.photo.domain.PhotoPost;
 import com.dcom.intranet.photo.repository.PhotoPostRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,20 +30,17 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class AdminService {
 
-    private static final int RECENT_CONTENT_SIZE = 5;
-
     private final UserRepository userRepository;
     private final NoticeRepository noticeRepository;
     private final PhotoPostRepository photoPostRepository;
     private final ArchiveRepository archiveRepository;
+    private final InfoPostRepository infoPostRepository;
     private final EmailService emailService;
 
     @Transactional(readOnly = true)
@@ -72,18 +65,22 @@ public class AdminService {
                         ))
                         .toList();
 
-        AdminDashboardResponse.MemberSummary memberSummary = new AdminDashboardResponse.MemberSummary(
-                userRepository.countByStatus(UserStatus.APPROVED),
-                pendingUserCount,
-                userRepository.countByStatus(UserStatus.WITHDRAWN)
-        );
+        List<AdminDashboardResponse.RecentActiveMember> recentActiveMembers =
+                userRepository.findTop3ByStatusOrderByLastLoginAtDesc(UserStatus.APPROVED).stream()
+                        .map(user -> new AdminDashboardResponse.RecentActiveMember(
+                                user.getId(),
+                                user.getName(),
+                                user.getStudentId(),
+                                user.getLastLoginAt()
+                        ))
+                        .toList();
 
         return new AdminDashboardResponse(
                 pendingUserCount,
                 totalUserCount,
                 recentSignupRequests,
-                memberSummary,
-                getRecentContents()
+                recentActiveMembers,
+                getPostCounts()
         );
     }
 
@@ -221,31 +218,13 @@ public class AdminService {
         });
     }
 
-    private List<AdminDashboardResponse.RecentContent> getRecentContents() {
-        Pageable top5 = PageRequest.of(0, RECENT_CONTENT_SIZE, Sort.by(Sort.Direction.DESC, "createdAt"));
-
-        List<AdminDashboardResponse.RecentContent> contents = new ArrayList<>();
-
-        for (Notice notice : noticeRepository.findAll(top5).getContent()) {
-            contents.add(new AdminDashboardResponse.RecentContent(
-                    "NOTICE", notice.getNoticeId(), notice.getTitle(), notice.getCreatedAt()
-            ));
-        }
-        for (PhotoPost photoPost : photoPostRepository.findAll(top5).getContent()) {
-            contents.add(new AdminDashboardResponse.RecentContent(
-                    "PHOTO", photoPost.getAlbumId(), photoPost.getEventName(), photoPost.getCreatedAt()
-            ));
-        }
-        for (Archive archive : archiveRepository.findAll(top5).getContent()) {
-            contents.add(new AdminDashboardResponse.RecentContent(
-                    "ARCHIVE", archive.getId(), archive.getSubjectName() + " - " + archive.getProfessorName(), archive.getCreatedAt()
-            ));
-        }
-
-        return contents.stream()
-                .sorted(Comparator.comparing(AdminDashboardResponse.RecentContent::createdAt).reversed())
-                .limit(RECENT_CONTENT_SIZE)
-                .toList();
+    private AdminDashboardResponse.PostCounts getPostCounts() {
+        return new AdminDashboardResponse.PostCounts(
+                noticeRepository.count(),
+                archiveRepository.count(),
+                infoPostRepository.count(),
+                photoPostRepository.count()
+        );
     }
 
     private User findUser(String loginId) {

@@ -19,6 +19,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Page<User> findByStatus(UserStatus status, Pageable pageable);
     List<User> findTop5ByStatusOrderByCreatedAtDesc(UserStatus status);
+    List<User> findTop3ByStatusOrderByLastLoginAtDesc(UserStatus status);
     long countByStatus(UserStatus status);
 
     Page<User> findByNameContainingOrLoginIdContainingOrStudentIdContaining(
