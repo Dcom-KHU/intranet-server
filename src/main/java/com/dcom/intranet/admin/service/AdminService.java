@@ -21,7 +21,9 @@ import com.dcom.intranet.notice.repository.NoticeRepository;
 import com.dcom.intranet.photo.repository.PhotoPostRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -86,10 +88,11 @@ public class AdminService {
 
     @Transactional(readOnly = true)
     public AdminUserListResponse getUserList(String keyword, Pageable pageable) {
+        Pageable stablePageable = stabilizeNameSort(pageable);
         Page<User> users = (keyword == null || keyword.isBlank())
-                ? userRepository.findAll(pageable)
+                ? userRepository.findAll(stablePageable)
                 : userRepository.findByNameContainingOrLoginIdContainingOrStudentIdContaining(
-                        keyword, keyword, keyword, pageable
+                        keyword, keyword, keyword, stablePageable
                 );
 
         Page<AdminUserListResponse.UserSummary> page = users.map(user -> new AdminUserListResponse.UserSummary(
@@ -104,6 +107,21 @@ public class AdminService {
         ));
 
         return AdminUserListResponse.from(page);
+    }
+
+    private Pageable stabilizeNameSort(Pageable pageable) {
+        Sort sort = pageable.getSort();
+        Sort.Order nameOrder = sort.getOrderFor("name");
+
+        if (nameOrder == null || !nameOrder.isAscending() || sort.getOrderFor("id") != null) {
+            return pageable;
+        }
+
+        return PageRequest.of(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                sort.and(Sort.by(Sort.Direction.ASC, "id"))
+        );
     }
 
     @Transactional(readOnly = true)
