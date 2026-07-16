@@ -44,6 +44,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -71,7 +72,8 @@ public class PhotoPostController {
                     "albumId": 1,
                     "coverImageUrl": "/uploads/photo/2026/07/cover.jpg",
                     "eventName": "신입생 환영회",
-                    "activityDate": "2026-07-03"
+                    "activityDate": "2026-07-03",
+                    "imageCount": 2
                   }
                 ],
                 "pageInfo": {
@@ -97,19 +99,7 @@ public class PhotoPostController {
                   "/uploads/photo/2026/07/photo1.jpg",
                   "/uploads/photo/2026/07/photo2.jpg"
                 ],
-                "description": "신입생 환영회 사진입니다.",
-                "comments": [
-                  {
-                    "commentId": 1,
-                    "author": {
-                      "studentNumber": "20211234",
-                      "name": "홍길동"
-                    },
-                    "content": "좋은 사진 감사합니다.",
-                    "createdAt": "2026-07-03T12:00:00",
-                    "updatedAt": null
-                  }
-                ]
+                "description": "신입생 환영회 사진입니다."
               }
             }
             """;
@@ -259,20 +249,22 @@ public class PhotoPostController {
     private final ObjectMapper objectMapper;
     private final Validator validator;
 
-    @Operation(summary = "사진첩 목록 조회", description = "사진첩 목록을 조회합니다. 대표 이미지는 첫 번째 업로드 사진이며, 기본 페이지 크기는 8개입니다.")
+    @Operation(summary = "사진첩 목록 조회", description = "사진첩 목록을 조회합니다. keyword 값이 있으면 행사명으로 검색합니다. 대표 이미지는 첫 번째 업로드 사진이며, 기본 페이지 크기는 8개입니다.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = CommonResponse.class), examples = @ExampleObject(value = PHOTO_LIST_SUCCESS_200_EXAMPLE))),
             @ApiResponse(responseCode = "401", description = "인증 필요", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = CommonResponse.class), examples = @ExampleObject(value = UNAUTHORIZED_401_EXAMPLE)))
     })
     @GetMapping
     public ResponseEntity<CommonResponse<PhotoPostListResponse>> getPhotoPostList(
+            @Parameter(description = "검색어. 행사명(eventName) 기준으로 검색합니다.", example = "신입생")
+            @RequestParam(required = false) String keyword,
             @Parameter(description = "페이지 정보. 기본 size는 8입니다.")
             @PageableDefault(size = 8, sort = "activityDate", direction = DESC) Pageable pageable
     ) {
-        return ResponseEntity.ok(CommonResponse.success(photoPostService.getPhotoPostList(pageable)));
+        return ResponseEntity.ok(CommonResponse.success(photoPostService.getPhotoPostList(keyword, pageable)));
     }
 
-    @Operation(summary = "사진첩 상세 조회", description = "사진 목록, 설명, 활동 날짜, 댓글을 포함한 사진첩 상세 정보를 조회합니다.")
+    @Operation(summary = "사진첩 상세 조회", description = "사진 목록, 설명, 활동 날짜를 포함한 사진첩 상세 정보를 조회합니다.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = CommonResponse.class), examples = @ExampleObject(value = PHOTO_DETAIL_SUCCESS_200_EXAMPLE))),
             @ApiResponse(responseCode = "401", description = "인증 필요", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = CommonResponse.class), examples = @ExampleObject(value = UNAUTHORIZED_401_EXAMPLE))),

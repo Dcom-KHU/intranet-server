@@ -39,13 +39,18 @@ public class PhotoPostService {
     private final PhotoPostFileStorageService photoPostFileStorageService;
 
     @Transactional(readOnly = true)
-    public PhotoPostListResponse getPhotoPostList(Pageable pageable) {
-        Page<PhotoPostListResponse.AlbumSummary> page = photoPostRepository.findAll(pageable)
+    public PhotoPostListResponse getPhotoPostList(String keyword, Pageable pageable) {
+        Page<PhotoPost> photoPosts = keyword == null || keyword.isBlank()
+                ? photoPostRepository.findAll(pageable)
+                : photoPostRepository.findByEventNameContaining(keyword, pageable);
+
+        Page<PhotoPostListResponse.AlbumSummary> page = photoPosts
                 .map(photoPost -> new PhotoPostListResponse.AlbumSummary(
                         photoPost.getAlbumId(),
                         photoPost.getCoverImageUrl(),
                         photoPost.getEventName(),
-                        photoPost.getActivityDate()
+                        photoPost.getActivityDate(),
+                        photoPost.getImages().size()
                 ));
 
         return PhotoPostListResponse.from(page);

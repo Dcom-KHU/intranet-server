@@ -35,10 +35,10 @@ public class NoticeService {
     private final NoticeFileStorageService noticeFileStorageService;
 
     @Transactional(readOnly = true)
-    public NoticeListResponse getNoticeList(String title, Pageable pageable) {
-        Page<Notice> notices = title == null || title.isBlank()
+    public NoticeListResponse getNoticeList(String keyword, Pageable pageable) {
+        Page<Notice> notices = keyword == null || keyword.isBlank()
                 ? noticeRepository.findAll(pageable)
-                : noticeRepository.findByTitleContaining(title, pageable);
+                : noticeRepository.findByTitleContaining(keyword, pageable);
 
         Page<NoticeListResponse.NoticeSummary> page = notices
                 .map(notice -> new NoticeListResponse.NoticeSummary(
