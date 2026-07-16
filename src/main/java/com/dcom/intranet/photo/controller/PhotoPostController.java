@@ -196,7 +196,10 @@ public class PhotoPostController {
                   {
                     "commentId": 1,
                     "albumId": 1,
-                    "authorId": 10,
+                    "author": {
+                      "studentNumber": "20211234",
+                      "name": "홍길동"
+                    },
                     "content": "댓글 내용",
                     "createdAt": "2026-07-03T12:00:00"
                   }
