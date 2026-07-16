@@ -186,19 +186,19 @@ public class NoticeController {
     private final ObjectMapper objectMapper;
     private final Validator validator;
 
-    @Operation(summary = "공지사항 목록 조회", description = "공지사항 목록을 조회합니다. title 값이 있으면 제목으로 검색합니다.")
+    @Operation(summary = "공지사항 목록 조회", description = "공지사항 목록을 조회합니다. keyword 값이 있으면 제목으로 검색합니다.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = CommonResponse.class), examples = @ExampleObject(value = NOTICE_LIST_SUCCESS_200_EXAMPLE))),
             @ApiResponse(responseCode = "401", description = "인증 필요", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = CommonResponse.class), examples = @ExampleObject(value = UNAUTHORIZED_401_EXAMPLE)))
     })
     @GetMapping
     public ResponseEntity<CommonResponse<NoticeListResponse>> getNoticeList(
-            @Parameter(description = "검색할 공지사항 제목", example = "회의")
-            @RequestParam(required = false) String title,
+            @Parameter(description = "검색어. 공지사항 제목 기준으로 검색합니다.", example = "회의")
+            @RequestParam(required = false) String keyword,
             @Parameter(description = "페이지 정보")
             @PageableDefault(size = 10, sort = "createdAt", direction = DESC) Pageable pageable
     ) {
-        return ResponseEntity.ok(CommonResponse.success(noticeService.getNoticeList(title, pageable)));
+        return ResponseEntity.ok(CommonResponse.success(noticeService.getNoticeList(keyword, pageable)));
     }
 
     @Operation(summary = "공지사항 상세 조회", description = "특정 공지사항의 상세 정보를 조회합니다.")

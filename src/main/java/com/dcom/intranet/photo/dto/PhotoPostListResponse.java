@@ -26,7 +26,8 @@ public record PhotoPostListResponse(
             Long albumId,
             String coverImageUrl,
             String eventName,
-            LocalDate activityDate
+            LocalDate activityDate,
+            int imageCount
     ) {
     }
 
