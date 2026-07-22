@@ -1,11 +1,8 @@
 package com.dcom.intranet.photo.dto;
 
-import com.dcom.intranet.global.dto.AuthorResponse;
-import com.dcom.intranet.photo.domain.PhotoComment;
 import com.dcom.intranet.photo.domain.PhotoPost;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 public record PhotoPostDetailResponse(
@@ -13,8 +10,7 @@ public record PhotoPostDetailResponse(
         String eventName,
         LocalDate activityDate,
         List<String> imageList,
-        String description,
-        List<CommentSummary> comments
+        String description
 ) {
 
     public static PhotoPostDetailResponse from(PhotoPost photoPost) {
@@ -23,29 +19,7 @@ public record PhotoPostDetailResponse(
                 photoPost.getEventName(),
                 photoPost.getActivityDate(),
                 photoPost.getImageUrls(),
-                photoPost.getDescription(),
-                photoPost.getComments().stream()
-                        .map(CommentSummary::from)
-                        .toList()
+                photoPost.getDescription()
         );
-    }
-
-    public record CommentSummary(
-            Long commentId,
-            AuthorResponse author,
-            String content,
-            LocalDateTime createdAt,
-            LocalDateTime updatedAt
-    ) {
-
-        public static CommentSummary from(PhotoComment comment) {
-            return new CommentSummary(
-                    comment.getCommentId(),
-                    AuthorResponse.from(comment.getAuthor()),
-                    comment.getContent(),
-                    comment.getCreatedAt(),
-                    comment.getUpdatedAt()
-            );
-        }
     }
 }

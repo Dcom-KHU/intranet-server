@@ -50,7 +50,17 @@ public class AdminController {
         return ResponseEntity.ok(CommonResponse.success(adminService.getDashboard()));
     }
 
-    @Operation(summary = "회원 목록 조회", description = "학번, 최근 접속일 기준 정렬을 지원하는 전체 회원 목록을 조회합니다.")
+    @Operation(
+            summary = "회원 목록 조회",
+            description = """
+                    전체 회원 목록을 조회합니다.
+
+                    정렬 예시:
+                    - 학번 오름차순: `sort=studentId,asc`
+                    - 최근 접속일 내림차순: `sort=lastLoginAt,desc`
+                    - 이름 가나다순: `sort=name,asc`
+                    """
+    )
     @GetMapping("/users")
     public ResponseEntity<CommonResponse<AdminUserListResponse>> getUserList(
             @RequestParam(required = false) String keyword,
