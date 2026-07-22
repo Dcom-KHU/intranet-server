@@ -27,7 +27,8 @@ public record NoticeListResponse(
             Long noticeId,
             String title,
             AuthorResponse author,
-            LocalDateTime createdAt
+            LocalDateTime createdAt,
+            boolean hasFiles
     ) {
     }
 

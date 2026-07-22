@@ -45,7 +45,8 @@ public class NoticeService {
                         notice.getNoticeId(),
                         notice.getTitle(),
                         resolveAuthor(notice.getAuthorId()),
-                        notice.getCreatedAt()
+                        notice.getCreatedAt(),
+                        !notice.getFiles().isEmpty()
                 ));
 
         return NoticeListResponse.from(page);

@@ -70,7 +70,8 @@ public class NoticeController {
                       "studentNumber": "20201234",
                       "name": "표지훈"
                     },
-                    "createdAt": "2026-07-03T12:00:00"
+                    "createdAt": "2026-07-03T12:00:00",
+                    "hasFiles": true
                   }
                 ],
                 "pageInfo": {
