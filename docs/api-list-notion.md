@@ -11,7 +11,6 @@
 | auth | /api/auth/password/reset/send | POST | 임시 비밀번호 발송 | No |
 | auth | /api/auth/password | POST | 비밀번호 재설정 | Yes |
 | home | /api/home | GET | 메인 대시보드 조회 | Yes |
-| admin | /api/admin/me | GET | 관리자 콘솔 접근 확인 | Yes |
 | admin | /api/admin/dashboard | GET | 관리자 대시보드 조회 | Yes |
 | admin | /api/admin/users | GET | 회원 목록 조회 | Yes |
 | admin | /api/admin/users/pending | GET | 가입 승인 대상 조회 | Yes |

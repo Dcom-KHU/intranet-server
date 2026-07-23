@@ -2,7 +2,6 @@ package com.dcom.intranet.admin.service;
 
 import com.dcom.intranet.admin.dto.request.AdminTransferAdminRequest;
 import com.dcom.intranet.admin.dto.response.AdminDashboardResponse;
-import com.dcom.intranet.admin.dto.response.AdminMeResponse;
 import com.dcom.intranet.admin.dto.response.AdminPendingUserListResponse;
 import com.dcom.intranet.admin.dto.response.AdminTransferAdminResponse;
 import com.dcom.intranet.admin.dto.response.AdminUserApproveResponse;
@@ -46,12 +45,6 @@ public class AdminService {
     private final EmailService emailService;
 
     @Transactional(readOnly = true)
-    public AdminMeResponse me(String loginId) {
-        User admin = findUser(loginId);
-        return new AdminMeResponse(admin.getId(), admin.getRole(), true);
-    }
-
-    @Transactional(readOnly = true)
     public AdminDashboardResponse getDashboard() {
         long pendingUserCount = userRepository.countByStatus(UserStatus.PENDING);
         long totalUserCount = userRepository.count();
@@ -90,9 +83,11 @@ public class AdminService {
     public AdminUserListResponse getUserList(String keyword, Pageable pageable) {
         Pageable stablePageable = stabilizeNameSort(pageable);
         Page<User> users = (keyword == null || keyword.isBlank())
-                ? userRepository.findAll(stablePageable)
-                : userRepository.findByNameContainingOrLoginIdContainingOrStudentIdContaining(
-                        keyword, keyword, keyword, stablePageable
+                ? userRepository.findByStatus(UserStatus.APPROVED, stablePageable)
+                : userRepository.findByStatusAndKeyword(
+                        UserStatus.APPROVED,
+                        keyword,
+                        stablePageable
                 );
 
         Page<AdminUserListResponse.UserSummary> page = users.map(user -> new AdminUserListResponse.UserSummary(

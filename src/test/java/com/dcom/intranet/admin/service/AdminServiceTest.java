@@ -1,6 +1,7 @@
 package com.dcom.intranet.admin.service;
 
 import com.dcom.intranet.archive.repository.ArchiveRepository;
+import com.dcom.intranet.auth.domain.UserStatus;
 import com.dcom.intranet.auth.repository.UserRepository;
 import com.dcom.intranet.auth.service.EmailService;
 import com.dcom.intranet.info.repository.InfoPostRepository;
@@ -43,13 +44,13 @@ class AdminServiceTest {
     @DisplayName("Name ascending sort adds id ascending tie-breaker")
     void nameAscendingSortAddsIdAscendingTieBreaker() {
         Pageable requested = PageRequest.of(0, 20, Sort.by(Sort.Direction.ASC, "name"));
-        when(userRepository.findAll(any(Pageable.class)))
-                .thenAnswer(invocation -> Page.empty(invocation.getArgument(0)));
+        when(userRepository.findByStatus(eq(UserStatus.APPROVED), any(Pageable.class)))
+                .thenAnswer(invocation -> Page.empty(invocation.getArgument(1)));
 
         adminService.getUserList(null, requested);
 
         ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
-        verify(userRepository).findAll(captor.capture());
+        verify(userRepository).findByStatus(eq(UserStatus.APPROVED), captor.capture());
         assertThat(captor.getValue().getSort().stream().toList()).containsExactly(
                 Sort.Order.asc("name"),
                 Sort.Order.asc("id")
@@ -60,15 +61,15 @@ class AdminServiceTest {
     @DisplayName("Keyword search applies the same stable name sort")
     void keywordSearchAppliesTheSameStableNameSort() {
         Pageable requested = PageRequest.of(0, 20, Sort.by(Sort.Direction.ASC, "name"));
-        when(userRepository.findByNameContainingOrLoginIdContainingOrStudentIdContaining(
-                eq("김"), eq("김"), eq("김"), any(Pageable.class)
-        )).thenAnswer(invocation -> Page.empty(invocation.getArgument(3)));
+        when(userRepository.findByStatusAndKeyword(
+                eq(UserStatus.APPROVED), eq("김"), any(Pageable.class)
+        )).thenAnswer(invocation -> Page.empty(invocation.getArgument(2)));
 
         adminService.getUserList("김", requested);
 
         ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
-        verify(userRepository).findByNameContainingOrLoginIdContainingOrStudentIdContaining(
-                eq("김"), eq("김"), eq("김"), captor.capture()
+        verify(userRepository).findByStatusAndKeyword(
+                eq(UserStatus.APPROVED), eq("김"), captor.capture()
         );
         assertThat(captor.getValue().getSort().stream().toList()).containsExactly(
                 Sort.Order.asc("name"),
@@ -80,13 +81,13 @@ class AdminServiceTest {
     @DisplayName("Non-name sort is passed to repository unchanged")
     void nonNameSortIsPassedToRepositoryUnchanged() {
         Pageable requested = PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "lastLoginAt"));
-        when(userRepository.findAll(any(Pageable.class)))
-                .thenAnswer(invocation -> Page.empty(invocation.getArgument(0)));
+        when(userRepository.findByStatus(eq(UserStatus.APPROVED), any(Pageable.class)))
+                .thenAnswer(invocation -> Page.empty(invocation.getArgument(1)));
 
         adminService.getUserList(null, requested);
 
         ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
-        verify(userRepository).findAll(captor.capture());
+        verify(userRepository).findByStatus(eq(UserStatus.APPROVED), captor.capture());
         assertThat(captor.getValue()).isSameAs(requested);
     }
 }

@@ -5,6 +5,8 @@ import com.dcom.intranet.auth.domain.UserStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +26,21 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Page<User> findByNameContainingOrLoginIdContainingOrStudentIdContaining(
             String name, String loginId, String studentId, Pageable pageable
+    );
+
+    @Query("""
+            SELECT u FROM User u
+            WHERE u.status = :status
+              AND (
+                  u.name LIKE CONCAT('%', :keyword, '%')
+                  OR u.loginId LIKE CONCAT('%', :keyword, '%')
+                  OR u.studentId LIKE CONCAT('%', :keyword, '%')
+              )
+            """)
+    Page<User> findByStatusAndKeyword(
+            @Param("status") UserStatus status,
+            @Param("keyword") String keyword,
+            Pageable pageable
     );
 
 }
