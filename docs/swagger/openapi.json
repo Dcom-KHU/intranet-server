@@ -4318,28 +4318,6 @@
         }
       }
     },
-    "/api/admin/me": {
-      "get": {
-        "tags": [
-          "관리자"
-        ],
-        "summary": "관리자 콘솔 접근 확인",
-        "description": "관리자 콘솔에 접근 가능한지 확인합니다.",
-        "operationId": "me_1",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/CommonResponseAdminMeResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/admin/dashboard": {
       "get": {
         "tags": [
@@ -6359,51 +6337,6 @@
             "format": "date-time"
           }
         }
-      },
-      "AdminMeResponse": {
-        "type": "object",
-        "properties": {
-          "userId": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "role": {
-            "type": "string",
-            "enum": [
-              "USER",
-              "ADMIN"
-            ]
-          },
-          "accessible": {
-            "type": "boolean"
-          }
-        },
-        "description": "응답 데이터"
-      },
-      "CommonResponseAdminMeResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "description": "요청 성공 여부",
-            "example": true
-          },
-          "status": {
-            "type": "integer",
-            "description": "HTTP 상태 코드",
-            "format": "int32",
-            "example": 200
-          },
-          "message": {
-            "type": "string",
-            "description": "응답 메시지",
-            "example": "요청이 성공적으로 처리되었습니다."
-          },
-          "data": {
-            "$ref": "#/components/schemas/AdminMeResponse"
-          }
-        },
-        "description": "공통 API 응답"
       },
       "AdminDashboardResponse": {
         "type": "object",

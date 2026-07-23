@@ -2,7 +2,6 @@ package com.dcom.intranet.admin.service;
 
 import com.dcom.intranet.admin.dto.request.AdminTransferAdminRequest;
 import com.dcom.intranet.admin.dto.response.AdminDashboardResponse;
-import com.dcom.intranet.admin.dto.response.AdminMeResponse;
 import com.dcom.intranet.admin.dto.response.AdminPendingUserListResponse;
 import com.dcom.intranet.admin.dto.response.AdminTransferAdminResponse;
 import com.dcom.intranet.admin.dto.response.AdminUserApproveResponse;
@@ -44,12 +43,6 @@ public class AdminService {
     private final ArchiveRepository archiveRepository;
     private final InfoPostRepository infoPostRepository;
     private final EmailService emailService;
-
-    @Transactional(readOnly = true)
-    public AdminMeResponse me(String loginId) {
-        User admin = findUser(loginId);
-        return new AdminMeResponse(admin.getId(), admin.getRole(), true);
-    }
 
     @Transactional(readOnly = true)
     public AdminDashboardResponse getDashboard() {

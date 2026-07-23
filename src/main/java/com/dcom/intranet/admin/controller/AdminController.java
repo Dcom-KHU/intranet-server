@@ -2,7 +2,6 @@ package com.dcom.intranet.admin.controller;
 
 import com.dcom.intranet.admin.dto.request.AdminTransferAdminRequest;
 import com.dcom.intranet.admin.dto.response.AdminDashboardResponse;
-import com.dcom.intranet.admin.dto.response.AdminMeResponse;
 import com.dcom.intranet.admin.dto.response.AdminPendingUserListResponse;
 import com.dcom.intranet.admin.dto.response.AdminTransferAdminResponse;
 import com.dcom.intranet.admin.dto.response.AdminUserApproveResponse;
@@ -37,12 +36,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminController {
 
     private final AdminService adminService;
-
-    @Operation(summary = "관리자 콘솔 접근 확인", description = "관리자 콘솔에 접근 가능한지 확인합니다.")
-    @GetMapping("/me")
-    public ResponseEntity<CommonResponse<AdminMeResponse>> me(@AuthenticationPrincipal String loginId) {
-        return ResponseEntity.ok(CommonResponse.success(adminService.me(loginId)));
-    }
 
     @Operation(summary = "관리자 대시보드 조회", description = "승인 대기 수, 전체 회원 수 등 요약 정보를 조회합니다.")
     @GetMapping("/dashboard")
