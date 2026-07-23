@@ -83,9 +83,11 @@ public class AdminService {
     public AdminUserListResponse getUserList(String keyword, Pageable pageable) {
         Pageable stablePageable = stabilizeNameSort(pageable);
         Page<User> users = (keyword == null || keyword.isBlank())
-                ? userRepository.findAll(stablePageable)
-                : userRepository.findByNameContainingOrLoginIdContainingOrStudentIdContaining(
-                        keyword, keyword, keyword, stablePageable
+                ? userRepository.findByStatus(UserStatus.APPROVED, stablePageable)
+                : userRepository.findByStatusAndKeyword(
+                        UserStatus.APPROVED,
+                        keyword,
+                        stablePageable
                 );
 
         Page<AdminUserListResponse.UserSummary> page = users.map(user -> new AdminUserListResponse.UserSummary(

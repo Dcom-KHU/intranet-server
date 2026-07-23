@@ -46,7 +46,7 @@ public class AdminController {
     @Operation(
             summary = "회원 목록 조회",
             description = """
-                    전체 회원 목록을 조회합니다.
+                    승인된 회원 목록을 조회합니다.
 
                     정렬 예시:
                     - 학번 오름차순: `sort=studentId,asc`
