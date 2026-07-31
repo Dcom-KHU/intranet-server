@@ -40,9 +40,8 @@ public class InfoPostService {
         Page<InfoPost> posts;
 
         if (keyword != null && !keyword.isBlank()) {
-            posts = infoPostRepository.findByTitleContainingOrContentContaining(
-                    keyword,
-                    keyword,
+            posts = infoPostRepository.searchByTitleOrContentIgnoringSpaces(
+                    normalizeKeyword(keyword),
                     pageable
             );
         } else {
@@ -72,6 +71,10 @@ public class InfoPostService {
         };
 
         return PageRequest.of(page, size, sortOption);
+    }
+
+    private String normalizeKeyword(String keyword) {
+        return keyword.replaceAll("\\s+", "");
     }
 
     @Transactional

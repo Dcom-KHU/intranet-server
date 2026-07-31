@@ -53,11 +53,8 @@ public class ArchiveService {
         Page<Archive> archives;
 
         if (searchKeyword != null && !searchKeyword.isBlank()) {
-            String keyword = searchKeyword.trim();
-
-            archives = archiveRepository.findBySubjectNameContainingOrProfessorNameContaining(
-                    keyword,
-                    keyword,
+            archives = archiveRepository.searchBySubjectNameOrProfessorNameIgnoringSpaces(
+                    normalizeKeyword(searchKeyword),
                     pageable
             );
         } else {
@@ -80,6 +77,10 @@ public class ArchiveService {
             int size
     ) {
         return getArchives(page, size, searchKeyword);
+    }
+
+    private String normalizeKeyword(String keyword) {
+        return keyword.replaceAll("\\s+", "");
     }
 
     public ArchiveDetailResponse getArchiveDetail(Long archiveId) {

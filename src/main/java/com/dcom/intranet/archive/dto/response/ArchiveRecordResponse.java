@@ -58,6 +58,7 @@ public class ArchiveRecordResponse {
             case SECOND -> "2학기";
             case SUMMER -> "여름학기";
             case WINTER -> "겨울학기";
+            case UNKNOWN -> "미상";
         };
     }
 

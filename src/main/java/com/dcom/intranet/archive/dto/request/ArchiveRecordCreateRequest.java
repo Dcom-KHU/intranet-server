@@ -14,7 +14,6 @@ import java.util.List;
 @NoArgsConstructor
 public class ArchiveRecordCreateRequest {
 
-    @NotNull(message = "시험 연도는 필수입니다.")
     private Integer examYear;
 
     @NotNull(message = "학기는 필수입니다.")

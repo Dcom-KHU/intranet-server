@@ -65,7 +65,7 @@ public class ArchiveController {
             description = """
                 최근 수정일 기준으로 족보 아카이브 목록을 조회합니다.
 
-                searchKeyword가 있으면 과목명 또는 교수명 기준으로 부분 일치 검색합니다.
+                searchKeyword가 있으면 과목명 또는 교수명 기준으로 공백을 무시해 부분 일치 검색합니다.
                 """
     )
     @ApiResponses({
@@ -96,7 +96,7 @@ public class ArchiveController {
             @Parameter(description = "페이지 크기", example = "10")
             @RequestParam(defaultValue = "10") int size,
 
-            @Parameter(description = "검색어. 과목명 또는 교수명 기준 부분 일치 검색", example = "자료구조")
+            @Parameter(description = "검색어. 과목명 또는 교수명 기준으로 공백을 무시해 부분 일치 검색", example = "자료구조")
             @RequestParam(required = false) String searchKeyword
     ) {
         ArchivePageResponse<ArchiveListResponse> response =

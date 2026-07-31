@@ -16,11 +16,10 @@ import java.util.List;
 @NoArgsConstructor
 public class ArchiveUpdateRequest {
 
-    @Schema(description = "시험 연도", example = "2024")
-    @NotNull(message = "시험 연도는 필수입니다.")
+    @Schema(description = "시험 연도. 학기를 UNKNOWN으로 지정할 때는 null을 허용합니다.", example = "2024")
     private Integer examYear;
 
-    @Schema(description = "학기", example = "FIRST")
+    @Schema(description = "학기. FIRST, SECOND, SUMMER, WINTER, UNKNOWN을 지원합니다.", example = "FIRST")
     @NotNull(message = "학기는 필수입니다.")
     private Semester semester;
 
