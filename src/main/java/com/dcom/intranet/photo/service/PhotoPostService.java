@@ -42,7 +42,7 @@ public class PhotoPostService {
     public PhotoPostListResponse getPhotoPostList(String keyword, Pageable pageable) {
         Page<PhotoPost> photoPosts = keyword == null || keyword.isBlank()
                 ? photoPostRepository.findAll(pageable)
-                : photoPostRepository.findByEventNameContaining(keyword, pageable);
+                : photoPostRepository.searchByEventNameIgnoringSpaces(normalizeKeyword(keyword), pageable);
 
         Page<PhotoPostListResponse.AlbumSummary> page = photoPosts
                 .map(photoPost -> new PhotoPostListResponse.AlbumSummary(
@@ -211,6 +211,10 @@ public class PhotoPostService {
                         HttpStatus.NOT_FOUND,
                         "사용자를 찾을 수 없습니다."
                 ));
+    }
+
+    private String normalizeKeyword(String keyword) {
+        return keyword.replaceAll("\\s+", "");
     }
 
     private void validateAuthor(PhotoComment comment, String loginId) {

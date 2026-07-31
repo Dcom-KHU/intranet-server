@@ -38,7 +38,7 @@ public class NoticeService {
     public NoticeListResponse getNoticeList(String keyword, Pageable pageable) {
         Page<Notice> notices = keyword == null || keyword.isBlank()
                 ? noticeRepository.findAll(pageable)
-                : noticeRepository.findByTitleContaining(keyword, pageable);
+                : noticeRepository.searchByTitleIgnoringSpaces(normalizeKeyword(keyword), pageable);
 
         Page<NoticeListResponse.NoticeSummary> page = notices
                 .map(notice -> new NoticeListResponse.NoticeSummary(
@@ -117,6 +117,10 @@ public class NoticeService {
                         HttpStatus.NOT_FOUND,
                         "공지사항을 찾을 수 없습니다."
                 ));
+    }
+
+    private String normalizeKeyword(String keyword) {
+        return keyword.replaceAll("\\s+", "");
     }
 
     private User findUser(String loginId) {
