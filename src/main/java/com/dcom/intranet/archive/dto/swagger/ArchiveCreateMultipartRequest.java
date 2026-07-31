@@ -16,7 +16,7 @@ import java.util.List;
 public class ArchiveCreateMultipartRequest {
 
     @Schema(
-            description = "족보 등록 요청 JSON 문자열",
+            description = "족보 등록 요청 JSON 문자열. 시험 연도를 알 수 없으면 examYear는 null, semester는 UNKNOWN으로 전송합니다.",
             example = """
                     {
                       "subjectName": "자료구조",

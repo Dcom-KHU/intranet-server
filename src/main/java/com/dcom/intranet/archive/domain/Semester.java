@@ -4,5 +4,6 @@ public enum Semester {
     FIRST,
     SECOND,
     SUMMER,
-    WINTER
+    WINTER,
+    UNKNOWN
 }
