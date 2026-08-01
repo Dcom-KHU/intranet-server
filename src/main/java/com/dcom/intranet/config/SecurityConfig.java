@@ -107,7 +107,8 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:5173",
                 "http://localhost:5174",
-                "https://dev-intranet.dcom.club"
+                "https://dev-intranet.dcom.club",
+                "https://intranet-web-rho.vercel.app"
         ));
 
         configuration.setAllowedMethods(List.of(
