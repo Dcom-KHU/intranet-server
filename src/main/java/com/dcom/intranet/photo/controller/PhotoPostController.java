@@ -30,6 +30,8 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Valid;
 import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
@@ -276,6 +278,23 @@ public class PhotoPostController {
             @PathVariable Long albumId
     ) {
         return ResponseEntity.ok(CommonResponse.success(photoPostService.getPhotoPostDetail(albumId)));
+    }
+
+    @Operation(summary = "활동사진 조회", description = "로그인한 회원이 해당 사진첩에 속한 사진을 조회합니다.")
+    @GetMapping("/{albumId}/images/{imageId}")
+    public ResponseEntity<Resource> downloadImage(
+            @PathVariable Long albumId,
+            @PathVariable Long imageId
+    ) {
+        PhotoPostService.DownloadFile image = photoPostService.downloadImage(albumId, imageId);
+        String contentType = image.contentType() == null
+                ? MediaType.APPLICATION_OCTET_STREAM_VALUE
+                : image.contentType();
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline")
+                .body(image.resource());
     }
 
     @Operation(

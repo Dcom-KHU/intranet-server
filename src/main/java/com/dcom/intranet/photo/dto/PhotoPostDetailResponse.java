@@ -18,7 +18,9 @@ public record PhotoPostDetailResponse(
                 photoPost.getAlbumId(),
                 photoPost.getEventName(),
                 photoPost.getActivityDate(),
-                photoPost.getImageUrls(),
+                photoPost.getImages().stream()
+                        .map(image -> "/api/photo-posts/%d/images/%d".formatted(photoPost.getAlbumId(), image.getId()))
+                        .toList(),
                 photoPost.getDescription()
         );
     }

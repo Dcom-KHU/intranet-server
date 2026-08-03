@@ -9,6 +9,7 @@ import com.dcom.intranet.info.repository.InfoPostRepository;
 import com.dcom.intranet.auth.domain.User;
 import com.dcom.intranet.auth.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -61,6 +62,16 @@ public class InfoPostService {
         post.increaseViews();
 
         return new InfoPostDetailResponse(post);
+    }
+
+    public DownloadFile downloadFile(Long postId, Long fileId) {
+        InfoPost post = findPost(postId);
+        InfoPostFile file = findFileInPost(post, fileId);
+        return new DownloadFile(
+                infoPostFileStorageService.loadAsResource(file.getFileUrl()),
+                file.getOriginalFileName(),
+                file.getContentType()
+        );
     }
 
     private Pageable createPageable(int page, int size, String sort) {
@@ -203,6 +214,9 @@ public class InfoPostService {
                         HttpStatus.NOT_FOUND,
                         "첨부파일을 찾을 수 없습니다."
                 ));
+    }
+
+    public record DownloadFile(Resource resource, String fileName, String contentType) {
     }
 
     @Transactional
