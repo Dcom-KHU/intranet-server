@@ -1,5 +1,6 @@
 package com.dcom.intranet.photo.domain;
 
+import com.dcom.intranet.auth.domain.User;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -8,6 +9,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.OrderColumn;
@@ -37,6 +39,10 @@ public class PhotoPost {
     @Column(columnDefinition = "LONGTEXT")
     private String description;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "author_id")
+    private User author;
+
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JoinColumn(name = "album_id", nullable = false)
     @OrderColumn(name = "upload_order")
@@ -58,17 +64,22 @@ public class PhotoPost {
     }
 
     public PhotoPost(String eventName, LocalDate activityDate, List<String> imageUrls) {
-        this.eventName = eventName;
-        this.activityDate = activityDate;
-        this.description = "";
-        if (imageUrls != null) {
-            imageUrls.stream()
-                    .map(imageUrl -> new PhotoPostImage(imageUrl, imageUrl, imageUrl, imageUrl, 0L, null))
-                    .forEach(this.images::add);
+        this(null, eventName, activityDate, "", null);
+        if (imageUrls == null) {
+            return;
         }
+
+        imageUrls.stream()
+                .map(imageUrl -> new PhotoPostImage(imageUrl, imageUrl, imageUrl, imageUrl, 0L, null))
+                .forEach(this.images::add);
     }
 
     public PhotoPost(String eventName, LocalDate activityDate, String description, List<PhotoPostImage> images) {
+        this(null, eventName, activityDate, description, images);
+    }
+
+    public PhotoPost(User author, String eventName, LocalDate activityDate, String description, List<PhotoPostImage> images) {
+        this.author = author;
         this.eventName = eventName;
         this.activityDate = activityDate;
         this.description = description == null ? "" : description;
@@ -89,6 +100,10 @@ public class PhotoPost {
 
     public String getDescription() {
         return description;
+    }
+
+    public User getAuthor() {
+        return author;
     }
 
     public List<String> getImageUrls() {

@@ -1,6 +1,9 @@
 package com.dcom.intranet.jwt;
 
 
+import com.dcom.intranet.auth.domain.User;
+import com.dcom.intranet.auth.domain.UserStatus;
+import com.dcom.intranet.auth.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,6 +23,7 @@ import java.util.List;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private  final JwtTokenProvider jwtTokenProvider;
+    private final UserRepository userRepository;
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
@@ -46,7 +50,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             /// 토큰이 유효하면 인증 정보 세팅
             if (token != null && jwtTokenProvider.validateToken(token)) {
                 String loginId = jwtTokenProvider.getLoginId(token);
-                String role = jwtTokenProvider.getRole(token);
+                User user = userRepository.findByLoginId(loginId)
+                        .filter(currentUser -> currentUser.getStatus() == UserStatus.APPROVED)
+                        .orElseThrow();
+                String role = user.getRole().name();
 
                 /// 스프링 시큐리티에 인증된 사람이란 것을 알려주기
                 UsernamePasswordAuthenticationToken authentication =

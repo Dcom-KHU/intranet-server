@@ -8,6 +8,7 @@ import com.dcom.intranet.admin.dto.response.AdminUserApproveResponse;
 import com.dcom.intranet.admin.dto.response.AdminUserDetailResponse;
 import com.dcom.intranet.admin.dto.response.AdminUserListResponse;
 import com.dcom.intranet.admin.dto.response.AdminUserRejectResponse;
+import com.dcom.intranet.admin.dto.response.AdminUserWithdrawResponse;
 import com.dcom.intranet.admin.service.AdminService;
 import com.dcom.intranet.global.response.CommonResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,6 +22,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -94,6 +96,18 @@ public class AdminController {
             @AuthenticationPrincipal String loginId
     ) {
         return ResponseEntity.ok(CommonResponse.success(adminService.rejectUser(userId, loginId)));
+    }
+
+    @Operation(
+            summary = "관리자 회원 탈퇴/삭제 처리",
+            description = "활동 이력이 있으면 WITHDRAWN 처리하고, 활동 이력이 없으면 계정 부속 데이터를 정리한 뒤 물리 삭제합니다."
+    )
+    @DeleteMapping("/users/{userId}")
+    public ResponseEntity<CommonResponse<AdminUserWithdrawResponse>> withdrawOrDeleteUser(
+            @PathVariable Long userId,
+            @AuthenticationPrincipal String loginId
+    ) {
+        return ResponseEntity.ok(CommonResponse.success(adminService.withdrawOrDeleteUser(userId, loginId)));
     }
 
     @Operation(

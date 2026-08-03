@@ -8,4 +8,6 @@ import java.util.List;
 public interface ArchiveRecordRepository extends JpaRepository<ArchiveRecord, Long> {
 
     List<ArchiveRecord> findByAuthorId(Long authorId);
+
+    boolean existsByAuthorId(Long authorId);
 }

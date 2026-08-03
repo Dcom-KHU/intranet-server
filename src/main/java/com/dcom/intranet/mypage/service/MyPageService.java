@@ -2,6 +2,7 @@ package com.dcom.intranet.mypage.service;
 
 import com.dcom.intranet.auth.domain.User;
 import com.dcom.intranet.auth.domain.UserStatus;
+import com.dcom.intranet.auth.repository.RefreshTokenRepository;
 import com.dcom.intranet.auth.repository.UserRepository;
 import com.dcom.intranet.mypage.domain.EmailChangeVerification;
 import com.dcom.intranet.mypage.domain.MyPageRouteType;
@@ -37,19 +38,22 @@ public class MyPageService {
     private final PasswordEncoder passwordEncoder;
     private final MyWrittenPostReader myWrittenPostReader;
     private final MyWrittenCommentReader myWrittenCommentReader;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     public MyPageService(
             UserRepository userRepository,
             EmailVerificationService emailVerificationService,
             PasswordEncoder passwordEncoder,
             MyWrittenPostReader myWrittenPostReader,
-            MyWrittenCommentReader myWrittenCommentReader
+            MyWrittenCommentReader myWrittenCommentReader,
+            RefreshTokenRepository refreshTokenRepository
     ) {
         this.userRepository = userRepository;
         this.emailVerificationService = emailVerificationService;
         this.passwordEncoder = passwordEncoder;
         this.myWrittenPostReader = myWrittenPostReader;
         this.myWrittenCommentReader = myWrittenCommentReader;
+        this.refreshTokenRepository = refreshTokenRepository;
     }
 
     @Transactional(readOnly = true)
@@ -138,6 +142,7 @@ public class MyPageService {
         User user = getApprovedUser(loginId);
 
         user.withdraw(LocalDateTime.now());
+        refreshTokenRepository.deleteByLoginId(user.getLoginId());
         return MemberWithdrawResponse.from(user);
     }
 
