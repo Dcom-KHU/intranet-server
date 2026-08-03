@@ -22,7 +22,7 @@ public class AttachmentController {
 
     private final AttachmentService attachmentService;
 
-    @Operation(summary = "첨부파일 다운로드", description = "로그인한 회원이 정보공유 또는 공지사항 첨부파일을 다운로드합니다. type은 info 또는 notice입니다.")
+    @Operation(summary = "첨부파일 다운로드", description = "로그인한 회원이 정보공유 또는 공지사항 첨부파일을 다운로드합니다. type은 info-posts 또는 notice입니다.")
     @GetMapping("/{type}/{fileId}/download")
     public ResponseEntity<Resource> download(
             @PathVariable String type,
