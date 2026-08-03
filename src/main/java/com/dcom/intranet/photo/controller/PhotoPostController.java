@@ -72,7 +72,7 @@ public class PhotoPostController {
                 "albumList": [
                   {
                     "albumId": 1,
-                    "coverImageUrl": "/uploads/photo/2026/07/cover.jpg",
+                    "coverImageUrl": "/api/photo-posts/1/images/1",
                     "eventName": "신입생 환영회",
                     "activityDate": "2026-07-03",
                     "imageCount": 2
@@ -98,8 +98,8 @@ public class PhotoPostController {
                 "eventName": "신입생 환영회",
                 "activityDate": "2026-07-03",
                 "imageList": [
-                  "/uploads/photo/2026/07/photo1.jpg",
-                  "/uploads/photo/2026/07/photo2.jpg"
+                  "/api/photo-posts/1/images/1",
+                  "/api/photo-posts/1/images/2"
                 ],
                 "description": "신입생 환영회 사진입니다."
               }
@@ -115,10 +115,10 @@ public class PhotoPostController {
                 "albumId": 1,
                 "eventName": "신입생 환영회",
                 "activityDate": "2026-07-03",
-                "coverImageUrl": "/uploads/photo/2026/07/cover.jpg",
+                "coverImageUrl": "/api/photo-posts/1/images/1",
                 "imageUrls": [
-                  "/uploads/photo/2026/07/photo1.jpg",
-                  "/uploads/photo/2026/07/photo2.jpg"
+                  "/api/photo-posts/1/images/1",
+                  "/api/photo-posts/1/images/2"
                 ]
               }
             }
@@ -133,9 +133,9 @@ public class PhotoPostController {
                 "albumId": 1,
                 "eventName": "신입생 환영회 수정",
                 "activityDate": "2026-07-04",
-                "coverImageUrl": "/uploads/photo/2026/07/cover-updated.jpg",
+                "coverImageUrl": "/api/photo-posts/1/images/3",
                 "imageUrls": [
-                  "/uploads/photo/2026/07/photo-updated1.jpg"
+                  "/api/photo-posts/1/images/3"
                 ]
               }
             }
