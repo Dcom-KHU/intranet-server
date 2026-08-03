@@ -1,5 +1,6 @@
 package com.dcom.intranet.global.exception;
 
+import lombok.extern.slf4j.Slf4j;
 import com.dcom.intranet.global.response.CommonResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,6 +12,7 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.server.ResponseStatusException;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -45,6 +47,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<CommonResponse<Void>> handleResponseStatusException(ResponseStatusException e) {
         int status = e.getStatusCode().value();
+        
+        log.error(
+            "ResponseStatusException 발생: status={}, reason={}",
+            e.getStatusCode(),
+            e.getReason(),
+            e
+    	);
+
         return ResponseEntity.status(e.getStatusCode())
                 .body(CommonResponse.fail(status, e.getReason()));
     }
@@ -81,6 +91,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<CommonResponse<Void>> handleException(Exception e) {
+        log.error("처리되지 않은 서버 예외가 발생했습니다.", e);
+
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(CommonResponse.fail(500, "서버 내부 오류가 발생했습니다."));
     }
