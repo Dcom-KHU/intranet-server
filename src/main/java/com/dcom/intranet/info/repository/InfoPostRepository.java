@@ -23,6 +23,4 @@ public interface InfoPostRepository extends JpaRepository<InfoPost, Long> {
     );
 
     List<InfoPost> findByAuthorId(Long authorId);
-
-    boolean existsByAuthorId(Long authorId);
 }

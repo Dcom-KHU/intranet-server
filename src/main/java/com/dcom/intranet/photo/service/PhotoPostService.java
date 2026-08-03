@@ -105,14 +105,11 @@ public class PhotoPostService {
     @Transactional
     public PhotoPostCreateResponse createPhotoPost(
             PhotoPostCreateRequest request,
-            List<MultipartFile> files,
-            String loginId
+            List<MultipartFile> files
     ) {
-        User author = findUser(loginId);
         List<PhotoPostImage> images = storeImages(files);
 
         PhotoPost photoPost = new PhotoPost(
-                author,
                 request.eventName(),
                 request.activityDate(),
                 request.description(),

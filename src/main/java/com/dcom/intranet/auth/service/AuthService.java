@@ -140,32 +140,15 @@ public class AuthService {
                 .orElseThrow(()-> new UnauthorizedException("유효하지 않은 RefreshToken입니다."));
 
         /// 만료 확인
-        if(savedToken.isExpired() || !jwtTokenProvider.validateToken(request.getRefreshToken())){
+        if(savedToken.isExpired()){
             refreshTokenRepository.delete(savedToken);
             throw new UnauthorizedException("로그인이 만료되었습니다. 다시 로그인해주세요.");
         }
 
         /// 토큰에서 loginId 추출 후 DB에서 현재 role 재조회 (권한 이양 등으로 role이 바뀐 경우를 반영)
         String loginId = jwtTokenProvider.getLoginId(request.getRefreshToken());
-
-        if (!savedToken.getLoginId().equals(loginId)) {
-            refreshTokenRepository.delete(savedToken);
-            throw new UnauthorizedException("유효하지 않은 RefreshToken입니다.");
-        }
-
         User user = userRepository.findByLoginId(loginId)
-                .orElse(null);
-
-        if (user == null) {
-            refreshTokenRepository.delete(savedToken);
-            throw new UnauthorizedException("유효하지 않은 RefreshToken입니다.");
-        }
-
-        if (user.getStatus() != UserStatus.APPROVED) {
-            refreshTokenRepository.deleteByLoginId(loginId);
-            throw new UnauthorizedException("유효하지 않은 RefreshToken입니다.");
-        }
-
+                .orElseThrow(() -> new UnauthorizedException("유효하지 않은 RefreshToken입니다."));
         String role = user.getRole().name();
 
         /// 새 토큰 발급

@@ -24,6 +24,4 @@ public interface NoticeRepository extends JpaRepository<Notice, Long> {
     );
 
     List<Notice> findByAuthorId(Long authorId);
-
-    boolean existsByAuthorId(Long authorId);
 }

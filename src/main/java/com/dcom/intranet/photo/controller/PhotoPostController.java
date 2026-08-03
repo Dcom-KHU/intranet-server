@@ -320,14 +320,12 @@ public class PhotoPostController {
     public ResponseEntity<CommonResponse<PhotoPostCreateResponse>> createPhotoPost(
             @RequestPart("request") String requestJson,
             @Parameter(description = "사진 목록. 첫 번째 사진이 대표 사진으로 사용됩니다.")
-            @RequestPart("files") List<MultipartFile> files,
-            Authentication authentication
+            @RequestPart("files") List<MultipartFile> files
     ) {
         PhotoPostCreateRequest request = parseCreateRequest(requestJson);
         PhotoPostCreateResponse response = photoPostService.createPhotoPost(
                 request,
-                files,
-                authentication.getName()
+                files
         );
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(CommonResponse.success(201, "사진첩이 등록되었습니다.", response));

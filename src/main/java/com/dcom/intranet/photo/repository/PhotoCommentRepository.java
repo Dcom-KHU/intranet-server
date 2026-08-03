@@ -10,8 +10,6 @@ public interface PhotoCommentRepository extends JpaRepository<PhotoComment, Long
 
     List<PhotoComment> findByAuthorId(Long authorId);
 
-    boolean existsByAuthorId(Long authorId);
-
     List<PhotoComment> findByPhotoPostAlbumIdOrderByCreatedAtAsc(Long albumId);
 
     Optional<PhotoComment> findByCommentIdAndPhotoPostAlbumId(Long commentId, Long albumId);
