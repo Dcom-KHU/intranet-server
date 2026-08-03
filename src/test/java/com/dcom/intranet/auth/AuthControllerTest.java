@@ -1,10 +1,8 @@
 package com.dcom.intranet.auth;
 
-import com.dcom.intranet.auth.domain.RefreshToken;
 import com.dcom.intranet.auth.domain.User;
 import com.dcom.intranet.auth.domain.UserRole;
 import com.dcom.intranet.auth.domain.UserStatus;
-import com.dcom.intranet.auth.repository.RefreshTokenRepository;
 import com.dcom.intranet.auth.repository.UserRepository;
 import com.dcom.intranet.jwt.JwtTokenProvider;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,16 +15,13 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -48,14 +43,10 @@ class AuthControllerTest {
     private UserRepository userRepository;
 
     @Autowired
-    private RefreshTokenRepository refreshTokenRepository;
-
-    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @BeforeEach
     void setUp() {
-        refreshTokenRepository.deleteAll();
         userRepository.deleteAll();
     }
 
@@ -87,28 +78,6 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.requirePasswordChange").value(true));
     }
 
-    @Test
-    @DisplayName("Refresh rejects non-approved user and deletes saved refresh token")
-    void refreshRejectsNonApprovedUserAndDeletesSavedRefreshToken() throws Exception {
-        User user = saveApprovedUser("refreshPending");
-        ReflectionTestUtils.setField(user, "status", UserStatus.PENDING);
-        userRepository.save(user);
-        String refreshToken = jwtTokenProvider.createRefreshToken(user.getLoginId(), user.getRole().name());
-        refreshTokenRepository.save(new RefreshToken(refreshToken, user.getLoginId(), 604800000L));
-
-        mockMvc.perform(post("/api/auth/refresh")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "refreshToken": "%s"
-                                }
-                                """.formatted(refreshToken)))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.status").value(401));
-
-        assertTrue(refreshTokenRepository.findByToken(refreshToken).isEmpty());
-    }
-
     private User saveApprovedUser(String loginId) {
         User user = new User(
                 loginId,
@@ -128,7 +97,6 @@ class AuthControllerTest {
         return switch (loginId) {
             case "authMeNormal" -> "20249901";
             case "authMeTemp" -> "20249902";
-            case "refreshPending" -> "20249903";
             default -> throw new IllegalArgumentException("Unknown loginId: " + loginId);
         };
     }

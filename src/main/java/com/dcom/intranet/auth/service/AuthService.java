@@ -22,8 +22,6 @@ import java.util.Random;
 @Transactional(readOnly = true)
 public class AuthService {
 
-    private static final long REFRESH_TOKEN_VALIDITY_MILLIS = 604800000L;
-
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
@@ -79,6 +77,9 @@ public class AuthService {
     /// 로그인
     @Transactional
     public LoginResponse login(LoginRequest request) {
+        // TODO: 삭제할 것 - 테스트용 해시 출력
+        System.out.println("HASH: " + passwordEncoder.encode("admin123"));
+
         /// 회원찾기
         User user = userRepository.findByLoginId(request.getLoginId())
                 .orElseThrow(() -> new UnauthorizedException("아이디 또는 비밀번호가 올바르지 않습니다."));
@@ -115,7 +116,7 @@ public class AuthService {
 
         /// Refresh Token DB에 저장
         refreshTokenRepository.save(
-                new RefreshToken(refreshToken, user.getLoginId(), REFRESH_TOKEN_VALIDITY_MILLIS)
+                new RefreshToken(refreshToken, user.getLoginId(), 1209600000L)
         );
 
 
@@ -132,7 +133,7 @@ public class AuthService {
     }
 
     /// 토큰 재발급
-    @Transactional(noRollbackFor = UnauthorizedException.class)
+    @Transactional
     public RefreshResponse refresh(RefreshRequest request){
         /// DB에서 refreshToken 찾기
         RefreshToken savedToken = refreshTokenRepository.findByToken(request.getRefreshToken())
@@ -148,10 +149,6 @@ public class AuthService {
         String loginId = jwtTokenProvider.getLoginId(request.getRefreshToken());
         User user = userRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new UnauthorizedException("유효하지 않은 RefreshToken입니다."));
-        if (user.getStatus() != UserStatus.APPROVED) {
-            refreshTokenRepository.delete(savedToken);
-            throw new UnauthorizedException("로그인이 만료되었습니다. 다시 로그인해주세요.");
-        }
         String role = user.getRole().name();
 
         /// 새 토큰 발급
@@ -161,7 +158,7 @@ public class AuthService {
 
         /// 기존 리프레시 토큰 삭제 + 새거 저장(Rotation)
         refreshTokenRepository.delete(savedToken);
-        refreshTokenRepository.save(new RefreshToken(newRefreshToken, loginId, REFRESH_TOKEN_VALIDITY_MILLIS));
+        refreshTokenRepository.save(new RefreshToken(newRefreshToken, loginId, 1209600000L));
 
         return RefreshResponse.of(newAccessToken, newRefreshToken, 1800);
 
