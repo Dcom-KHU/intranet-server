@@ -18,7 +18,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
@@ -27,8 +26,6 @@ import java.util.List;
 public class HomeService {
 
     private static final int RECENT_SIZE = 5;
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy.MM.dd");
-
     private final NoticeRepository noticeRepository;
     private final ArchiveRecordRepository archiveRecordRepository;
     private final InfoPostRepository infoPostRepository;
@@ -52,7 +49,7 @@ public class HomeService {
                         notice.getNoticeId(),
                         notice.getTitle(),
                         resolveAuthor(notice.getAuthorId()),
-                        notice.getCreatedAt().format(DATE_FORMATTER),
+                        notice.getCreatedAt(),
                         !notice.getFiles().isEmpty()
                 ))
                 .toList();
@@ -67,7 +64,7 @@ public class HomeService {
                         record.getArchive().getSubjectName(),
                         record.getArchive().getProfessorName(),
                         AuthorResponse.from(record.getAuthor()),
-                        record.getCreatedAt().format(DATE_FORMATTER)
+                        record.getCreatedAt()
                 ))
                 .toList();
     }
@@ -80,7 +77,7 @@ public class HomeService {
                         post.getId(),
                         post.getTitle(),
                         AuthorResponse.from(post.getAuthor()),
-                        post.getCreatedAt().format(DATE_FORMATTER),
+                        post.getCreatedAt(),
                         !post.getFiles().isEmpty()
                 ))
                 .toList();
@@ -92,9 +89,14 @@ public class HomeService {
         return photoPostRepository.findAll(pageable).getContent().stream()
                 .map(photoPost -> new PhotoAlbumSummaryResponse(
                         photoPost.getAlbumId(),
-                        photoPost.getCoverImageUrl(),
+                        photoPost.getImages().isEmpty()
+                                ? null
+                                : "/api/photo-posts/%d/images/%d".formatted(
+                                        photoPost.getAlbumId(),
+                                        photoPost.getImages().get(0).getId()
+                                ),
                         photoPost.getEventName(),
-                        photoPost.getActivityDate().format(DATE_FORMATTER),
+                        photoPost.getCreatedAt(),
                         photoPost.getImages().size()
                 ))
                 .toList();

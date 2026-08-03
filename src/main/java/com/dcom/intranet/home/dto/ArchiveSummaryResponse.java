@@ -3,6 +3,8 @@ package com.dcom.intranet.home.dto;
 import com.dcom.intranet.global.dto.AuthorResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.time.LocalDateTime;
+
 @Schema(description = "족보 요약")
 public record ArchiveSummaryResponse(
         @Schema(description = "족보 ID", example = "1")
@@ -17,7 +19,7 @@ public record ArchiveSummaryResponse(
         @Schema(description = "작성자")
         AuthorResponse author,
 
-        @Schema(description = "등록일", example = "2026.05.25")
-        String date
+        @Schema(description = "등록일시", example = "2026-06-20T10:00:00")
+        LocalDateTime createdAt
 ) {
 }
