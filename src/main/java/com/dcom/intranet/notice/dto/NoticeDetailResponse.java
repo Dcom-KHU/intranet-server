@@ -26,7 +26,7 @@ public record NoticeDetailResponse(
                         .map(file -> new FileInfo(
                                 file.getId(),
                                 file.getOriginalFileName(),
-                                "/api/notice/%d/files/%d/download".formatted(notice.getNoticeId(), file.getId())
+                                "/api/attachments/notice/%d/download".formatted(file.getId())
                         ))
                         .toList()
         );
