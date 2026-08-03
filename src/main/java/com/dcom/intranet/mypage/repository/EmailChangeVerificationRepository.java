@@ -11,6 +11,4 @@ public interface EmailChangeVerificationRepository extends JpaRepository<EmailCh
     Optional<EmailChangeVerification> findTopByLoginIdAndEmailOrderByCreatedAtDesc(String loginId, String email);
 
     Optional<EmailChangeVerification> findByEmailChangeToken(String emailChangeToken);
-
-    void deleteByLoginId(String loginId);
 }
