@@ -1,6 +1,7 @@
 package com.dcom.intranet.auth.repository;
 
 import com.dcom.intranet.auth.domain.User;
+import com.dcom.intranet.auth.domain.UserRole;
 import com.dcom.intranet.auth.domain.UserStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,6 +24,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findTop5ByStatusOrderByCreatedAtDesc(UserStatus status);
     List<User> findTop3ByStatusOrderByLastLoginAtDesc(UserStatus status);
     long countByStatus(UserStatus status);
+    long countByRoleAndStatus(UserRole role, UserStatus status);
+    boolean existsByApprovedByAdminId(Long approvedByAdminId);
 
     Page<User> findByNameContainingOrLoginIdContainingOrStudentIdContaining(
             String name, String loginId, String studentId, Pageable pageable

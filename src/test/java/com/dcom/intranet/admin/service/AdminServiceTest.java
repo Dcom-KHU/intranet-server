@@ -1,11 +1,20 @@
 package com.dcom.intranet.admin.service;
 
 import com.dcom.intranet.archive.repository.ArchiveRepository;
+import com.dcom.intranet.archive.repository.ArchiveRecordRepository;
+import com.dcom.intranet.auth.domain.User;
+import com.dcom.intranet.auth.domain.UserRole;
 import com.dcom.intranet.auth.domain.UserStatus;
+import com.dcom.intranet.auth.repository.EmailVerificationRepository;
+import com.dcom.intranet.auth.repository.RefreshTokenRepository;
 import com.dcom.intranet.auth.repository.UserRepository;
 import com.dcom.intranet.auth.service.EmailService;
+import com.dcom.intranet.global.exception.BadRequestException;
+import com.dcom.intranet.info.repository.InfoCommentRepository;
 import com.dcom.intranet.info.repository.InfoPostRepository;
+import com.dcom.intranet.mypage.repository.EmailChangeVerificationRepository;
 import com.dcom.intranet.notice.repository.NoticeRepository;
+import com.dcom.intranet.photo.repository.PhotoCommentRepository;
 import com.dcom.intranet.photo.repository.PhotoPostRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -14,11 +23,16 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -30,6 +44,12 @@ class AdminServiceTest {
     private final ArchiveRepository archiveRepository = mock(ArchiveRepository.class);
     private final InfoPostRepository infoPostRepository = mock(InfoPostRepository.class);
     private final EmailService emailService = mock(EmailService.class);
+    private final InfoCommentRepository infoCommentRepository = mock(InfoCommentRepository.class);
+    private final ArchiveRecordRepository archiveRecordRepository = mock(ArchiveRecordRepository.class);
+    private final PhotoCommentRepository photoCommentRepository = mock(PhotoCommentRepository.class);
+    private final RefreshTokenRepository refreshTokenRepository = mock(RefreshTokenRepository.class);
+    private final EmailVerificationRepository emailVerificationRepository = mock(EmailVerificationRepository.class);
+    private final EmailChangeVerificationRepository emailChangeVerificationRepository = mock(EmailChangeVerificationRepository.class);
 
     private final AdminService adminService = new AdminService(
             userRepository,
@@ -37,7 +57,13 @@ class AdminServiceTest {
             photoPostRepository,
             archiveRepository,
             infoPostRepository,
-            emailService
+            emailService,
+            infoCommentRepository,
+            archiveRecordRepository,
+            photoCommentRepository,
+            refreshTokenRepository,
+            emailVerificationRepository,
+            emailChangeVerificationRepository
     );
 
     @Test
@@ -89,5 +115,102 @@ class AdminServiceTest {
         ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
         verify(userRepository).findByStatus(eq(UserStatus.APPROVED), captor.capture());
         assertThat(captor.getValue()).isSameAs(requested);
+    }
+
+    @Test
+    @DisplayName("Admin user processing hard deletes user without retained activity")
+    void adminUserProcessingHardDeletesUserWithoutRetainedActivity() {
+        User admin = user(1L, "admin", UserStatus.APPROVED, UserRole.ADMIN);
+        User target = user(2L, "target", UserStatus.APPROVED, UserRole.USER);
+        when(userRepository.findByLoginId("admin")).thenReturn(Optional.of(admin));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(target));
+
+        var response = adminService.withdrawOrDeleteUser(2L, "admin");
+
+        assertThat(response.result()).isEqualTo("HARD_DELETED");
+        verify(refreshTokenRepository).deleteByLoginId("target");
+        verify(emailVerificationRepository).deleteByLoginIdOrEmail("target", "target@dcom.org");
+        verify(emailChangeVerificationRepository).deleteByLoginId("target");
+        verify(userRepository).delete(target);
+        verify(userRepository).flush();
+    }
+
+    @Test
+    @DisplayName("Admin user processing withdraws user with retained activity")
+    void adminUserProcessingWithdrawsUserWithRetainedActivity() {
+        User admin = user(1L, "admin", UserStatus.APPROVED, UserRole.ADMIN);
+        User target = user(2L, "target", UserStatus.APPROVED, UserRole.USER);
+        when(userRepository.findByLoginId("admin")).thenReturn(Optional.of(admin));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(target));
+        when(infoPostRepository.existsByAuthorId(2L)).thenReturn(true);
+
+        var response = adminService.withdrawOrDeleteUser(2L, "admin");
+
+        assertThat(response.result()).isEqualTo("WITHDRAWN");
+        assertThat(target.getStatus()).isEqualTo(UserStatus.WITHDRAWN);
+        assertThat(target.getWithdrawnAt()).isNotNull();
+        verify(refreshTokenRepository).deleteByLoginId("target");
+        verify(userRepository, never()).delete(target);
+        verify(userRepository, never()).flush();
+        verify(emailVerificationRepository, never()).deleteByLoginIdOrEmail(any(), any());
+        verify(emailChangeVerificationRepository, never()).deleteByLoginId(any());
+    }
+
+    @Test
+    @DisplayName("Admin user processing treats photo post authorship as retained activity")
+    void adminUserProcessingTreatsPhotoPostAuthorshipAsRetainedActivity() {
+        User admin = user(1L, "admin", UserStatus.APPROVED, UserRole.ADMIN);
+        User target = user(2L, "target", UserStatus.APPROVED, UserRole.USER);
+        when(userRepository.findByLoginId("admin")).thenReturn(Optional.of(admin));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(target));
+        when(photoPostRepository.existsByAuthorId(2L)).thenReturn(true);
+
+        var response = adminService.withdrawOrDeleteUser(2L, "admin");
+
+        assertThat(response.result()).isEqualTo("WITHDRAWN");
+        assertThat(target.getStatus()).isEqualTo(UserStatus.WITHDRAWN);
+        verify(refreshTokenRepository).deleteByLoginId("target");
+        verify(userRepository, never()).delete(target);
+    }
+
+    @Test
+    @DisplayName("Admin user processing rejects self processing")
+    void adminUserProcessingRejectsSelfProcessing() {
+        User admin = user(1L, "admin", UserStatus.APPROVED, UserRole.ADMIN);
+        when(userRepository.findByLoginId("admin")).thenReturn(Optional.of(admin));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(admin));
+
+        assertThatThrownBy(() -> adminService.withdrawOrDeleteUser(1L, "admin"))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("자기 자신");
+    }
+
+    @Test
+    @DisplayName("Admin user processing rejects last approved admin")
+    void adminUserProcessingRejectsLastApprovedAdmin() {
+        User admin = user(1L, "admin", UserStatus.APPROVED, UserRole.ADMIN);
+        User target = user(2L, "targetAdmin", UserStatus.APPROVED, UserRole.ADMIN);
+        when(userRepository.findByLoginId("admin")).thenReturn(Optional.of(admin));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(target));
+        when(userRepository.countByRoleAndStatus(UserRole.ADMIN, UserStatus.APPROVED)).thenReturn(1L);
+
+        assertThatThrownBy(() -> adminService.withdrawOrDeleteUser(2L, "admin"))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("마지막 관리자");
+    }
+
+    private User user(Long id, String loginId, UserStatus status, UserRole role) {
+        User user = new User(
+                loginId,
+                "encoded-password",
+                "테스트회원" + id,
+                "2099%04d".formatted(id),
+                loginId + "@dcom.org",
+                "010-0000-%04d".formatted(id)
+        );
+        ReflectionTestUtils.setField(user, "id", id);
+        ReflectionTestUtils.setField(user, "status", status);
+        ReflectionTestUtils.setField(user, "role", role);
+        return user;
     }
 }
