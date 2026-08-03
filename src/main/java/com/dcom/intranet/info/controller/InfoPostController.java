@@ -22,6 +22,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.multipart.MultipartFile;
@@ -32,6 +35,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Set;
+import java.nio.charset.StandardCharsets;
 
 @Tag(name = "Information Board", description = "정보공유 게시판 API")
 @RestController
@@ -139,6 +143,26 @@ public class InfoPostController {
         return ResponseEntity.ok(
                 CommonResponse.success(response)
         );
+    }
+
+    @Operation(summary = "정보공유 첨부파일 다운로드", description = "로그인한 회원이 해당 정보공유 게시글의 첨부파일을 다운로드합니다.")
+    @GetMapping("/{postId}/files/{fileId}/download")
+    public ResponseEntity<Resource> downloadFile(
+            @PathVariable Long postId,
+            @PathVariable Long fileId
+    ) {
+        InfoPostService.DownloadFile downloadFile = infoPostService.downloadFile(postId, fileId);
+        String contentType = downloadFile.contentType() == null
+                ? MediaType.APPLICATION_OCTET_STREAM_VALUE
+                : downloadFile.contentType();
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
+                        .filename(downloadFile.fileName(), StandardCharsets.UTF_8)
+                        .build()
+                        .toString())
+                .body(downloadFile.resource());
     }
 
     @Operation(

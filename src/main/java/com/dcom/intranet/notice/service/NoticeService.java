@@ -14,6 +14,7 @@ import com.dcom.intranet.notice.dto.NoticeUpdateRequest;
 import com.dcom.intranet.notice.dto.NoticeUpdateResponse;
 import com.dcom.intranet.notice.repository.NoticeRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -57,6 +58,17 @@ public class NoticeService {
         Notice notice = findNotice(noticeId);
 
         return NoticeDetailResponse.from(notice, resolveAuthor(notice.getAuthorId()));
+    }
+
+    @Transactional(readOnly = true)
+    public DownloadFile downloadFile(Long noticeId, Long fileId) {
+        Notice notice = findNotice(noticeId);
+        NoticeFile file = findFileInNotice(notice, fileId);
+        return new DownloadFile(
+                noticeFileStorageService.loadAsResource(file.getFileUrl()),
+                file.getOriginalFileName(),
+                file.getContentType()
+        );
     }
 
     @Transactional
@@ -185,5 +197,8 @@ public class NoticeService {
                         HttpStatus.NOT_FOUND,
                         "첨부파일을 찾을 수 없습니다."
                 ));
+    }
+
+    public record DownloadFile(Resource resource, String fileName, String contentType) {
     }
 }

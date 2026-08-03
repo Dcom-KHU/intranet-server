@@ -26,6 +26,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
@@ -47,6 +50,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Set;
+import java.nio.charset.StandardCharsets;
 
 import static org.springframework.data.domain.Sort.Direction.DESC;
 
@@ -214,6 +218,26 @@ public class NoticeController {
             @PathVariable Long noticeId
     ) {
         return ResponseEntity.ok(CommonResponse.success(noticeService.getNoticeDetail(noticeId)));
+    }
+
+    @Operation(summary = "공지사항 첨부파일 다운로드", description = "로그인한 회원이 해당 공지사항의 첨부파일을 다운로드합니다.")
+    @GetMapping("/{noticeId}/files/{fileId}/download")
+    public ResponseEntity<Resource> downloadFile(
+            @PathVariable Long noticeId,
+            @PathVariable Long fileId
+    ) {
+        NoticeService.DownloadFile downloadFile = noticeService.downloadFile(noticeId, fileId);
+        String contentType = downloadFile.contentType() == null
+                ? MediaType.APPLICATION_OCTET_STREAM_VALUE
+                : downloadFile.contentType();
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
+                        .filename(downloadFile.fileName(), StandardCharsets.UTF_8)
+                        .build()
+                        .toString())
+                .body(downloadFile.resource());
     }
 
     @Operation(

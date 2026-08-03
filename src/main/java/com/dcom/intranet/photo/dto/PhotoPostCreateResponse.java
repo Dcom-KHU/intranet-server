@@ -18,8 +18,15 @@ public record PhotoPostCreateResponse(
                 photoPost.getAlbumId(),
                 photoPost.getEventName(),
                 photoPost.getActivityDate(),
-                photoPost.getCoverImageUrl(),
-                photoPost.getImageUrls()
+                photoPost.getImages().isEmpty()
+                        ? null
+                        : "/api/photo-posts/%d/images/%d".formatted(
+                                photoPost.getAlbumId(),
+                                photoPost.getImages().get(0).getId()
+                        ),
+                photoPost.getImages().stream()
+                        .map(image -> "/api/photo-posts/%d/images/%d".formatted(photoPost.getAlbumId(), image.getId()))
+                        .toList()
         );
     }
 }
