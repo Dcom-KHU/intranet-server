@@ -2,6 +2,7 @@ package com.dcom.intranet.mypage.service;
 
 import com.dcom.intranet.auth.domain.User;
 import com.dcom.intranet.auth.domain.UserStatus;
+import com.dcom.intranet.auth.repository.RefreshTokenRepository;
 import com.dcom.intranet.auth.repository.UserRepository;
 import com.dcom.intranet.mypage.domain.EmailChangeVerification;
 import com.dcom.intranet.mypage.domain.MyPageRouteType;
@@ -33,6 +34,7 @@ public class MyPageService {
     private static final String NOTICES = "notices";
 
     private final UserRepository userRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
     private final EmailVerificationService emailVerificationService;
     private final PasswordEncoder passwordEncoder;
     private final MyWrittenPostReader myWrittenPostReader;
@@ -40,12 +42,14 @@ public class MyPageService {
 
     public MyPageService(
             UserRepository userRepository,
+            RefreshTokenRepository refreshTokenRepository,
             EmailVerificationService emailVerificationService,
             PasswordEncoder passwordEncoder,
             MyWrittenPostReader myWrittenPostReader,
             MyWrittenCommentReader myWrittenCommentReader
     ) {
         this.userRepository = userRepository;
+        this.refreshTokenRepository = refreshTokenRepository;
         this.emailVerificationService = emailVerificationService;
         this.passwordEncoder = passwordEncoder;
         this.myWrittenPostReader = myWrittenPostReader;
@@ -130,6 +134,10 @@ public class MyPageService {
         }
 
         user.changePassword(passwordEncoder.encode(request.newPassword()));
+
+        /// 비밀번호가 변경됐으므로 기존 세션(Refresh Token)은 모두 무효화
+        refreshTokenRepository.deleteByLoginId(loginId);
+
         return new PasswordChangeResponse("비밀번호가 변경되었습니다.");
     }
 
@@ -138,6 +146,10 @@ public class MyPageService {
         User user = getApprovedUser(loginId);
 
         user.withdraw(LocalDateTime.now());
+
+        /// 탈퇴한 회원의 Refresh Token은 모두 무효화
+        refreshTokenRepository.deleteByLoginId(loginId);
+
         return MemberWithdrawResponse.from(user);
     }
 
