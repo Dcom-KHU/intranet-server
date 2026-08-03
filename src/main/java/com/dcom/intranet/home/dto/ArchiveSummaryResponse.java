@@ -20,6 +20,6 @@ public record ArchiveSummaryResponse(
         AuthorResponse author,
 
         @Schema(description = "등록일시", example = "2026-06-20T10:00:00")
-        LocalDateTime createdAt
+        LocalDateTime date
 ) {
 }
