@@ -23,7 +23,7 @@ public class AttachmentService {
 
     public DownloadFile download(String type, Long fileId) {
         return switch (type) {
-            case "info" -> downloadInfoFile(fileId);
+            case "info-posts" -> downloadInfoFile(fileId);
             case "notice" -> downloadNoticeFile(fileId);
             default -> throw new ResponseStatusException(HttpStatus.NOT_FOUND, "첨부파일 유형을 찾을 수 없습니다.");
         };

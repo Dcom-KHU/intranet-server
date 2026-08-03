@@ -15,7 +15,7 @@ public class InfoPostFileResponse {
     public InfoPostFileResponse(InfoPostFile file) {
         this.fileId = file.getId();
         this.originalFileName = file.getOriginalFileName();
-        this.fileUrl = "/api/attachments/info/%d/download".formatted(file.getId());
+        this.fileUrl = "/api/attachments/info-posts/%d/download".formatted(file.getId());
         this.fileSize = file.getFileSize();
         this.contentType = file.getContentType();
     }
