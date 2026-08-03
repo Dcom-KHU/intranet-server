@@ -35,14 +35,6 @@ public class JwtTokenProvider {
         return createToken(loginId, role, refreshTokenValidity);
     }
 
-    public long getAccessTokenValidity() {
-        return accessTokenValidity;
-    }
-
-    public long getRefreshTokenValidity() {
-        return refreshTokenValidity;
-    }
-
     private String createToken(String loginId, String role, long validity) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + validity);
