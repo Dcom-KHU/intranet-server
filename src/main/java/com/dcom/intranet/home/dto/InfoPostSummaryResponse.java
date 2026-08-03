@@ -17,7 +17,7 @@ public record InfoPostSummaryResponse(
         AuthorResponse author,
 
         @Schema(description = "작성일시", example = "2026-06-20T10:00:00")
-        LocalDateTime createdAt,
+        LocalDateTime date,
 
         @Schema(description = "첨부파일 존재 여부", example = "true")
         boolean hasAttachment
