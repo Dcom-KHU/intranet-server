@@ -11,6 +11,8 @@ public interface PhotoPostRepository extends JpaRepository<PhotoPost, Long> {
 
     Page<PhotoPost> findByEventNameContaining(String eventName, Pageable pageable);
 
+    boolean existsByAuthorId(Long authorId);
+
     @Query("""
             SELECT p
             FROM PhotoPost p
