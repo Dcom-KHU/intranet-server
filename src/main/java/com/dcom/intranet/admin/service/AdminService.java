@@ -60,7 +60,7 @@ public class AdminService {
     @Transactional(readOnly = true)
     public AdminDashboardResponse getDashboard() {
         long pendingUserCount = userRepository.countByStatus(UserStatus.PENDING);
-        long totalUserCount = userRepository.count();
+        long totalUserCount = userRepository.countByStatus(UserStatus.APPROVED);
 
         List<AdminDashboardResponse.SignupRequestSummary> recentSignupRequests =
                 userRepository.findTop5ByStatusOrderByCreatedAtDesc(UserStatus.PENDING).stream()

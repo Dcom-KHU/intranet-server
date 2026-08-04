@@ -10,7 +10,7 @@ public record AdminDashboardResponse(
         @Schema(description = "승인 대기 회원 수", example = "3")
         long pendingUserCount,
 
-        @Schema(description = "전체 회원 수", example = "128")
+        @Schema(description = "승인 완료 회원 수", example = "128")
         long totalUserCount,
 
         @Schema(description = "최근 가입 신청 목록 (최대 5명, 최신순)")
