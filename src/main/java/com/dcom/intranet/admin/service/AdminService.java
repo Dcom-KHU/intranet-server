@@ -12,6 +12,7 @@ import com.dcom.intranet.archive.repository.ArchiveRepository;
 import com.dcom.intranet.auth.domain.User;
 import com.dcom.intranet.auth.domain.UserRole;
 import com.dcom.intranet.auth.domain.UserStatus;
+import com.dcom.intranet.auth.repository.RefreshTokenRepository;
 import com.dcom.intranet.auth.repository.UserRepository;
 import com.dcom.intranet.auth.service.EmailService;
 import com.dcom.intranet.global.exception.BadRequestException;
@@ -38,6 +39,7 @@ import java.util.List;
 public class AdminService {
 
     private final UserRepository userRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
     private final NoticeRepository noticeRepository;
     private final PhotoPostRepository photoPostRepository;
     private final ArchiveRepository archiveRepository;
@@ -169,6 +171,9 @@ public class AdminService {
                 admin.getId(),
                 LocalDateTime.now()
         );
+
+        /// 물리 삭제 전 보유 중인 Refresh Token 무효화
+        refreshTokenRepository.deleteByLoginId(user.getLoginId());
 
         /// 승인되지 않은 회원이라 연관 데이터가 없으므로 물리 삭제
         userRepository.delete(user);
