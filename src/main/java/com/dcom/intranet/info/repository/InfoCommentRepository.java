@@ -12,5 +12,7 @@ public interface InfoCommentRepository extends JpaRepository<InfoComment, Long> 
 
     List<InfoComment> findByAuthorId(Long authorId);
 
+    boolean existsByAuthorId(Long authorId);
+
     Optional<InfoComment> findByIdAndPostId(Long commentId, Long postId);
 }
