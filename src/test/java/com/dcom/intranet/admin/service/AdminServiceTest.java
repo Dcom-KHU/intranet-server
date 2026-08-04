@@ -2,6 +2,7 @@ package com.dcom.intranet.admin.service;
 
 import com.dcom.intranet.archive.repository.ArchiveRepository;
 import com.dcom.intranet.auth.domain.UserStatus;
+import com.dcom.intranet.auth.repository.RefreshTokenRepository;
 import com.dcom.intranet.auth.repository.UserRepository;
 import com.dcom.intranet.auth.service.EmailService;
 import com.dcom.intranet.info.repository.InfoPostRepository;
@@ -25,6 +26,7 @@ import static org.mockito.Mockito.when;
 class AdminServiceTest {
 
     private final UserRepository userRepository = mock(UserRepository.class);
+    private final RefreshTokenRepository refreshTokenRepository = mock(RefreshTokenRepository.class);
     private final NoticeRepository noticeRepository = mock(NoticeRepository.class);
     private final PhotoPostRepository photoPostRepository = mock(PhotoPostRepository.class);
     private final ArchiveRepository archiveRepository = mock(ArchiveRepository.class);
@@ -33,6 +35,7 @@ class AdminServiceTest {
 
     private final AdminService adminService = new AdminService(
             userRepository,
+            refreshTokenRepository,
             noticeRepository,
             photoPostRepository,
             archiveRepository,
