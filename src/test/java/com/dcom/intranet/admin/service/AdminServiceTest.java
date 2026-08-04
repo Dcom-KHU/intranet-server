@@ -67,6 +67,21 @@ class AdminServiceTest {
     );
 
     @Test
+    @DisplayName("Dashboard total user count includes only approved users")
+    void dashboardTotalUserCountIncludesOnlyApprovedUsers() {
+        when(userRepository.countByStatus(UserStatus.PENDING)).thenReturn(3L);
+        when(userRepository.countByStatus(UserStatus.APPROVED)).thenReturn(12L);
+
+        var response = adminService.getDashboard();
+
+        assertThat(response.pendingUserCount()).isEqualTo(3L);
+        assertThat(response.totalUserCount()).isEqualTo(12L);
+        verify(userRepository).countByStatus(UserStatus.PENDING);
+        verify(userRepository).countByStatus(UserStatus.APPROVED);
+        verify(userRepository, never()).count();
+    }
+
+    @Test
     @DisplayName("Name ascending sort adds id ascending tie-breaker")
     void nameAscendingSortAddsIdAscendingTieBreaker() {
         Pageable requested = PageRequest.of(0, 20, Sort.by(Sort.Direction.ASC, "name"));
