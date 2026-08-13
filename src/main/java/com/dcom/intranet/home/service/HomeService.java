@@ -60,7 +60,7 @@ public class HomeService {
 
         return archiveRecordRepository.findAll(pageable).getContent().stream()
                 .map(record -> new ArchiveSummaryResponse(
-                        record.getId(),
+                        record.getArchive().getId(),
                         record.getArchive().getSubjectName(),
                         record.getArchive().getProfessorName(),
                         AuthorResponse.from(record.getAuthor()),
