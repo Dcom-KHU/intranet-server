@@ -1,6 +1,8 @@
 package com.dcom.intranet.home.service;
 
-import com.dcom.intranet.archive.repository.ArchiveRecordRepository;
+import com.dcom.intranet.archive.domain.Archive;
+import com.dcom.intranet.archive.domain.ArchiveRecord;
+import com.dcom.intranet.archive.repository.ArchiveRepository;
 import com.dcom.intranet.auth.repository.UserRepository;
 import com.dcom.intranet.global.dto.AuthorResponse;
 import com.dcom.intranet.home.dto.ArchiveSummaryResponse;
@@ -18,6 +20,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -27,7 +30,7 @@ public class HomeService {
 
     private static final int RECENT_SIZE = 5;
     private final NoticeRepository noticeRepository;
-    private final ArchiveRecordRepository archiveRecordRepository;
+    private final ArchiveRepository archiveRepository;
     private final InfoPostRepository infoPostRepository;
     private final PhotoPostRepository photoPostRepository;
     private final UserRepository userRepository;
@@ -56,17 +59,27 @@ public class HomeService {
     }
 
     private List<ArchiveSummaryResponse> recentArchives() {
-        Pageable pageable = PageRequest.of(0, RECENT_SIZE, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Pageable pageable = PageRequest.of(0, RECENT_SIZE, Sort.by(Sort.Direction.DESC, "lastModifiedAt"));
 
-        return archiveRecordRepository.findAll(pageable).getContent().stream()
-                .map(record -> new ArchiveSummaryResponse(
-                        record.getId(),
-                        record.getArchive().getSubjectName(),
-                        record.getArchive().getProfessorName(),
-                        AuthorResponse.from(record.getAuthor()),
-                        record.getCreatedAt()
+        return archiveRepository.findAll(pageable).getContent().stream()
+                .map(archive -> new ArchiveSummaryResponse(
+                        archive.getId(),
+                        archive.getSubjectName(),
+                        archive.getProfessorName(),
+                        resolveLatestArchiveAuthor(archive),
+                        archive.getLastModifiedAt()
                 ))
                 .toList();
+    }
+
+    private AuthorResponse resolveLatestArchiveAuthor(Archive archive) {
+        return archive.getRecords().stream()
+                .max(Comparator.comparing(
+                        ArchiveRecord::getCreatedAt,
+                        Comparator.nullsFirst(Comparator.naturalOrder())
+                ))
+                .map(record -> AuthorResponse.from(record.getAuthor()))
+                .orElseGet(() -> new AuthorResponse(null, "알 수 없음"));
     }
 
     private List<InfoPostSummaryResponse> recentInfoPosts() {
