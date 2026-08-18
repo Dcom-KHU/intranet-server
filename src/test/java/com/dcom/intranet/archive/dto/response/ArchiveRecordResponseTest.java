@@ -47,8 +47,8 @@ class ArchiveRecordResponseTest {
     }
 
     @Test
-    @DisplayName("학기가 UNKNOWN이어도 시험 유형이 있으면 label에 시험 유형을 내려준다")
-    void labelIncludesExamTypeWhenSemesterIsUnknown() {
+    @DisplayName("학기가 UNKNOWN이면 응답 semester는 null이다")
+    void unknownSemesterIsExposedAsNull() {
         ArchiveRecord record = new ArchiveRecord(
                 user(),
                 null,
@@ -59,13 +59,38 @@ class ArchiveRecordResponseTest {
 
         ArchiveRecordResponse response = new ArchiveRecordResponse(record);
 
-        assertThat(response.getLabel()).isEqualTo("퀴즈");
+        assertThat(response.getSemester()).isNull();
+        assertThat(response.getExamType()).isEqualTo("QUIZ");
     }
 
     @Test
-    @DisplayName("과제 시험 유형도 label에 내려준다")
-    void labelIncludesAssignmentExamType() {
+    @DisplayName("시험 유형이 ETC이면 응답 examType은 null이다")
+    void etcExamTypeIsExposedAsNull() {
         ArchiveRecord record = new ArchiveRecord(
+                user(),
+                2026,
+                Semester.SECOND,
+                ExamType.ETC,
+                "본문"
+        );
+
+        ArchiveRecordResponse response = new ArchiveRecordResponse(record);
+
+        assertThat(response.getSemester()).isEqualTo("SECOND");
+        assertThat(response.getExamType()).isNull();
+    }
+
+    @Test
+    @DisplayName("퀴즈와 과제 시험 유형은 응답에 그대로 내려준다")
+    void quizAndAssignmentExamTypesAreExposed() {
+        ArchiveRecord quizRecord = new ArchiveRecord(
+                user(),
+                2026,
+                Semester.FIRST,
+                ExamType.QUIZ,
+                "본문"
+        );
+        ArchiveRecord assignmentRecord = new ArchiveRecord(
                 user(),
                 2026,
                 Semester.SECOND,
@@ -73,19 +98,11 @@ class ArchiveRecordResponseTest {
                 "본문"
         );
 
-        ArchiveRecordResponse response = new ArchiveRecordResponse(record);
+        ArchiveRecordResponse quizResponse = new ArchiveRecordResponse(quizRecord);
+        ArchiveRecordResponse assignmentResponse = new ArchiveRecordResponse(assignmentRecord);
 
-        assertThat(response.getLabel()).isEqualTo("2026년 2학기 과제");
-    }
-
-    @Test
-    @DisplayName("시험 정보가 전혀 없으면 label은 null이다")
-    void labelIsNullWhenExamInfoDoesNotExist() {
-        ArchiveRecord record = archiveRecord();
-
-        ArchiveRecordResponse response = new ArchiveRecordResponse(record);
-
-        assertThat(response.getLabel()).isNull();
+        assertThat(quizResponse.getExamType()).isEqualTo("QUIZ");
+        assertThat(assignmentResponse.getExamType()).isEqualTo("ASSIGNMENT");
     }
 
     private ArchiveRecord archiveRecord() {

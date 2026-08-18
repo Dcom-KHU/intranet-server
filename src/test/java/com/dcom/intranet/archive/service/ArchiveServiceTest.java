@@ -111,6 +111,28 @@ class ArchiveServiceTest {
     }
 
     @Test
+    @DisplayName("족보 등록 시 UNKNOWN 학기와 ETC 시험 유형은 null로 저장한다")
+    void createArchiveStoresUnknownSemesterAndEtcExamTypeAsNull() {
+        ArchiveCreateRequest request = createRequestWithRecords(
+                createRecordRequest(null, Semester.UNKNOWN, ExamType.ETC)
+        );
+
+        when(userRepository.findByLoginId("login"))
+                .thenReturn(Optional.of(user(1L)));
+        when(archiveRepository.findBySubjectNameAndProfessorName("자료구조", "박교수"))
+                .thenReturn(Optional.empty());
+
+        archiveService.createArchive(request, List.of(), "login");
+
+        ArgumentCaptor<ArchiveRecord> recordCaptor = ArgumentCaptor.forClass(ArchiveRecord.class);
+        verify(archiveRecordRepository).save(recordCaptor.capture());
+
+        ArchiveRecord savedRecord = recordCaptor.getValue();
+        assertThat(savedRecord.getSemester()).isNull();
+        assertThat(savedRecord.getExamType()).isNull();
+    }
+
+    @Test
     @DisplayName("여러 족보 레코드에 파일을 첨부할 때 fileIndexes가 없으면 요청을 거부한다")
     void createMultipleRecordsRequiresFileIndexesWhenFilesUploaded() {
         ArchiveCreateRequest request = createRequestWithRecords(
@@ -189,10 +211,18 @@ class ArchiveServiceTest {
     }
 
     private ArchiveRecordCreateRequest createRecordRequest(List<Integer> fileIndexes) {
+        return createRecordRequest(fileIndexes, Semester.FIRST, ExamType.MIDTERM);
+    }
+
+    private ArchiveRecordCreateRequest createRecordRequest(
+            List<Integer> fileIndexes,
+            Semester semester,
+            ExamType examType
+    ) {
         ArchiveRecordCreateRequest request = new ArchiveRecordCreateRequest();
         request.setExamYear(2026);
-        request.setSemester(Semester.FIRST);
-        request.setExamType(ExamType.MIDTERM);
+        request.setSemester(semester);
+        request.setExamType(examType);
         request.setContent("본문");
         request.setFileIndexes(fileIndexes);
         return request;

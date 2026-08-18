@@ -7,7 +7,6 @@ import com.dcom.intranet.global.dto.AuthorResponse;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -17,7 +16,6 @@ public class ArchiveRecordResponse {
     private final Integer examYear;
     private final String semester;
     private final String examType;
-    private final String label;
     private final String content;
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
@@ -27,9 +25,8 @@ public class ArchiveRecordResponse {
     public ArchiveRecordResponse(ArchiveRecord record) {
         this.recordId = record.getId();
         this.examYear = record.getExamYear();
-        this.semester = record.getSemester() == null ? null : record.getSemester().name();
-        this.examType = record.getExamType() == null ? null : record.getExamType().name();
-        this.label = createLabel(record);
+        this.semester = toResponseSemester(record.getSemester());
+        this.examType = toResponseExamType(record.getExamType());
         this.content = record.getContent();
         this.createdAt = record.getCreatedAt();
         this.updatedAt = record.getUpdatedAt();
@@ -44,45 +41,19 @@ public class ArchiveRecordResponse {
                 .toList();
     }
 
-    private String createLabel(ArchiveRecord record) {
-        List<String> parts = new ArrayList<>();
-
-        if (record.getExamYear() != null) {
-            parts.add("%d년".formatted(record.getExamYear()));
-        }
-
-        if (record.getSemester() != null && record.getSemester() != Semester.UNKNOWN) {
-            parts.add(toSemesterLabel(record.getSemester()));
-        }
-
-        if (record.getExamType() != null) {
-            parts.add(toExamTypeLabel(record.getExamType()));
-        }
-
-        if (parts.isEmpty()) {
+    private String toResponseSemester(Semester semester) {
+        if (semester == null || semester == Semester.UNKNOWN) {
             return null;
         }
 
-        return String.join(" ", parts);
+        return semester.name();
     }
 
-    private String toSemesterLabel(Semester semester) {
-        return switch (semester) {
-            case FIRST -> "1학기";
-            case SECOND -> "2학기";
-            case SUMMER -> "여름학기";
-            case WINTER -> "겨울학기";
-            case UNKNOWN -> "미상";
-        };
-    }
+    private String toResponseExamType(ExamType examType) {
+        if (examType == null || examType == ExamType.ETC) {
+            return null;
+        }
 
-    private String toExamTypeLabel(ExamType examType) {
-        return switch (examType) {
-            case MIDTERM -> "중간고사";
-            case FINAL -> "기말고사";
-            case QUIZ -> "퀴즈";
-            case ASSIGNMENT -> "과제";
-            case ETC -> "기타";
-        };
+        return examType.name();
     }
 }
