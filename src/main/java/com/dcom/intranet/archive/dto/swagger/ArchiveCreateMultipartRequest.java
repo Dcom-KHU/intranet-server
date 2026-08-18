@@ -16,7 +16,7 @@ import java.util.List;
 public class ArchiveCreateMultipartRequest {
 
     @Schema(
-            description = "족보 등록 요청 JSON 문자열",
+            description = "족보 등록 요청 JSON 문자열. 시험 연도/학기/시험 유형을 알 수 없으면 null로 전송합니다. semester=UNKNOWN, examType=ETC도 null로 저장됩니다.",
             example = """
                     {
                       "subjectName": "자료구조",
@@ -27,7 +27,7 @@ public class ArchiveCreateMultipartRequest {
                           "semester": "FIRST",
                           "examType": "MIDTERM",
                           "content": "Swagger 테스트 족보입니다.",
-                          "fileIndexes": []
+                          "fileIndexes": [0]
                         }
                       ]
                     }

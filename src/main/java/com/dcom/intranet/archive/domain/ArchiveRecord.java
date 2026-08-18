@@ -45,6 +45,15 @@ public class ArchiveRecord {
     @Column(columnDefinition = "TEXT")
     private String content;
 
+    @Column(name = "legacy_author_student_number")
+    private String legacyAuthorStudentNumber;
+
+    @Column(name = "legacy_author_name")
+    private String legacyAuthorName;
+
+    @Column(name = "legacy_anonymous")
+    private Boolean legacyAnonymous;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -66,8 +75,8 @@ public class ArchiveRecord {
     public ArchiveRecord(User author, Integer examYear, Semester semester, ExamType examType, String content) {
         this.author = author; // 글쓴이
         this.examYear = examYear; // 시험 연도
-        this.semester = semester; // 학기
-        this.examType = examType; // 중간 or 기말 or 기타
+        this.semester = normalizeSemester(semester); // 학기
+        this.examType = normalizeExamType(examType); // 중간 or 기말 or 기타
         this.content = content; // 설명글
     }
 
@@ -85,10 +94,24 @@ public class ArchiveRecord {
     // service의 update 로직에 touch 함수 반영
     public void update(Integer examYear, Semester semester, ExamType examType, String content) {
         this.examYear = examYear;
-        this.semester = semester;
-        this.examType = examType;
+        this.semester = normalizeSemester(semester);
+        this.examType = normalizeExamType(examType);
         this.content = content;
         this.updatedAt = LocalDateTime.now();
+    }
+
+    private Semester normalizeSemester(Semester semester) {
+        return semester == Semester.UNKNOWN ? null : semester;
+    }
+
+    private ExamType normalizeExamType(ExamType examType) {
+        return examType == ExamType.ETC ? null : examType;
+    }
+
+    public void applyLegacyAuthor(String studentNumber, String name, Boolean anonymous) {
+        this.legacyAuthorStudentNumber = studentNumber;
+        this.legacyAuthorName = name;
+        this.legacyAnonymous = anonymous;
     }
 
     public void removeFile(ArchiveFile file) {

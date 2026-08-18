@@ -18,4 +18,33 @@ public record AuthorResponse(
                 user.getName()
         );
     }
+
+    public static AuthorResponse fromLegacyOrUser(
+            String legacyStudentNumber,
+            String legacyName,
+            Boolean legacyAnonymous,
+            User fallbackUser
+    ) {
+        if (Boolean.TRUE.equals(legacyAnonymous)) {
+            return new AuthorResponse(null, "익명");
+        }
+
+        if (legacyAnonymous != null || hasText(legacyStudentNumber) || hasText(legacyName)) {
+            return new AuthorResponse(
+                    null,
+                    hasText(legacyName) ? legacyName.trim() : "알 수 없음"
+            );
+        }
+
+        if (fallbackUser == null) {
+            return new AuthorResponse(null, "알 수 없음");
+        }
+
+        return from(fallbackUser);
+    }
+
+    private static boolean hasText(String value) {
+        return value != null && !value.isBlank();
+    }
+
 }

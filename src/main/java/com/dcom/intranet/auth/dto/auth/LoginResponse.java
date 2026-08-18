@@ -17,6 +17,9 @@ public class LoginResponse {
     @Schema(description = "Refresh Token", example = "eyJhbGciOiJIUzI1NiJ9.aaaaa.bbbbb")
     private String refreshToken;
 
+    @Schema(description = "Access Token 만료까지 남은 시간(초)", example = "1800")
+    private long expiresIn;
+
     @Schema(description = "사용자 ID", example = "1")
     private Long userId;
 
@@ -29,11 +32,12 @@ public class LoginResponse {
     @Schema(description = "임시 비밀번호로 로그인했는지 여부. true인 경우 /api/auth/password로 새 비밀번호를 설정해야 함", example = "false")
     private boolean requirePasswordChange;
 
-    public static LoginResponse of(User user, String accessToken, String refreshToken,
+    public static LoginResponse of(User user, String accessToken, String refreshToken, long expiresIn,
                                    boolean requirePasswordChange){
         return LoginResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
+                .expiresIn(expiresIn)
                 .userId(user.getId())
                 .role(user.getRole())
                 .status(user.getStatus())

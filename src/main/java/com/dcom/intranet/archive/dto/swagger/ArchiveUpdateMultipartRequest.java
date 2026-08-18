@@ -16,9 +16,11 @@ import java.util.List;
 public class ArchiveUpdateMultipartRequest {
 
     @Schema(
-            description = "족보 수정 요청 JSON 문자열",
+            description = "족보 수정 요청 JSON 문자열. 시험 연도/학기/시험 유형을 알 수 없으면 null로 전송합니다. semester=UNKNOWN, examType=ETC도 null로 저장됩니다.",
             example = """
                     {
+                      "subjectName": "자료구조",
+                      "professorName": "박교수",
                       "examYear": 2024,
                       "semester": "FIRST",
                       "examType": "FINAL",

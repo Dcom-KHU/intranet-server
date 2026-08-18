@@ -30,6 +30,8 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Valid;
 import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
@@ -70,7 +72,7 @@ public class PhotoPostController {
                 "albumList": [
                   {
                     "albumId": 1,
-                    "coverImageUrl": "/uploads/photo/2026/07/cover.jpg",
+                    "coverImageUrl": "/api/photo-posts/1/images/1",
                     "eventName": "신입생 환영회",
                     "activityDate": "2026-07-03",
                     "imageCount": 2
@@ -96,8 +98,8 @@ public class PhotoPostController {
                 "eventName": "신입생 환영회",
                 "activityDate": "2026-07-03",
                 "imageList": [
-                  "/uploads/photo/2026/07/photo1.jpg",
-                  "/uploads/photo/2026/07/photo2.jpg"
+                  "/api/photo-posts/1/images/1",
+                  "/api/photo-posts/1/images/2"
                 ],
                 "description": "신입생 환영회 사진입니다."
               }
@@ -113,10 +115,10 @@ public class PhotoPostController {
                 "albumId": 1,
                 "eventName": "신입생 환영회",
                 "activityDate": "2026-07-03",
-                "coverImageUrl": "/uploads/photo/2026/07/cover.jpg",
+                "coverImageUrl": "/api/photo-posts/1/images/1",
                 "imageUrls": [
-                  "/uploads/photo/2026/07/photo1.jpg",
-                  "/uploads/photo/2026/07/photo2.jpg"
+                  "/api/photo-posts/1/images/1",
+                  "/api/photo-posts/1/images/2"
                 ]
               }
             }
@@ -131,9 +133,9 @@ public class PhotoPostController {
                 "albumId": 1,
                 "eventName": "신입생 환영회 수정",
                 "activityDate": "2026-07-04",
-                "coverImageUrl": "/uploads/photo/2026/07/cover-updated.jpg",
+                "coverImageUrl": "/api/photo-posts/1/images/3",
                 "imageUrls": [
-                  "/uploads/photo/2026/07/photo-updated1.jpg"
+                  "/api/photo-posts/1/images/3"
                 ]
               }
             }
@@ -157,6 +159,11 @@ public class PhotoPostController {
               "message": "댓글이 작성되었습니다.",
               "data": {
                 "commentId": 1,
+                "albumId": 1,
+                "author": {
+                  "studentNumber": "20211234",
+                  "name": "홍길동"
+                },
                 "content": "댓글 내용",
                 "createdAt": "2026-07-03T12:00:00"
               }
@@ -170,7 +177,13 @@ public class PhotoPostController {
               "message": "요청이 성공적으로 처리되었습니다.",
               "data": {
                 "commentId": 1,
+                "albumId": 1,
+                "author": {
+                  "studentNumber": "20211234",
+                  "name": "홍길동"
+                },
                 "content": "수정된 댓글 내용",
+                "createdAt": "2026-07-03T12:00:00",
                 "updatedAt": "2026-07-03T13:00:00"
               }
             }
@@ -278,6 +291,23 @@ public class PhotoPostController {
         return ResponseEntity.ok(CommonResponse.success(photoPostService.getPhotoPostDetail(albumId)));
     }
 
+    @Operation(summary = "활동사진 조회", description = "로그인한 회원이 해당 사진첩에 속한 사진을 조회합니다.")
+    @GetMapping("/{albumId}/images/{imageId}")
+    public ResponseEntity<Resource> downloadImage(
+            @PathVariable Long albumId,
+            @PathVariable Long imageId
+    ) {
+        PhotoPostService.DownloadFile image = photoPostService.downloadImage(albumId, imageId);
+        String contentType = image.contentType() == null
+                ? MediaType.APPLICATION_OCTET_STREAM_VALUE
+                : image.contentType();
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline")
+                .body(image.resource());
+    }
+
     @Operation(
             summary = "사진첩 등록",
             description = "사진첩을 등록합니다. ADMIN만 등록할 수 있으며 요청 형식은 multipart/form-data입니다. 첫 번째 사진이 대표 사진으로 사용됩니다.",
@@ -301,12 +331,14 @@ public class PhotoPostController {
     public ResponseEntity<CommonResponse<PhotoPostCreateResponse>> createPhotoPost(
             @RequestPart("request") String requestJson,
             @Parameter(description = "사진 목록. 첫 번째 사진이 대표 사진으로 사용됩니다.")
-            @RequestPart("files") List<MultipartFile> files
+            @RequestPart("files") List<MultipartFile> files,
+            Authentication authentication
     ) {
         PhotoPostCreateRequest request = parseCreateRequest(requestJson);
         PhotoPostCreateResponse response = photoPostService.createPhotoPost(
                 request,
-                files
+                files,
+                authentication.getName()
         );
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(CommonResponse.success(201, "사진첩이 등록되었습니다.", response));

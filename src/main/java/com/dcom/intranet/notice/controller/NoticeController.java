@@ -47,6 +47,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Set;
+import java.nio.charset.StandardCharsets;
 
 import static org.springframework.data.domain.Sort.Direction.DESC;
 

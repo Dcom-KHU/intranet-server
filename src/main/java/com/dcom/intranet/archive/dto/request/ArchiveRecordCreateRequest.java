@@ -2,7 +2,6 @@ package com.dcom.intranet.archive.dto.request;
 
 import com.dcom.intranet.archive.domain.ExamType;
 import com.dcom.intranet.archive.domain.Semester;
-import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -14,13 +13,10 @@ import java.util.List;
 @NoArgsConstructor
 public class ArchiveRecordCreateRequest {
 
-    @NotNull(message = "시험 연도는 필수입니다.")
     private Integer examYear;
 
-    @NotNull(message = "학기는 필수입니다.")
     private Semester semester;
 
-    @NotNull(message = "시험 유형은 필수입니다.")
     private ExamType examType;
 
     private String content;

@@ -77,8 +77,6 @@ public class AuthService {
     /// 로그인
     @Transactional
     public LoginResponse login(LoginRequest request) {
-        // TODO: 삭제할 것 - 테스트용 해시 출력
-        System.out.println("HASH: " + passwordEncoder.encode("admin123"));
 
         /// 회원찾기
         User user = userRepository.findByLoginId(request.getLoginId())
@@ -116,11 +114,12 @@ public class AuthService {
 
         /// Refresh Token DB에 저장
         refreshTokenRepository.save(
-                new RefreshToken(refreshToken, user.getLoginId(), 1209600000L)
+                new RefreshToken(refreshToken, user.getLoginId(), jwtTokenProvider.getRefreshTokenValidity())
         );
 
+        long expiresIn = jwtTokenProvider.getAccessTokenValidity() / 1000;
 
-        return LoginResponse.of(user, accessToken, refreshToken, usedTempPassword);
+        return LoginResponse.of(user, accessToken, refreshToken, expiresIn, usedTempPassword);
 
     }
 
@@ -140,15 +139,33 @@ public class AuthService {
                 .orElseThrow(()-> new UnauthorizedException("유효하지 않은 RefreshToken입니다."));
 
         /// 만료 확인
-        if(savedToken.isExpired()){
+        if(savedToken.isExpired() || !jwtTokenProvider.validateToken(request.getRefreshToken())){
             refreshTokenRepository.delete(savedToken);
             throw new UnauthorizedException("로그인이 만료되었습니다. 다시 로그인해주세요.");
         }
 
-        /// 토큰에서 loginId 추출 후 DB에서 현재 role 재조회 (권한 이양 등으로 role이 바뀐 경우를 반영)
+        /// 토큰에서 loginId 추출 후 DB에서 현재 상태/role 재조회 (탈퇴, 권한 이양 등의 변경 사항 반영)
         String loginId = jwtTokenProvider.getLoginId(request.getRefreshToken());
+
+        if (!savedToken.getLoginId().equals(loginId)) {
+            refreshTokenRepository.delete(savedToken);
+            throw new UnauthorizedException("유효하지 않은 RefreshToken입니다.");
+        }
+
         User user = userRepository.findByLoginId(loginId)
-                .orElseThrow(() -> new UnauthorizedException("유효하지 않은 RefreshToken입니다."));
+                .orElse(null);
+
+        if (user == null) {
+            refreshTokenRepository.delete(savedToken);
+            throw new UnauthorizedException("유효하지 않은 RefreshToken입니다.");
+        }
+
+        /// 탈퇴 등으로 더 이상 APPROVED 상태가 아니면 재발급 거부 + 보유한 Refresh Token 전체 삭제
+        if (user.getStatus() != UserStatus.APPROVED) {
+            refreshTokenRepository.deleteByLoginId(loginId);
+            throw new UnauthorizedException("더 이상 유효하지 않은 계정입니다. 다시 로그인해주세요.");
+        }
+
         String role = user.getRole().name();
 
         /// 새 토큰 발급
@@ -158,9 +175,11 @@ public class AuthService {
 
         /// 기존 리프레시 토큰 삭제 + 새거 저장(Rotation)
         refreshTokenRepository.delete(savedToken);
-        refreshTokenRepository.save(new RefreshToken(newRefreshToken, loginId, 1209600000L));
+        refreshTokenRepository.save(new RefreshToken(newRefreshToken, loginId, jwtTokenProvider.getRefreshTokenValidity()));
 
-        return RefreshResponse.of(newAccessToken, newRefreshToken, 1800);
+        long expiresIn = jwtTokenProvider.getAccessTokenValidity() / 1000;
+
+        return RefreshResponse.of(newAccessToken, newRefreshToken, expiresIn);
 
     }
 
@@ -199,6 +218,9 @@ public class AuthService {
 
         String encodedNewPassword = passwordEncoder.encode(newPassword);
         user.changePassword(encodedNewPassword);
+
+        /// 비밀번호가 재설정됐으므로 기존 세션(Refresh Token)은 모두 무효화
+        refreshTokenRepository.deleteByLoginId(loginId);
     }
 
     /// 영문 + 숫자 (8자리) 임시 비밀번호 생성

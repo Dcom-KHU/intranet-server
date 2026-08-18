@@ -2,12 +2,15 @@ package com.dcom.intranet.photo.service;
 
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
@@ -91,6 +94,18 @@ public class PhotoPostFileStorageService {
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     "사진 파일 삭제 중 오류가 발생했습니다."
             );
+        }
+    }
+
+    public Resource loadAsResource(String fileUrl) {
+        try {
+            Resource resource = new UrlResource(resolvePath(fileUrl).toUri());
+            if (!resource.exists() || !resource.isReadable()) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "파일을 읽을 수 없습니다.");
+            }
+            return resource;
+        } catch (MalformedURLException e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "파일 경로가 올바르지 않습니다.");
         }
     }
 

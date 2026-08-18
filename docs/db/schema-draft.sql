@@ -94,6 +94,9 @@ CREATE TABLE archive_records (
     semester VARCHAR(20) NULL COMMENT '학기: FIRST, SECOND, SUMMER, WINTER',
     exam_type VARCHAR(20) NULL COMMENT '시험 유형: MIDTERM, FINAL, QUIZ, ASSIGNMENT, ETC',
     content TEXT NULL,
+    legacy_author_student_number VARCHAR(255) NULL,
+    legacy_author_name VARCHAR(255) NULL,
+    legacy_anonymous TINYINT(1) NULL,
     created_at DATETIME NOT NULL,
     updated_at DATETIME NULL,
     PRIMARY KEY (record_id),
@@ -213,13 +216,19 @@ CREATE TABLE notice_files (
 -- 최신 develop 코드 기준 PhotoPost 테이블이다.
 CREATE TABLE photo_posts (
     album_id BIGINT NOT NULL AUTO_INCREMENT,
+    author_id BIGINT NULL,
     event_name VARCHAR(100) NOT NULL,
     activity_date DATE NOT NULL,
     description LONGTEXT NULL,
     created_at DATETIME NOT NULL,
     PRIMARY KEY (album_id),
-    KEY idx_photo_posts_activity_date (activity_date)
-    -- REVIEW: 현재 PhotoPost Entity에는 작성자/admin_id와 updated_at 컬럼이 없다.
+    KEY idx_photo_posts_author_id (author_id),
+    KEY idx_photo_posts_activity_date (activity_date),
+    CONSTRAINT fk_photo_posts_author
+        FOREIGN KEY (author_id) REFERENCES users (id)
+        ON DELETE RESTRICT
+    -- REVIEW: 기존 운영 데이터 호환을 위해 photo_posts.author_id는 NULL 허용이다.
+    -- REVIEW: 최신 Java Entity 기준에는 photo_posts.updated_at이 없다.
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE photo_post_images (

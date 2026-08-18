@@ -18,6 +18,7 @@ import com.dcom.intranet.photo.dto.PhotoPostUpdateRequest;
 import com.dcom.intranet.photo.repository.PhotoCommentRepository;
 import com.dcom.intranet.photo.repository.PhotoPostRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -42,12 +43,17 @@ public class PhotoPostService {
     public PhotoPostListResponse getPhotoPostList(String keyword, Pageable pageable) {
         Page<PhotoPost> photoPosts = keyword == null || keyword.isBlank()
                 ? photoPostRepository.findAll(pageable)
-                : photoPostRepository.findByEventNameContaining(keyword, pageable);
+                : photoPostRepository.searchByEventNameIgnoringSpaces(normalizeKeyword(keyword), pageable);
 
         Page<PhotoPostListResponse.AlbumSummary> page = photoPosts
                 .map(photoPost -> new PhotoPostListResponse.AlbumSummary(
                         photoPost.getAlbumId(),
-                        photoPost.getCoverImageUrl(),
+                        photoPost.getImages().isEmpty()
+                                ? null
+                                : "/api/photo-posts/%d/images/%d".formatted(
+                                        photoPost.getAlbumId(),
+                                        photoPost.getImages().get(0).getId()
+                                ),
                         photoPost.getEventName(),
                         photoPost.getActivityDate(),
                         photoPost.getImages().size()
@@ -68,6 +74,22 @@ public class PhotoPostService {
     }
 
     @Transactional(readOnly = true)
+    public DownloadFile downloadImage(Long albumId, Long imageId) {
+        PhotoPost photoPost = photoPostRepository.findById(albumId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "사진첩을 찾을 수 없습니다."));
+        PhotoPostImage image = photoPost.getImages().stream()
+                .filter(candidate -> candidate.getId().equals(imageId))
+                .findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "사진을 찾을 수 없습니다."));
+
+        return new DownloadFile(
+                photoPostFileStorageService.loadAsResource(image.getFileUrl()),
+                image.getOriginalFileName(),
+                image.getContentType()
+        );
+    }
+
+    @Transactional(readOnly = true)
     public PhotoCommentListResponse getCommentList(Long albumId) {
         if (!photoPostRepository.existsById(albumId)) {
             throw new ResponseStatusException(
@@ -83,11 +105,14 @@ public class PhotoPostService {
     @Transactional
     public PhotoPostCreateResponse createPhotoPost(
             PhotoPostCreateRequest request,
-            List<MultipartFile> files
+            List<MultipartFile> files,
+            String loginId
     ) {
+        User author = findUser(loginId);
         List<PhotoPostImage> images = storeImages(files);
 
         PhotoPost photoPost = new PhotoPost(
+                author,
                 request.eventName(),
                 request.activityDate(),
                 request.description(),
@@ -213,6 +238,10 @@ public class PhotoPostService {
                 ));
     }
 
+    private String normalizeKeyword(String keyword) {
+        return keyword.replaceAll("\\s+", "");
+    }
+
     private void validateAuthor(PhotoComment comment, String loginId) {
         User user = findUser(loginId);
 
@@ -269,5 +298,8 @@ public class PhotoPostService {
 
         return files.stream()
                 .anyMatch(file -> file != null && !file.isEmpty());
+    }
+
+    public record DownloadFile(Resource resource, String fileName, String contentType) {
     }
 }

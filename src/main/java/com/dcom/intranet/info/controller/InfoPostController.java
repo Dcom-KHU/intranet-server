@@ -48,7 +48,7 @@ public class InfoPostController {
             description = """
                     정보공유 게시글 목록을 조회합니다.
                     
-                    keyword가 있으면 제목 또는 본문 기준으로 검색합니다.
+                    keyword가 있으면 제목 또는 본문 기준으로 공백을 무시해 검색합니다.
                     sort 값은 latest, oldest, views를 지원합니다.
                     기본 정렬은 latest입니다.
                     """
@@ -81,7 +81,7 @@ public class InfoPostController {
             @Parameter(description = "페이지 크기", example = "10")
             @RequestParam(defaultValue = "10") int size,
 
-            @Parameter(description = "검색어. 제목 또는 본문 기준 검색", example = "시간 복잡도")
+            @Parameter(description = "검색어. 제목 또는 본문 기준으로 공백을 무시해 검색", example = "시간 복잡도")
             @RequestParam(required = false) String keyword,
 
             @Parameter(description = "정렬 기준. latest, oldest, views", example = "latest")

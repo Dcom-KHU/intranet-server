@@ -23,7 +23,11 @@ public record NoticeDetailResponse(
                 author,
                 notice.getCreatedAt(),
                 notice.getFiles().stream()
-                        .map(file -> new FileInfo(file.getId(), file.getOriginalFileName(), file.getFileUrl()))
+                        .map(file -> new FileInfo(
+                                file.getId(),
+                                file.getOriginalFileName(),
+                                "/api/attachments/notice/%d/download".formatted(file.getId())
+                        ))
                         .toList()
         );
     }
