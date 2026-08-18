@@ -10,14 +10,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ArchiveRecordResponseTest {
 
     @Test
-    @DisplayName("레거시 작성자 정보가 있으면 관리자 계정 대신 레거시 작성자를 내려준다")
+    @DisplayName("레거시 작성자 정보가 있으면 관리자 계정 대신 레거시 작성자 이름을 내려주고 학번은 숨긴다")
     void usesLegacyAuthorWhenPresent() {
         ArchiveRecord record = archiveRecord();
         record.applyLegacyAuthor("legacy-login-id", "홍길동", false);
 
         ArchiveRecordResponse response = new ArchiveRecordResponse(record);
 
-        assertThat(response.getAuthor().studentNumber()).isEqualTo("legacy-login-id");
+        assertThat(response.getAuthor().studentNumber()).isNull();
         assertThat(response.getAuthor().name()).isEqualTo("홍길동");
     }
 

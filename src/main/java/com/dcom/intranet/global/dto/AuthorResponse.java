@@ -31,7 +31,7 @@ public record AuthorResponse(
 
         if (legacyAnonymous != null || hasText(legacyStudentNumber) || hasText(legacyName)) {
             return new AuthorResponse(
-                    trimToNull(legacyStudentNumber),
+                    null,
                     hasText(legacyName) ? legacyName.trim() : "알 수 없음"
             );
         }
@@ -47,7 +47,4 @@ public record AuthorResponse(
         return value != null && !value.isBlank();
     }
 
-    private static String trimToNull(String value) {
-        return hasText(value) ? value.trim() : null;
-    }
 }

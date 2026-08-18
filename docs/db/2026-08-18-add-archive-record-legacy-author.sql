@@ -28,10 +28,7 @@ JOIN (
       AND m.legacy_comment_id IS NULL
 ) legacy_board
     ON legacy_board.archive_record_id = ar.record_id
-SET ar.legacy_author_student_number = CASE
-        WHEN legacy_board.legacy_anonymous = 1 THEN NULL
-        ELSE NULLIF(TRIM(legacy_board.legacy_author_student_number), '')
-    END,
+SET ar.legacy_author_student_number = NULL,
     ar.legacy_author_name = CASE
         WHEN legacy_board.legacy_anonymous = 1 THEN NULL
         ELSE NULLIF(TRIM(legacy_board.legacy_author_name), '')
@@ -55,10 +52,7 @@ JOIN (
       AND m.legacy_comment_id IS NOT NULL
 ) legacy_comment
     ON legacy_comment.archive_record_id = ar.record_id
-SET ar.legacy_author_student_number = CASE
-        WHEN legacy_comment.legacy_anonymous = 1 THEN NULL
-        ELSE NULLIF(TRIM(legacy_comment.legacy_author_student_number), '')
-    END,
+SET ar.legacy_author_student_number = NULL,
     ar.legacy_author_name = CASE
         WHEN legacy_comment.legacy_anonymous = 1 THEN NULL
         ELSE NULLIF(TRIM(legacy_comment.legacy_author_name), '')
