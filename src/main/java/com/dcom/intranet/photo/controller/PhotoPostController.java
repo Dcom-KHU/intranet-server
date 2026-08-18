@@ -159,6 +159,11 @@ public class PhotoPostController {
               "message": "댓글이 작성되었습니다.",
               "data": {
                 "commentId": 1,
+                "albumId": 1,
+                "author": {
+                  "studentNumber": "20211234",
+                  "name": "홍길동"
+                },
                 "content": "댓글 내용",
                 "createdAt": "2026-07-03T12:00:00"
               }
@@ -172,7 +177,13 @@ public class PhotoPostController {
               "message": "요청이 성공적으로 처리되었습니다.",
               "data": {
                 "commentId": 1,
+                "albumId": 1,
+                "author": {
+                  "studentNumber": "20211234",
+                  "name": "홍길동"
+                },
                 "content": "수정된 댓글 내용",
+                "createdAt": "2026-07-03T12:00:00",
                 "updatedAt": "2026-07-03T13:00:00"
               }
             }
