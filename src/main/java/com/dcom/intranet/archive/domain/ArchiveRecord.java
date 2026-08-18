@@ -45,6 +45,15 @@ public class ArchiveRecord {
     @Column(columnDefinition = "TEXT")
     private String content;
 
+    @Column(name = "legacy_author_student_number")
+    private String legacyAuthorStudentNumber;
+
+    @Column(name = "legacy_author_name")
+    private String legacyAuthorName;
+
+    @Column(name = "legacy_anonymous")
+    private Boolean legacyAnonymous;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -89,6 +98,12 @@ public class ArchiveRecord {
         this.examType = examType;
         this.content = content;
         this.updatedAt = LocalDateTime.now();
+    }
+
+    public void applyLegacyAuthor(String studentNumber, String name, Boolean anonymous) {
+        this.legacyAuthorStudentNumber = studentNumber;
+        this.legacyAuthorName = name;
+        this.legacyAnonymous = anonymous;
     }
 
     public void removeFile(ArchiveFile file) {
