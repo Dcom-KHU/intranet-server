@@ -7,6 +7,7 @@ import com.dcom.intranet.global.dto.AuthorResponse;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -44,17 +45,25 @@ public class ArchiveRecordResponse {
     }
 
     private String createLabel(ArchiveRecord record) {
-        if (record.getExamYear() == null
-                || record.getSemester() == null
-                || record.getExamType() == null) {
+        List<String> parts = new ArrayList<>();
+
+        if (record.getExamYear() != null) {
+            parts.add("%d년".formatted(record.getExamYear()));
+        }
+
+        if (record.getSemester() != null && record.getSemester() != Semester.UNKNOWN) {
+            parts.add(toSemesterLabel(record.getSemester()));
+        }
+
+        if (record.getExamType() != null) {
+            parts.add(toExamTypeLabel(record.getExamType()));
+        }
+
+        if (parts.isEmpty()) {
             return null;
         }
 
-        return "%d년 %s %s".formatted(
-                record.getExamYear(),
-                toSemesterLabel(record.getSemester()),
-                toExamTypeLabel(record.getExamType())
-        );
+        return String.join(" ", parts);
     }
 
     private String toSemesterLabel(Semester semester) {

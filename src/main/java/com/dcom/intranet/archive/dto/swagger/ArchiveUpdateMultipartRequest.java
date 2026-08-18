@@ -19,6 +19,8 @@ public class ArchiveUpdateMultipartRequest {
             description = "족보 수정 요청 JSON 문자열. 시험 연도를 알 수 없으면 examYear는 null, semester는 UNKNOWN으로 전송합니다.",
             example = """
                     {
+                      "subjectName": "자료구조",
+                      "professorName": "박교수",
                       "examYear": 2024,
                       "semester": "FIRST",
                       "examType": "FINAL",

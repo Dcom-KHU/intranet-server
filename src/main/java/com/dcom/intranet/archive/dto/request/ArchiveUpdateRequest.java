@@ -16,6 +16,12 @@ import java.util.List;
 @NoArgsConstructor
 public class ArchiveUpdateRequest {
 
+    @Schema(description = "수정할 과목명. 생략하면 기존 값을 유지합니다.", example = "자료구조")
+    private String subjectName;
+
+    @Schema(description = "수정할 교수명. 생략하면 기존 값을 유지합니다.", example = "박교수")
+    private String professorName;
+
     @Schema(description = "시험 연도. 학기를 UNKNOWN으로 지정할 때는 null을 허용합니다.", example = "2024")
     private Integer examYear;
 

@@ -26,7 +26,12 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.IntStream;
 
 @Service
 @RequiredArgsConstructor
@@ -114,12 +119,14 @@ public class ArchiveService {
         // 새 Archive면 여기서 저장되고, 기존 Archive면 관리 상태로 유지됨
         archiveRepository.save(archive);
 
+        List<ArchiveRecordCreateRequest> recordRequests = request.getRecords();
+        List<List<Integer>> recordFileIndexes = resolveRecordFileIndexes(recordRequests, requestFiles);
+
         List<ArchiveRecord> createdRecords = new ArrayList<>();
 
-        for (ArchiveRecordCreateRequest recordRequest : request.getRecords()) {
-            List<Integer> fileIndexes = resolveFileIndexes(recordRequest);
-
-            validateFileIndexes(fileIndexes, requestFiles);
+        for (int recordIndex = 0; recordIndex < recordRequests.size(); recordIndex++) {
+            ArchiveRecordCreateRequest recordRequest = recordRequests.get(recordIndex);
+            List<Integer> fileIndexes = recordFileIndexes.get(recordIndex);
 
             validateRecordHasContentOrFiles(recordRequest, fileIndexes);
 
@@ -198,6 +205,52 @@ public class ArchiveService {
                 ));
     }
 
+    private List<List<Integer>> resolveRecordFileIndexes(
+            List<ArchiveRecordCreateRequest> recordRequests,
+            List<MultipartFile> files
+    ) {
+        List<List<Integer>> resolvedIndexes = recordRequests.stream()
+                .map(this::resolveFileIndexes)
+                .toList();
+
+        boolean hasAnyExplicitFileIndex = resolvedIndexes.stream()
+                .anyMatch(indexes -> !indexes.isEmpty());
+
+        if (!hasUploadedFiles(files)) {
+            if (hasAnyExplicitFileIndex) {
+                validateFileIndexes(resolvedIndexes, files);
+            }
+
+            return resolvedIndexes;
+        }
+
+        if (!hasAnyExplicitFileIndex && recordRequests.size() == 1) {
+            return List.of(nonEmptyUploadedFileIndexes(files));
+        }
+
+        if (!hasAnyExplicitFileIndex) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "여러 족보 레코드에 파일을 첨부할 때는 fileIndexes를 지정해야 합니다."
+            );
+        }
+
+        validateFileIndexes(resolvedIndexes, files);
+        validateAllUploadedFilesAreReferenced(resolvedIndexes, files);
+
+        return resolvedIndexes;
+    }
+
+    private List<Integer> nonEmptyUploadedFileIndexes(List<MultipartFile> files) {
+        return IntStream.range(0, files.size())
+                .filter(fileIndex -> {
+                    MultipartFile file = files.get(fileIndex);
+                    return file != null && !file.isEmpty();
+                })
+                .boxed()
+                .toList();
+    }
+
     private List<Integer> resolveFileIndexes(ArchiveRecordCreateRequest recordRequest) {
         if (recordRequest.getFileIndexes() == null || recordRequest.getFileIndexes().isEmpty()) {
             return List.of();
@@ -227,6 +280,8 @@ public class ArchiveService {
                 : request.getDeleteFileIds().stream().distinct().toList();
 
         validateUpdateRequest(record, request, safeFiles, deleteFileIds);
+
+        updateArchiveMetadataIfRequested(record.getArchive(), request);
 
         // 1. 기본 정보 수정
         record.update(
@@ -272,6 +327,43 @@ public class ArchiveService {
                 record.getId(),
                 record.getUpdatedAt()
         );
+    }
+
+    private void updateArchiveMetadataIfRequested(Archive archive, ArchiveUpdateRequest request) {
+        String requestedSubjectName = trimToNull(request.getSubjectName());
+        String requestedProfessorName = trimToNull(request.getProfessorName());
+
+        if (requestedSubjectName == null && requestedProfessorName == null) {
+            return;
+        }
+
+        String subjectName = requestedSubjectName == null
+                ? archive.getSubjectName()
+                : requestedSubjectName;
+
+        String professorName = requestedProfessorName == null
+                ? archive.getProfessorName()
+                : requestedProfessorName;
+
+        boolean unchanged = archive.getSubjectName().equals(subjectName)
+                && archive.getProfessorName().equals(professorName);
+
+        if (unchanged) {
+            return;
+        }
+
+        Optional<Archive> duplicateArchive =
+                archiveRepository.findBySubjectNameAndProfessorName(subjectName, professorName);
+
+        if (duplicateArchive.isPresent()
+                && !Objects.equals(duplicateArchive.get().getId(), archive.getId())) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "같은 과목명과 교수명의 족보 아카이브가 이미 존재합니다."
+            );
+        }
+
+        archive.updateMetadata(subjectName, professorName);
     }
 
     private ArchiveRecord findRecordInArchive(Long archiveId, Long recordId) {
@@ -413,10 +505,10 @@ public class ArchiveService {
     }
 
     private void validateFileIndexes(
-            List<Integer> fileIndexes,
+            List<List<Integer>> recordFileIndexes,
             List<MultipartFile> files
     ) {
-        if (fileIndexes == null || fileIndexes.isEmpty()) {
+        if (recordFileIndexes == null || recordFileIndexes.isEmpty()) {
             return;
         }
 
@@ -427,20 +519,44 @@ public class ArchiveService {
             );
         }
 
-        for (Integer fileIndex : fileIndexes) {
-            if (fileIndex == null || fileIndex < 0 || fileIndex >= files.size()) {
-                throw new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "fileIndexes 값이 업로드된 파일 범위를 벗어났습니다."
-                );
-            }
+        for (List<Integer> fileIndexes : recordFileIndexes) {
+            for (Integer fileIndex : fileIndexes) {
+                if (fileIndex == null || fileIndex < 0 || fileIndex >= files.size()) {
+                    throw new ResponseStatusException(
+                            HttpStatus.BAD_REQUEST,
+                            "fileIndexes 값이 업로드된 파일 범위를 벗어났습니다."
+                    );
+                }
 
+                MultipartFile file = files.get(fileIndex);
+
+                if (file == null || file.isEmpty()) {
+                    throw new ResponseStatusException(
+                            HttpStatus.BAD_REQUEST,
+                            "fileIndexes가 가리키는 파일이 비어 있습니다."
+                    );
+                }
+            }
+        }
+    }
+
+    private void validateAllUploadedFilesAreReferenced(
+            List<List<Integer>> recordFileIndexes,
+            List<MultipartFile> files
+    ) {
+        Set<Integer> referencedIndexes = new HashSet<>();
+
+        for (List<Integer> fileIndexes : recordFileIndexes) {
+            referencedIndexes.addAll(fileIndexes);
+        }
+
+        for (int fileIndex = 0; fileIndex < files.size(); fileIndex++) {
             MultipartFile file = files.get(fileIndex);
 
-            if (file == null || file.isEmpty()) {
+            if (file != null && !file.isEmpty() && !referencedIndexes.contains(fileIndex)) {
                 throw new ResponseStatusException(
                         HttpStatus.BAD_REQUEST,
-                        "fileIndexes가 가리키는 파일이 비어 있습니다."
+                        "업로드된 파일 중 어느 족보 레코드에도 연결되지 않은 파일이 있습니다."
                 );
             }
         }
@@ -461,5 +577,22 @@ public class ArchiveService {
                     "본문 내용 또는 파일 중 하나는 필요합니다."
             );
         }
+    }
+
+    private boolean hasUploadedFiles(List<MultipartFile> files) {
+        if (files == null || files.isEmpty()) {
+            return false;
+        }
+
+        return files.stream()
+                .anyMatch(file -> file != null && !file.isEmpty());
+    }
+
+    private String trimToNull(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+
+        return value.trim();
     }
 }

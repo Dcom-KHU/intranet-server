@@ -1,6 +1,8 @@
 package com.dcom.intranet.archive.dto.response;
 
 import com.dcom.intranet.archive.domain.ArchiveRecord;
+import com.dcom.intranet.archive.domain.ExamType;
+import com.dcom.intranet.archive.domain.Semester;
 import com.dcom.intranet.auth.domain.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -44,8 +46,54 @@ class ArchiveRecordResponseTest {
         assertThat(response.getAuthor().name()).isEqualTo("관리자");
     }
 
+    @Test
+    @DisplayName("학기가 UNKNOWN이어도 시험 유형이 있으면 label에 시험 유형을 내려준다")
+    void labelIncludesExamTypeWhenSemesterIsUnknown() {
+        ArchiveRecord record = new ArchiveRecord(
+                user(),
+                null,
+                Semester.UNKNOWN,
+                ExamType.QUIZ,
+                "본문"
+        );
+
+        ArchiveRecordResponse response = new ArchiveRecordResponse(record);
+
+        assertThat(response.getLabel()).isEqualTo("퀴즈");
+    }
+
+    @Test
+    @DisplayName("과제 시험 유형도 label에 내려준다")
+    void labelIncludesAssignmentExamType() {
+        ArchiveRecord record = new ArchiveRecord(
+                user(),
+                2026,
+                Semester.SECOND,
+                ExamType.ASSIGNMENT,
+                "본문"
+        );
+
+        ArchiveRecordResponse response = new ArchiveRecordResponse(record);
+
+        assertThat(response.getLabel()).isEqualTo("2026년 2학기 과제");
+    }
+
+    @Test
+    @DisplayName("시험 정보가 전혀 없으면 label은 null이다")
+    void labelIsNullWhenExamInfoDoesNotExist() {
+        ArchiveRecord record = archiveRecord();
+
+        ArchiveRecordResponse response = new ArchiveRecordResponse(record);
+
+        assertThat(response.getLabel()).isNull();
+    }
+
     private ArchiveRecord archiveRecord() {
-        User admin = new User(
+        return new ArchiveRecord(user(), null, null, null, "본문");
+    }
+
+    private User user() {
+        return new User(
                 "admin",
                 "password",
                 "관리자",
@@ -53,6 +101,5 @@ class ArchiveRecordResponseTest {
                 "admin@khu.ac.kr",
                 "01012345678"
         );
-        return new ArchiveRecord(admin, null, null, null, "본문");
     }
 }

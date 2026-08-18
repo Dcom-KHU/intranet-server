@@ -27,7 +27,7 @@ public class ArchiveCreateMultipartRequest {
                           "semester": "FIRST",
                           "examType": "MIDTERM",
                           "content": "Swagger 테스트 족보입니다.",
-                          "fileIndexes": []
+                          "fileIndexes": [0]
                         }
                       ]
                     }

@@ -51,6 +51,12 @@ public class Archive {
         this.professorName = professorName;
     }
 
+    public void updateMetadata(String subjectName, String professorName) {
+        this.subjectName = subjectName;
+        this.professorName = professorName;
+        touch();
+    }
+
     @PrePersist
     public void prePersist() {
         LocalDateTime now = LocalDateTime.now();
