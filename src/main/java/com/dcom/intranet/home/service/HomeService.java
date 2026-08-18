@@ -78,7 +78,12 @@ public class HomeService {
                         ArchiveRecord::getCreatedAt,
                         Comparator.nullsFirst(Comparator.naturalOrder())
                 ))
-                .map(record -> AuthorResponse.from(record.getAuthor()))
+                .map(record -> AuthorResponse.fromLegacyOrUser(
+                        record.getLegacyAuthorStudentNumber(),
+                        record.getLegacyAuthorName(),
+                        record.getLegacyAnonymous(),
+                        record.getAuthor()
+                ))
                 .orElseGet(() -> new AuthorResponse(null, "알 수 없음"));
     }
 

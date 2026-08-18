@@ -32,7 +32,12 @@ public class ArchiveRecordResponse {
         this.content = record.getContent();
         this.createdAt = record.getCreatedAt();
         this.updatedAt = record.getUpdatedAt();
-        this.author = AuthorResponse.from(record.getAuthor());
+        this.author = AuthorResponse.fromLegacyOrUser(
+                record.getLegacyAuthorStudentNumber(),
+                record.getLegacyAuthorName(),
+                record.getLegacyAnonymous(),
+                record.getAuthor()
+        );
         this.files = record.getFiles().stream()
                 .map(file -> new ArchiveFileResponse(record.getArchive().getId(), record.getId(), file))
                 .toList();
