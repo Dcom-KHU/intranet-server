@@ -21,13 +21,23 @@ public class ArchiveUpdateRequest {
     @Schema(description = "수정할 교수명. 생략하면 기존 값을 유지합니다.", example = "박교수")
     private String professorName;
 
-    @Schema(description = "시험 연도. 학기를 UNKNOWN으로 지정할 때는 null을 허용합니다.", example = "2024")
+    @Schema(description = "시험 연도. 모르면 null로 전송합니다. 빈 문자열은 사용하지 않습니다.", example = "2024", nullable = true)
     private Integer examYear;
 
-    @Schema(description = "학기. FIRST, SECOND, SUMMER, WINTER를 지원합니다. UNKNOWN 또는 null은 null로 저장됩니다.", example = "FIRST")
+    @Schema(
+            description = "학기. FIRST, SECOND, SUMMER, WINTER 중 하나이며 모르면 null로 전송합니다. 빈 문자열은 사용하지 않습니다.",
+            example = "FIRST",
+            allowableValues = {"FIRST", "SECOND", "SUMMER", "WINTER"},
+            nullable = true
+    )
     private Semester semester;
 
-    @Schema(description = "시험 유형. MIDTERM, FINAL, QUIZ, ASSIGNMENT를 지원합니다. ETC 또는 null은 null로 저장됩니다.", example = "MIDTERM")
+    @Schema(
+            description = "시험 유형. MIDTERM, FINAL, QUIZ, ASSIGNMENT 중 하나이며 모르면 null로 전송합니다. 빈 문자열은 사용하지 않습니다.",
+            example = "MIDTERM",
+            allowableValues = {"MIDTERM", "FINAL", "QUIZ", "ASSIGNMENT"},
+            nullable = true
+    )
     private ExamType examType;
 
     @Schema(description = "족보 설명 또는 본문", example = "2024년 1학기 중간고사 족보입니다.")
