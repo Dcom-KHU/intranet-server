@@ -21,6 +21,7 @@ public class PhotoPostUpdateMultipartRequest {
                     {
                       "eventName": "신입생 환영회 수정",
                       "activityDate": "2026-07-04",
+                      "place": "Engineering Building 101",
                       "description": "수정된 사진첩 설명입니다."
                     }
                     """

@@ -38,6 +38,9 @@ public class PhotoPost {
     @Column(columnDefinition = "LONGTEXT")
     private String description;
 
+    @Column(length = 255)
+    private String place;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "author_id")
     private User author;
@@ -74,14 +77,19 @@ public class PhotoPost {
     }
 
     public PhotoPost(String eventName, LocalDate activityDate, String description, List<PhotoPostImage> images) {
-        this(null, eventName, activityDate, description, images);
+        this(null, eventName, activityDate, description, null, images);
     }
 
     public PhotoPost(User author, String eventName, LocalDate activityDate, String description, List<PhotoPostImage> images) {
+        this(author, eventName, activityDate, description, null, images);
+    }
+
+    public PhotoPost(User author, String eventName, LocalDate activityDate, String description, String place, List<PhotoPostImage> images) {
         this.author = author;
         this.eventName = eventName;
         this.activityDate = activityDate;
         this.description = description == null ? "" : description;
+        this.place = place;
         this.images = images == null ? new ArrayList<>() : new ArrayList<>(images);
     }
 
@@ -99,6 +107,10 @@ public class PhotoPost {
 
     public String getDescription() {
         return description;
+    }
+
+    public String getPlace() {
+        return place;
     }
 
     public User getAuthor() {
@@ -132,9 +144,14 @@ public class PhotoPost {
     }
 
     public void update(String eventName, LocalDate activityDate, String description) {
+        update(eventName, activityDate, description, null);
+    }
+
+    public void update(String eventName, LocalDate activityDate, String description, String place) {
         this.eventName = eventName;
         this.activityDate = activityDate;
         this.description = description == null ? "" : description;
+        this.place = place;
     }
 
     public void replaceImages(List<String> imageUrls) {

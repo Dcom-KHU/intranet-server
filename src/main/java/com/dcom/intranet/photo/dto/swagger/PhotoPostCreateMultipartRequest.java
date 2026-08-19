@@ -21,6 +21,7 @@ public class PhotoPostCreateMultipartRequest {
                     {
                       "eventName": "신입생 환영회",
                       "activityDate": "2026-07-03",
+                      "place": "D.COM club room",
                       "description": "신입생 환영회 사진입니다."
                     }
                     """

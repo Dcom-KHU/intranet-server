@@ -97,6 +97,7 @@ public class PhotoPostController {
                 "albumId": 1,
                 "eventName": "신입생 환영회",
                 "activityDate": "2026-07-03",
+                "place": "D.COM club room",
                 "imageList": [
                   "/api/photo-posts/1/images/1",
                   "/api/photo-posts/1/images/2"
@@ -115,6 +116,7 @@ public class PhotoPostController {
                 "albumId": 1,
                 "eventName": "신입생 환영회",
                 "activityDate": "2026-07-03",
+                "place": "D.COM club room",
                 "coverImageUrl": "/api/photo-posts/1/images/1",
                 "imageUrls": [
                   "/api/photo-posts/1/images/1",
@@ -133,6 +135,7 @@ public class PhotoPostController {
                 "albumId": 1,
                 "eventName": "신입생 환영회 수정",
                 "activityDate": "2026-07-04",
+                "place": "Engineering Building 101",
                 "coverImageUrl": "/api/photo-posts/1/images/3",
                 "imageUrls": [
                   "/api/photo-posts/1/images/3"

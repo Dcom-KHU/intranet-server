@@ -116,6 +116,7 @@ public class PhotoPostService {
                 request.eventName(),
                 request.activityDate(),
                 request.description(),
+                request.place(),
                 images
         );
 
@@ -138,7 +139,8 @@ public class PhotoPostService {
         photoPost.update(
                 request.eventName(),
                 request.activityDate(),
-                request.description()
+                request.description(),
+                request.place()
         );
 
         if (hasFiles(files)) {

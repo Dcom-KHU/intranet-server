@@ -10,7 +10,8 @@ public record PhotoPostDetailResponse(
         String eventName,
         LocalDate activityDate,
         List<String> imageList,
-        String description
+        String description,
+        String place
 ) {
 
     public static PhotoPostDetailResponse from(PhotoPost photoPost) {
@@ -21,7 +22,8 @@ public record PhotoPostDetailResponse(
                 photoPost.getImages().stream()
                         .map(image -> "/api/photo-posts/%d/images/%d".formatted(photoPost.getAlbumId(), image.getId()))
                         .toList(),
-                photoPost.getDescription()
+                photoPost.getDescription(),
+                photoPost.getPlace()
         );
     }
 }
