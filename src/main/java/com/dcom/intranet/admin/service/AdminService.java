@@ -183,10 +183,15 @@ public class AdminService {
                 LocalDateTime.now()
         );
 
-        /// 물리 삭제 전 보유 중인 Refresh Token 무효화
-        refreshTokenRepository.deleteByLoginId(user.getLoginId());
+        if (hasRetainedActivity(user)) {
+            /// 기존 작성 기록의 작성자 참조를 보존하기 위해 탈퇴 상태로 유지
+            refreshTokenRepository.deleteByLoginId(user.getLoginId());
+            user.withdraw(LocalDateTime.now());
+            return response;
+        }
 
-        /// 승인되지 않은 회원이라 연관 데이터가 없으므로 물리 삭제
+        /// 활동 이력이 없는 회원만 인증 부속 데이터를 정리한 뒤 물리 삭제
+        cleanupAccountAttachments(user);
         userRepository.delete(user);
 
         return response;

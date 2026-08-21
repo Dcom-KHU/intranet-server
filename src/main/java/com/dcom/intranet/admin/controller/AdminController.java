@@ -89,7 +89,10 @@ public class AdminController {
         return ResponseEntity.ok(CommonResponse.success(adminService.approveUser(userId, loginId)));
     }
 
-    @Operation(summary = "가입 거절", description = "PENDING 회원을 거절합니다. 거절된 회원 정보는 DB에서 물리 삭제됩니다.")
+    @Operation(
+            summary = "가입 거절",
+            description = "PENDING 회원을 거절합니다. 작성한 활동 이력이 있으면 WITHDRAWN 상태로 유지하고, 없으면 DB에서 물리 삭제합니다."
+    )
     @PatchMapping("/users/{userId}/reject")
     public ResponseEntity<CommonResponse<AdminUserRejectResponse>> rejectUser(
             @PathVariable Long userId,

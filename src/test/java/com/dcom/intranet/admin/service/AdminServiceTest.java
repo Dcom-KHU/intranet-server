@@ -133,6 +133,40 @@ class AdminServiceTest {
     }
 
     @Test
+    @DisplayName("가입 거절 시 족보 작성 이력이 있으면 회원을 탈퇴 상태로 유지한다")
+    void rejectUserWithdrawsUserWithArchiveRecord() {
+        User admin = user(1L, "admin", UserStatus.APPROVED, UserRole.ADMIN);
+        User target = user(2L, "target", UserStatus.PENDING, UserRole.USER);
+        when(userRepository.findByLoginId("admin")).thenReturn(Optional.of(admin));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(target));
+        when(archiveRecordRepository.existsByAuthorId(2L)).thenReturn(true);
+
+        var response = adminService.rejectUser(2L, "admin");
+
+        assertThat(response.status()).isEqualTo("REJECTED");
+        assertThat(response.rejectedByAdminId()).isEqualTo(1L);
+        assertThat(target.getStatus()).isEqualTo(UserStatus.WITHDRAWN);
+        verify(refreshTokenRepository).deleteByLoginId("target");
+        verify(userRepository, never()).delete(target);
+    }
+
+    @Test
+    @DisplayName("가입 거절 시 활동 이력이 없으면 회원과 인증 부속 데이터를 물리 삭제한다")
+    void rejectUserHardDeletesUserWithoutRetainedActivity() {
+        User admin = user(1L, "admin", UserStatus.APPROVED, UserRole.ADMIN);
+        User target = user(2L, "target", UserStatus.PENDING, UserRole.USER);
+        when(userRepository.findByLoginId("admin")).thenReturn(Optional.of(admin));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(target));
+
+        adminService.rejectUser(2L, "admin");
+
+        verify(refreshTokenRepository).deleteByLoginId("target");
+        verify(emailVerificationRepository).deleteByLoginIdOrEmail("target", "target@dcom.org");
+        verify(emailChangeVerificationRepository).deleteByLoginId("target");
+        verify(userRepository).delete(target);
+    }
+
+    @Test
     @DisplayName("Admin user processing hard deletes user without retained activity")
     void adminUserProcessingHardDeletesUserWithoutRetainedActivity() {
         User admin = user(1L, "admin", UserStatus.APPROVED, UserRole.ADMIN);
