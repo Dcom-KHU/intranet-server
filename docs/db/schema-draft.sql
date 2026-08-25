@@ -220,6 +220,7 @@ CREATE TABLE photo_posts (
     event_name VARCHAR(100) NOT NULL,
     activity_date DATE NOT NULL,
     description LONGTEXT NULL,
+    place VARCHAR(255) NULL,
     created_at DATETIME NOT NULL,
     PRIMARY KEY (album_id),
     KEY idx_photo_posts_author_id (author_id),

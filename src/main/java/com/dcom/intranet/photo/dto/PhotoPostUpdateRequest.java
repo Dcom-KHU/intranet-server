@@ -12,6 +12,8 @@ public record PhotoPostUpdateRequest(
         @NotNull
         LocalDate activityDate,
 
-        String description
+        String description,
+
+        String place
 ) {
 }

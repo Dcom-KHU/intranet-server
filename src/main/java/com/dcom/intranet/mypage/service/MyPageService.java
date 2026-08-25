@@ -4,6 +4,7 @@ import com.dcom.intranet.auth.domain.User;
 import com.dcom.intranet.auth.domain.UserStatus;
 import com.dcom.intranet.auth.repository.RefreshTokenRepository;
 import com.dcom.intranet.auth.repository.UserRepository;
+import com.dcom.intranet.auth.service.UserAccountLifecycleService;
 import com.dcom.intranet.mypage.domain.EmailChangeVerification;
 import com.dcom.intranet.mypage.domain.MyPageRouteType;
 import com.dcom.intranet.mypage.dto.response.MemberWithdrawResponse;
@@ -39,6 +40,7 @@ public class MyPageService {
     private final PasswordEncoder passwordEncoder;
     private final MyWrittenPostReader myWrittenPostReader;
     private final MyWrittenCommentReader myWrittenCommentReader;
+    private final UserAccountLifecycleService userAccountLifecycleService;
 
     public MyPageService(
             UserRepository userRepository,
@@ -46,7 +48,8 @@ public class MyPageService {
             EmailVerificationService emailVerificationService,
             PasswordEncoder passwordEncoder,
             MyWrittenPostReader myWrittenPostReader,
-            MyWrittenCommentReader myWrittenCommentReader
+            MyWrittenCommentReader myWrittenCommentReader,
+            UserAccountLifecycleService userAccountLifecycleService
     ) {
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
@@ -54,6 +57,7 @@ public class MyPageService {
         this.passwordEncoder = passwordEncoder;
         this.myWrittenPostReader = myWrittenPostReader;
         this.myWrittenCommentReader = myWrittenCommentReader;
+        this.userAccountLifecycleService = userAccountLifecycleService;
     }
 
     @Transactional(readOnly = true)
@@ -145,12 +149,21 @@ public class MyPageService {
     public MemberWithdrawResponse withdraw(String loginId) {
         User user = getApprovedUser(loginId);
 
-        user.withdraw(LocalDateTime.now());
+        if (userAccountLifecycleService.hasRetainedActivity(user)) {
+            user.withdraw(LocalDateTime.now());
 
-        /// 탈퇴한 회원의 Refresh Token은 모두 무효화
-        refreshTokenRepository.deleteByLoginId(loginId);
+            /// 탈퇴한 회원의 Refresh Token은 모두 무효화
+            userAccountLifecycleService.cleanupSessions(user);
 
-        return MemberWithdrawResponse.from(user);
+            return MemberWithdrawResponse.withdrawn(user);
+        }
+
+        Long deletedUserId = user.getId();
+        userAccountLifecycleService.cleanupAccountAttachments(user);
+        userRepository.delete(user);
+        userRepository.flush();
+
+        return MemberWithdrawResponse.hardDeleted(deletedUserId);
     }
 
     private User getApprovedUser(String loginId) {

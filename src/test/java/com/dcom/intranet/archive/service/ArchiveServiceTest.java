@@ -133,6 +133,31 @@ class ArchiveServiceTest {
     }
 
     @Test
+    @DisplayName("족보 등록 시 모르는 시험 정보는 null로 저장한다")
+    void createArchiveStoresNullExamInfoAsNull() {
+        ArchiveRecordCreateRequest recordRequest = createRecordRequest(null);
+        recordRequest.setExamYear(null);
+        recordRequest.setSemester(null);
+        recordRequest.setExamType(null);
+        ArchiveCreateRequest request = createRequestWithRecords(recordRequest);
+
+        when(userRepository.findByLoginId("login"))
+                .thenReturn(Optional.of(user(1L)));
+        when(archiveRepository.findBySubjectNameAndProfessorName("자료구조", "박교수"))
+                .thenReturn(Optional.empty());
+
+        archiveService.createArchive(request, List.of(), "login");
+
+        ArgumentCaptor<ArchiveRecord> recordCaptor = ArgumentCaptor.forClass(ArchiveRecord.class);
+        verify(archiveRecordRepository).save(recordCaptor.capture());
+
+        ArchiveRecord savedRecord = recordCaptor.getValue();
+        assertThat(savedRecord.getExamYear()).isNull();
+        assertThat(savedRecord.getSemester()).isNull();
+        assertThat(savedRecord.getExamType()).isNull();
+    }
+
+    @Test
     @DisplayName("여러 족보 레코드에 파일을 첨부할 때 fileIndexes가 없으면 요청을 거부한다")
     void createMultipleRecordsRequiresFileIndexesWhenFilesUploaded() {
         ArchiveCreateRequest request = createRequestWithRecords(

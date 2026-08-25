@@ -9,6 +9,7 @@ public record PhotoPostCreateResponse(
         Long albumId,
         String eventName,
         LocalDate activityDate,
+        String place,
         String coverImageUrl,
         List<String> imageUrls
 ) {
@@ -18,6 +19,7 @@ public record PhotoPostCreateResponse(
                 photoPost.getAlbumId(),
                 photoPost.getEventName(),
                 photoPost.getActivityDate(),
+                photoPost.getPlace(),
                 photoPost.getImages().isEmpty()
                         ? null
                         : "/api/photo-posts/%d/images/%d".formatted(

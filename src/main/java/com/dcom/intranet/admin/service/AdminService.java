@@ -9,21 +9,16 @@ import com.dcom.intranet.admin.dto.response.AdminUserDetailResponse;
 import com.dcom.intranet.admin.dto.response.AdminUserListResponse;
 import com.dcom.intranet.admin.dto.response.AdminUserRejectResponse;
 import com.dcom.intranet.admin.dto.response.AdminUserWithdrawResponse;
-import com.dcom.intranet.archive.repository.ArchiveRecordRepository;
 import com.dcom.intranet.archive.repository.ArchiveRepository;
 import com.dcom.intranet.auth.domain.User;
 import com.dcom.intranet.auth.domain.UserRole;
 import com.dcom.intranet.auth.domain.UserStatus;
-import com.dcom.intranet.auth.repository.EmailVerificationRepository;
-import com.dcom.intranet.auth.repository.RefreshTokenRepository;
 import com.dcom.intranet.auth.repository.UserRepository;
 import com.dcom.intranet.auth.service.EmailService;
+import com.dcom.intranet.auth.service.UserAccountLifecycleService;
 import com.dcom.intranet.global.exception.BadRequestException;
-import com.dcom.intranet.info.repository.InfoCommentRepository;
 import com.dcom.intranet.info.repository.InfoPostRepository;
-import com.dcom.intranet.mypage.repository.EmailChangeVerificationRepository;
 import com.dcom.intranet.notice.repository.NoticeRepository;
-import com.dcom.intranet.photo.repository.PhotoCommentRepository;
 import com.dcom.intranet.photo.repository.PhotoPostRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -45,17 +40,12 @@ import java.util.List;
 public class AdminService {
 
     private final UserRepository userRepository;
-    private final RefreshTokenRepository refreshTokenRepository;
     private final NoticeRepository noticeRepository;
     private final PhotoPostRepository photoPostRepository;
     private final ArchiveRepository archiveRepository;
     private final InfoPostRepository infoPostRepository;
     private final EmailService emailService;
-    private final InfoCommentRepository infoCommentRepository;
-    private final ArchiveRecordRepository archiveRecordRepository;
-    private final PhotoCommentRepository photoCommentRepository;
-    private final EmailVerificationRepository emailVerificationRepository;
-    private final EmailChangeVerificationRepository emailChangeVerificationRepository;
+    private final UserAccountLifecycleService userAccountLifecycleService;
 
     @Transactional(readOnly = true)
     public AdminDashboardResponse getDashboard() {
@@ -183,10 +173,15 @@ public class AdminService {
                 LocalDateTime.now()
         );
 
-        /// 물리 삭제 전 보유 중인 Refresh Token 무효화
-        refreshTokenRepository.deleteByLoginId(user.getLoginId());
+        if (userAccountLifecycleService.hasRetainedActivity(user)) {
+            /// 기존 작성 기록의 작성자 참조를 보존하기 위해 탈퇴 상태로 유지
+            userAccountLifecycleService.cleanupSessions(user);
+            user.withdraw(LocalDateTime.now());
+            return response;
+        }
 
-        /// 승인되지 않은 회원이라 연관 데이터가 없으므로 물리 삭제
+        /// 활동 이력이 없는 회원만 인증 부속 데이터를 정리한 뒤 물리 삭제
+        userAccountLifecycleService.cleanupAccountAttachments(user);
         userRepository.delete(user);
 
         return response;
@@ -199,13 +194,13 @@ public class AdminService {
 
         validateAdminUserProcessing(admin, target);
 
-        if (hasRetainedActivity(target)) {
-            refreshTokenRepository.deleteByLoginId(target.getLoginId());
+        if (userAccountLifecycleService.hasRetainedActivity(target)) {
+            userAccountLifecycleService.cleanupSessions(target);
             target.withdraw(LocalDateTime.now());
             return AdminUserWithdrawResponse.withdrawn(target.getId());
         }
 
-        cleanupAccountAttachments(target);
+        userAccountLifecycleService.cleanupAccountAttachments(target);
         Long deletedUserId = target.getId();
         userRepository.delete(target);
         userRepository.flush();
@@ -271,23 +266,6 @@ public class AdminService {
                 && userRepository.countByRoleAndStatus(UserRole.ADMIN, UserStatus.APPROVED) <= 1) {
             throw new BadRequestException("마지막 관리자는 탈퇴/삭제 처리할 수 없습니다.");
         }
-    }
-
-    private boolean hasRetainedActivity(User user) {
-        Long userId = user.getId();
-        return infoPostRepository.existsByAuthorId(userId)
-                || infoCommentRepository.existsByAuthorId(userId)
-                || archiveRecordRepository.existsByAuthorId(userId)
-                || noticeRepository.existsByAuthorId(userId)
-                || photoPostRepository.existsByAuthorId(userId)
-                || photoCommentRepository.existsByAuthorId(userId)
-                || userRepository.existsByApprovedByAdminId(userId);
-    }
-
-    private void cleanupAccountAttachments(User user) {
-        refreshTokenRepository.deleteByLoginId(user.getLoginId());
-        emailVerificationRepository.deleteByLoginIdOrEmail(user.getLoginId(), user.getEmail());
-        emailChangeVerificationRepository.deleteByLoginId(user.getLoginId());
     }
 
     private void registerApprovalMailAfterCommit(String email, String name) {
