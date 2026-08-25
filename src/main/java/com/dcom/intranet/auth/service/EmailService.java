@@ -35,9 +35,9 @@ public class EmailService {
         /// 메일 발송
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(email);
-        message.setSubject("[D.COM Intranet] 이메일 인증 코드");
-        message.setText("인증 코드 : " + code + "\n\n"
-                + EXPIRATION_MINUTES + "분 내로 입력해주세요. ");
+        message.setSubject("[D.COM] 인증번호");
+        message.setText("인증번호: " + code + "\n\n"
+                + EXPIRATION_MINUTES + "분 이내로 입력해주세요.");
         mailSender.send(message);
     }
 
