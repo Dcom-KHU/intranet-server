@@ -108,6 +108,7 @@ public class SecurityConfig {
                 "http://localhost:5173",
                 "http://localhost:5174",
                 "https://dev-intranet.dcom.club",
+	        "https://intranet.dcom.club",
                 "https://intranet-web-rho.vercel.app"
         ));
 
