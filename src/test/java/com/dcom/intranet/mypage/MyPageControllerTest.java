@@ -5,6 +5,8 @@ import com.dcom.intranet.auth.domain.User;
 import com.dcom.intranet.auth.domain.UserRole;
 import com.dcom.intranet.auth.domain.UserStatus;
 import com.dcom.intranet.auth.repository.UserRepository;
+import com.dcom.intranet.info.domain.InfoPost;
+import com.dcom.intranet.info.repository.InfoPostRepository;
 import com.dcom.intranet.mypage.domain.EmailChangeVerification;
 import com.dcom.intranet.mypage.dto.response.PageInfoResponse;
 import com.dcom.intranet.mypage.dto.response.MyWrittenCommentDeleteResponse;
@@ -71,6 +73,9 @@ class MyPageControllerTest {
     private UserRepository userRepository;
 
     @Autowired
+    private InfoPostRepository infoPostRepository;
+
+    @Autowired
     private EmailChangeVerificationRepository emailVerificationRepository;
 
     @Autowired
@@ -91,6 +96,7 @@ class MyPageControllerTest {
         myWrittenCommentReader.reset();
         reset(mailSender);
         emailVerificationRepository.deleteAll();
+        infoPostRepository.deleteAll();
         userRepository.deleteAll();
     }
 
@@ -791,8 +797,8 @@ class MyPageControllerTest {
     }
 
     @Test
-    @DisplayName("Member withdraw returns 200 and stores WITHDRAWN status")
-    void memberWithdrawReturns200AndStoresWithdrawnStatus() throws Exception {
+    @DisplayName("Member withdraw hard deletes user without retained activity")
+    void memberWithdrawHardDeletesUserWithoutRetainedActivity() throws Exception {
         User user = saveUser("withdraw1", UserStatus.APPROVED, UserRole.USER);
         String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
 
@@ -803,10 +809,32 @@ class MyPageControllerTest {
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.message").value(SUCCESS_MESSAGE))
                 .andExpect(jsonPath("$.data.userId").value(user.getId()))
+                .andExpect(jsonPath("$.data.result").value("HARD_DELETED"))
+                .andExpect(jsonPath("$.data.status").value(nullValue()))
+                .andExpect(jsonPath("$.data.withdrawnAt").value(nullValue()));
+
+        assertThat(userRepository.findByLoginId("withdraw1")).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Member withdraw stores WITHDRAWN status with retained activity")
+    void memberWithdrawStoresWithdrawnStatusWithRetainedActivity() throws Exception {
+        User user = saveUser("withdrawWithActivity", UserStatus.APPROVED, UserRole.USER);
+        infoPostRepository.save(new InfoPost(user, "작성 이력", "보존 대상 활동"));
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+
+        mockMvc.perform(patch("/api/users/me/withdraw")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.message").value(SUCCESS_MESSAGE))
+                .andExpect(jsonPath("$.data.userId").value(user.getId()))
+                .andExpect(jsonPath("$.data.result").value("WITHDRAWN"))
                 .andExpect(jsonPath("$.data.status").value("WITHDRAWN"))
                 .andExpect(jsonPath("$.data.withdrawnAt").isNotEmpty());
 
-        User withdrawnUser = userRepository.findByLoginId("withdraw1").orElseThrow();
+        User withdrawnUser = userRepository.findByLoginId("withdrawWithActivity").orElseThrow();
         assertThat(withdrawnUser.getStatus()).isEqualTo(UserStatus.WITHDRAWN);
         assertThat(withdrawnUser.getWithdrawnAt()).isNotNull();
     }
@@ -1856,6 +1884,7 @@ class MyPageControllerTest {
             case "withdraw1" -> "20240021";
             case "withdraw2" -> "20240022";
             case "withdrawnUser" -> "20240023";
+            case "withdrawWithActivity" -> "20240024";
             case "postTargetInfo" -> "20240101";
             case "postTargetArchive" -> "20240102";
             case "postTargetPhoto" -> "20240103";

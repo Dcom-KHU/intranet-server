@@ -5,6 +5,7 @@ import com.dcom.intranet.auth.domain.User;
 import com.dcom.intranet.auth.domain.UserRole;
 import com.dcom.intranet.auth.domain.UserStatus;
 import com.dcom.intranet.auth.dto.auth.RefreshRequest;
+import com.dcom.intranet.auth.dto.auth.SignupRequest;
 import com.dcom.intranet.auth.repository.RefreshTokenRepository;
 import com.dcom.intranet.auth.repository.UserRepository;
 import com.dcom.intranet.global.exception.UnauthorizedException;
@@ -31,14 +32,98 @@ class AuthServiceTest {
     private final JwtTokenProvider jwtTokenProvider = mock(JwtTokenProvider.class);
     private final EmailService emailService = mock(EmailService.class);
     private final RefreshTokenRepository refreshTokenRepository = mock(RefreshTokenRepository.class);
+    private final UserAccountLifecycleService userAccountLifecycleService = mock(UserAccountLifecycleService.class);
 
     private final AuthService authService = new AuthService(
             userRepository,
             passwordEncoder,
             jwtTokenProvider,
             emailService,
-            refreshTokenRepository
+            refreshTokenRepository,
+            userAccountLifecycleService
     );
+
+    @Test
+    @DisplayName("Check login id treats WITHDRAWN user login id as available")
+    void checkLoginIdTreatsWithdrawnUserLoginIdAsAvailable() {
+        when(userRepository.existsByLoginIdAndStatusNot("rejoin", UserStatus.WITHDRAWN))
+                .thenReturn(false);
+
+        var response = authService.checkLoginId("rejoin");
+
+        assertThat(response.isAvailable()).isTrue();
+    }
+
+    @Test
+    @DisplayName("Signup reactivates WITHDRAWN user with same login id")
+    void signupReactivatesWithdrawnUserWithSameLoginId() {
+        SignupRequest request = signupRequest(
+                "rejoin",
+                "new-password",
+                "재가입회원",
+                "20249998",
+                "rejoin-new@dcom.org",
+                "010-9999-9998"
+        );
+        User withdrawnUser = user("rejoin", UserStatus.WITHDRAWN, UserRole.ADMIN);
+        ReflectionTestUtils.setField(withdrawnUser, "id", 10L);
+        when(userRepository.findByLoginId("rejoin")).thenReturn(Optional.of(withdrawnUser));
+        when(userRepository.existsByLoginIdAndStatusNot("rejoin", UserStatus.WITHDRAWN)).thenReturn(false);
+        when(userRepository.existsByStudentIdAndIdNot("20249998", 10L)).thenReturn(false);
+        when(userRepository.existsByEmailAndIdNot("rejoin-new@dcom.org", 10L)).thenReturn(false);
+        when(emailService.isEmailVerified("rejoin-new@dcom.org")).thenReturn(true);
+        when(passwordEncoder.encode("new-password")).thenReturn("encoded-new-password");
+        when(userAccountLifecycleService.hasRetainedActivity(withdrawnUser)).thenReturn(true);
+        when(userRepository.save(withdrawnUser)).thenReturn(withdrawnUser);
+
+        var response = authService.signup(request);
+
+        assertThat(response.getUserId()).isEqualTo(10L);
+        assertThat(response.getLoginId()).isEqualTo("rejoin");
+        assertThat(response.getStatus()).isEqualTo(UserStatus.PENDING);
+        assertThat(withdrawnUser.getStatus()).isEqualTo(UserStatus.PENDING);
+        assertThat(withdrawnUser.getRole()).isEqualTo(UserRole.USER);
+        assertThat(withdrawnUser.getStudentId()).isEqualTo("20249998");
+        assertThat(withdrawnUser.getEmail()).isEqualTo("rejoin-new@dcom.org");
+        assertThat(withdrawnUser.getWithdrawnAt()).isNull();
+        verify(userRepository).save(withdrawnUser);
+    }
+
+    @Test
+    @DisplayName("Signup hard deletes WITHDRAWN user without retained activity before creating new user")
+    void signupHardDeletesWithdrawnUserWithoutRetainedActivityBeforeCreatingNewUser() {
+        SignupRequest request = signupRequest(
+                "rejoin-empty",
+                "new-password",
+                "재가입회원",
+                "20249997",
+                "rejoin-empty@dcom.org",
+                "010-9999-9997"
+        );
+        User withdrawnUser = user("rejoin-empty", UserStatus.WITHDRAWN, UserRole.USER);
+        ReflectionTestUtils.setField(withdrawnUser, "id", 11L);
+        when(userRepository.findByLoginId("rejoin-empty")).thenReturn(Optional.of(withdrawnUser));
+        when(userRepository.existsByLoginIdAndStatusNot("rejoin-empty", UserStatus.WITHDRAWN)).thenReturn(false);
+        when(userRepository.existsByStudentIdAndIdNot("20249997", 11L)).thenReturn(false);
+        when(userRepository.existsByEmailAndIdNot("rejoin-empty@dcom.org", 11L)).thenReturn(false);
+        when(emailService.isEmailVerified("rejoin-empty@dcom.org")).thenReturn(true);
+        when(passwordEncoder.encode("new-password")).thenReturn("encoded-new-password");
+        when(userAccountLifecycleService.hasRetainedActivity(withdrawnUser)).thenReturn(false);
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
+            User savedUser = invocation.getArgument(0);
+            ReflectionTestUtils.setField(savedUser, "id", 12L);
+            return savedUser;
+        });
+
+        var response = authService.signup(request);
+
+        assertThat(response.getUserId()).isEqualTo(12L);
+        assertThat(response.getLoginId()).isEqualTo("rejoin-empty");
+        assertThat(response.getStatus()).isEqualTo(UserStatus.PENDING);
+        verify(userAccountLifecycleService).cleanupAccountAttachments(withdrawnUser);
+        verify(userRepository).delete(withdrawnUser);
+        verify(userRepository).flush();
+    }
 
     @Test
     @DisplayName("Refresh rejects invalid JWT and deletes stored token")
@@ -116,6 +201,18 @@ class AuthServiceTest {
     private RefreshRequest refreshRequest(String refreshToken) {
         RefreshRequest request = new RefreshRequest();
         ReflectionTestUtils.setField(request, "refreshToken", refreshToken);
+        return request;
+    }
+
+    private SignupRequest signupRequest(String loginId, String password, String name,
+                                        String studentId, String email, String phoneNumber) {
+        SignupRequest request = new SignupRequest();
+        ReflectionTestUtils.setField(request, "loginId", loginId);
+        ReflectionTestUtils.setField(request, "password", password);
+        ReflectionTestUtils.setField(request, "name", name);
+        ReflectionTestUtils.setField(request, "studentId", studentId);
+        ReflectionTestUtils.setField(request, "email", email);
+        ReflectionTestUtils.setField(request, "phoneNumber", phoneNumber);
         return request;
     }
 

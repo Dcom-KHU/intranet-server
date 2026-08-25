@@ -1,20 +1,15 @@
 package com.dcom.intranet.admin.service;
 
-import com.dcom.intranet.archive.repository.ArchiveRecordRepository;
 import com.dcom.intranet.archive.repository.ArchiveRepository;
 import com.dcom.intranet.auth.domain.User;
 import com.dcom.intranet.auth.domain.UserRole;
 import com.dcom.intranet.auth.domain.UserStatus;
-import com.dcom.intranet.auth.repository.EmailVerificationRepository;
-import com.dcom.intranet.auth.repository.RefreshTokenRepository;
 import com.dcom.intranet.auth.repository.UserRepository;
 import com.dcom.intranet.auth.service.EmailService;
+import com.dcom.intranet.auth.service.UserAccountLifecycleService;
 import com.dcom.intranet.global.exception.BadRequestException;
-import com.dcom.intranet.info.repository.InfoCommentRepository;
 import com.dcom.intranet.info.repository.InfoPostRepository;
-import com.dcom.intranet.mypage.repository.EmailChangeVerificationRepository;
 import com.dcom.intranet.notice.repository.NoticeRepository;
-import com.dcom.intranet.photo.repository.PhotoCommentRepository;
 import com.dcom.intranet.photo.repository.PhotoPostRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -39,31 +34,21 @@ import static org.mockito.Mockito.when;
 class AdminServiceTest {
 
     private final UserRepository userRepository = mock(UserRepository.class);
-    private final RefreshTokenRepository refreshTokenRepository = mock(RefreshTokenRepository.class);
     private final NoticeRepository noticeRepository = mock(NoticeRepository.class);
     private final PhotoPostRepository photoPostRepository = mock(PhotoPostRepository.class);
     private final ArchiveRepository archiveRepository = mock(ArchiveRepository.class);
     private final InfoPostRepository infoPostRepository = mock(InfoPostRepository.class);
     private final EmailService emailService = mock(EmailService.class);
-    private final InfoCommentRepository infoCommentRepository = mock(InfoCommentRepository.class);
-    private final ArchiveRecordRepository archiveRecordRepository = mock(ArchiveRecordRepository.class);
-    private final PhotoCommentRepository photoCommentRepository = mock(PhotoCommentRepository.class);
-    private final EmailVerificationRepository emailVerificationRepository = mock(EmailVerificationRepository.class);
-    private final EmailChangeVerificationRepository emailChangeVerificationRepository = mock(EmailChangeVerificationRepository.class);
+    private final UserAccountLifecycleService userAccountLifecycleService = mock(UserAccountLifecycleService.class);
 
     private final AdminService adminService = new AdminService(
             userRepository,
-            refreshTokenRepository,
             noticeRepository,
             photoPostRepository,
             archiveRepository,
             infoPostRepository,
             emailService,
-            infoCommentRepository,
-            archiveRecordRepository,
-            photoCommentRepository,
-            emailVerificationRepository,
-            emailChangeVerificationRepository
+            userAccountLifecycleService
     );
 
     @Test
@@ -139,14 +124,14 @@ class AdminServiceTest {
         User target = user(2L, "target", UserStatus.PENDING, UserRole.USER);
         when(userRepository.findByLoginId("admin")).thenReturn(Optional.of(admin));
         when(userRepository.findById(2L)).thenReturn(Optional.of(target));
-        when(archiveRecordRepository.existsByAuthorId(2L)).thenReturn(true);
+        when(userAccountLifecycleService.hasRetainedActivity(target)).thenReturn(true);
 
         var response = adminService.rejectUser(2L, "admin");
 
         assertThat(response.status()).isEqualTo("REJECTED");
         assertThat(response.rejectedByAdminId()).isEqualTo(1L);
         assertThat(target.getStatus()).isEqualTo(UserStatus.WITHDRAWN);
-        verify(refreshTokenRepository).deleteByLoginId("target");
+        verify(userAccountLifecycleService).cleanupSessions(target);
         verify(userRepository, never()).delete(target);
     }
 
@@ -160,9 +145,7 @@ class AdminServiceTest {
 
         adminService.rejectUser(2L, "admin");
 
-        verify(refreshTokenRepository).deleteByLoginId("target");
-        verify(emailVerificationRepository).deleteByLoginIdOrEmail("target", "target@dcom.org");
-        verify(emailChangeVerificationRepository).deleteByLoginId("target");
+        verify(userAccountLifecycleService).cleanupAccountAttachments(target);
         verify(userRepository).delete(target);
     }
 
@@ -177,9 +160,7 @@ class AdminServiceTest {
         var response = adminService.withdrawOrDeleteUser(2L, "admin");
 
         assertThat(response.result()).isEqualTo("HARD_DELETED");
-        verify(refreshTokenRepository).deleteByLoginId("target");
-        verify(emailVerificationRepository).deleteByLoginIdOrEmail("target", "target@dcom.org");
-        verify(emailChangeVerificationRepository).deleteByLoginId("target");
+        verify(userAccountLifecycleService).cleanupAccountAttachments(target);
         verify(userRepository).delete(target);
         verify(userRepository).flush();
     }
@@ -191,18 +172,17 @@ class AdminServiceTest {
         User target = user(2L, "target", UserStatus.APPROVED, UserRole.USER);
         when(userRepository.findByLoginId("admin")).thenReturn(Optional.of(admin));
         when(userRepository.findById(2L)).thenReturn(Optional.of(target));
-        when(infoPostRepository.existsByAuthorId(2L)).thenReturn(true);
+        when(userAccountLifecycleService.hasRetainedActivity(target)).thenReturn(true);
 
         var response = adminService.withdrawOrDeleteUser(2L, "admin");
 
         assertThat(response.result()).isEqualTo("WITHDRAWN");
         assertThat(target.getStatus()).isEqualTo(UserStatus.WITHDRAWN);
         assertThat(target.getWithdrawnAt()).isNotNull();
-        verify(refreshTokenRepository).deleteByLoginId("target");
+        verify(userAccountLifecycleService).cleanupSessions(target);
         verify(userRepository, never()).delete(target);
         verify(userRepository, never()).flush();
-        verify(emailVerificationRepository, never()).deleteByLoginIdOrEmail(any(), any());
-        verify(emailChangeVerificationRepository, never()).deleteByLoginId(any());
+        verify(userAccountLifecycleService, never()).cleanupAccountAttachments(any());
     }
 
     @Test
@@ -212,13 +192,13 @@ class AdminServiceTest {
         User target = user(2L, "target", UserStatus.APPROVED, UserRole.USER);
         when(userRepository.findByLoginId("admin")).thenReturn(Optional.of(admin));
         when(userRepository.findById(2L)).thenReturn(Optional.of(target));
-        when(photoPostRepository.existsByAuthorId(2L)).thenReturn(true);
+        when(userAccountLifecycleService.hasRetainedActivity(target)).thenReturn(true);
 
         var response = adminService.withdrawOrDeleteUser(2L, "admin");
 
         assertThat(response.result()).isEqualTo("WITHDRAWN");
         assertThat(target.getStatus()).isEqualTo(UserStatus.WITHDRAWN);
-        verify(refreshTokenRepository).deleteByLoginId("target");
+        verify(userAccountLifecycleService).cleanupSessions(target);
         verify(userRepository, never()).delete(target);
     }
 

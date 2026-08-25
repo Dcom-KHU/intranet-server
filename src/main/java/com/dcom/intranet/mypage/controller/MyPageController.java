@@ -467,7 +467,7 @@ public class MyPageController {
 
     @Operation(
             summary = "회원 탈퇴",
-            description = "인증된 사용자의 회원 상태를 WITHDRAWN으로 변경한다.",
+            description = "인증된 사용자의 회원 탈퇴를 처리한다. 보존해야 할 활동 이력이 있으면 WITHDRAWN 상태로 논리 삭제하고, 활동 이력이 없으면 계정 부속 데이터를 정리한 뒤 물리 삭제한다.",
             responses = {
                     @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",

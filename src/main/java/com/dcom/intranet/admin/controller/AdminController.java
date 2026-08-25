@@ -49,6 +49,7 @@ public class AdminController {
             summary = "회원 목록 조회",
             description = """
                     승인된 회원 목록을 조회합니다.
+                    keyword는 이름, 아이디, 학번, 이메일에서 검색합니다.
 
                     정렬 예시:
                     - 학번 오름차순: `sort=studentId,asc`

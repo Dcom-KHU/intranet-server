@@ -17,8 +17,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
 
     boolean existsByLoginId(String loginId);
+    boolean existsByLoginIdAndStatusNot(String loginId, UserStatus status);
     boolean existsByStudentId(String studentId);
+    boolean existsByStudentIdAndIdNot(String studentId, Long id);
     boolean existsByEmail(String email);
+    boolean existsByEmailAndIdNot(String email, Long id);
 
     Page<User> findByStatus(UserStatus status, Pageable pageable);
     List<User> findTop5ByStatusOrderByCreatedAtDesc(UserStatus status);
@@ -38,6 +41,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
                   u.name LIKE CONCAT('%', :keyword, '%')
                   OR u.loginId LIKE CONCAT('%', :keyword, '%')
                   OR u.studentId LIKE CONCAT('%', :keyword, '%')
+                  OR u.email LIKE CONCAT('%', :keyword, '%')
               )
             """)
     Page<User> findByStatusAndKeyword(
