@@ -12,8 +12,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ArchiveRecordResponseTest {
 
     @Test
-    @DisplayName("레거시 작성자 정보가 있으면 관리자 계정 대신 레거시 작성자 이름을 내려주고 학번은 숨긴다")
+    @DisplayName("레거시 작성자 정보가 있으면 관리자 계정 대신 레거시 작성자 이름과 입학연도를 내려준다")
     void usesLegacyAuthorWhenPresent() {
+        ArchiveRecord record = archiveRecord();
+        record.applyLegacyAuthor("15", "홍길동", false);
+
+        ArchiveRecordResponse response = new ArchiveRecordResponse(record);
+
+        assertThat(response.getAuthor().studentNumber()).isEqualTo("15");
+        assertThat(response.getAuthor().name()).isEqualTo("홍길동");
+    }
+
+    @Test
+    @DisplayName("레거시 작성자 학번 값이 두 자리 입학연도가 아니면 노출하지 않는다")
+    void hidesInvalidLegacyStudentNumber() {
         ArchiveRecord record = archiveRecord();
         record.applyLegacyAuthor("legacy-login-id", "홍길동", false);
 
