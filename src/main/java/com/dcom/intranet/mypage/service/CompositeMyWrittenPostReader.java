@@ -14,7 +14,12 @@ import com.dcom.intranet.mypage.dto.response.MyWrittenPostResponse;
 import com.dcom.intranet.mypage.dto.response.MyWrittenPostTargetResponse;
 import com.dcom.intranet.mypage.dto.response.PageInfoResponse;
 import com.dcom.intranet.mypage.exception.MyPageApiException;
+import com.dcom.intranet.notice.domain.Notice;
 import com.dcom.intranet.notice.repository.NoticeRepository;
+import com.dcom.intranet.notice.service.NoticeService;
+import com.dcom.intranet.photo.domain.PhotoPost;
+import com.dcom.intranet.photo.repository.PhotoPostRepository;
+import com.dcom.intranet.photo.service.PhotoPostService;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,29 +33,39 @@ public class CompositeMyWrittenPostReader implements MyWrittenPostReader {
 
     private static final String INFO_POSTS = "info-posts";
     private static final String ARCHIVES = "archives";
+    private static final String PHOTO_POSTS = "photo-posts";
     private static final String NOTICES = "notices";
 
     private final InfoPostRepository infoPostRepository;
     private final ArchiveRecordRepository archiveRecordRepository;
+    private final PhotoPostRepository photoPostRepository;
     private final NoticeRepository noticeRepository;
     private final UserRepository userRepository;
     private final InfoPostService infoPostService;
     private final ArchiveService archiveService;
+    private final PhotoPostService photoPostService;
+    private final NoticeService noticeService;
 
     public CompositeMyWrittenPostReader(
             InfoPostRepository infoPostRepository,
             ArchiveRecordRepository archiveRecordRepository,
+            PhotoPostRepository photoPostRepository,
             UserRepository userRepository,
             InfoPostService infoPostService,
             ArchiveService archiveService,
-            NoticeRepository noticeRepository
+            NoticeRepository noticeRepository,
+            PhotoPostService photoPostService,
+            NoticeService noticeService
     ) {
         this.infoPostRepository = infoPostRepository;
         this.archiveRecordRepository = archiveRecordRepository;
+        this.photoPostRepository = photoPostRepository;
         this.noticeRepository = noticeRepository;
         this.userRepository = userRepository;
         this.infoPostService = infoPostService;
         this.archiveService = archiveService;
+        this.photoPostService = photoPostService;
+        this.noticeService = noticeService;
     }
 
     @Override
@@ -59,6 +74,7 @@ public class CompositeMyWrittenPostReader implements MyWrittenPostReader {
         List<MyWrittenPostResponse> posts = switch (type == null ? "" : type) {
             case INFO_POSTS -> readInfoPosts(userId);
             case ARCHIVES -> readArchiveRecords(userId);
+            case PHOTO_POSTS -> readPhotoPosts(userId);
             case NOTICES -> readNotices(userId);
             case "" -> readAllPosts(userId);
             default -> List.of();
@@ -80,6 +96,14 @@ public class CompositeMyWrittenPostReader implements MyWrittenPostReader {
                 ArchiveRecord record = findArchiveRecord(userId, postId);
                 yield new MyWrittenPostTargetResponse(ARCHIVES, record.getArchive().getId());
             }
+            case PHOTO_POSTS -> {
+                PhotoPost post = findPhotoPost(userId, postId);
+                yield new MyWrittenPostTargetResponse(PHOTO_POSTS, post.getAlbumId());
+            }
+            case NOTICES -> {
+                Notice notice = findNotice(userId, postId);
+                yield new MyWrittenPostTargetResponse(NOTICES, notice.getNoticeId());
+            }
             default -> throw notFound();
         };
     }
@@ -98,6 +122,16 @@ public class CompositeMyWrittenPostReader implements MyWrittenPostReader {
                 ArchiveRecord record = findArchiveRecord(userId, postId);
                 archiveService.deleteRecord(record.getArchive().getId(), record.getId(), user.getLoginId());
             }
+            case PHOTO_POSTS -> {
+                PhotoPost post = findPhotoPost(userId, postId);
+                validateAdmin(user);
+                photoPostService.deletePhotoPost(post.getAlbumId());
+            }
+            case NOTICES -> {
+                Notice notice = findNotice(userId, postId);
+                validateAdmin(user);
+                noticeService.deleteNotice(notice.getNoticeId());
+            }
             default -> throw notFound();
         }
 
@@ -105,7 +139,10 @@ public class CompositeMyWrittenPostReader implements MyWrittenPostReader {
     }
 
     private List<MyWrittenPostResponse> readAllPosts(Long userId) {
-        return sortByCreatedAtDesc(concat(concat(readInfoPosts(userId), readArchiveRecords(userId)), readNotices(userId)));
+        return sortByCreatedAtDesc(concat(
+                concat(readInfoPosts(userId), readArchiveRecords(userId)),
+                concat(readPhotoPosts(userId), readNotices(userId))
+        ));
     }
 
     private List<MyWrittenPostResponse> readInfoPosts(Long userId) {
@@ -124,7 +161,7 @@ public class CompositeMyWrittenPostReader implements MyWrittenPostReader {
         return archiveRecordRepository.findByAuthorId(userId)
                 .stream()
                 .map(record -> new MyWrittenPostResponse(
-                        record.getArchive().getId(),
+                        record.getId(),
                         record.getId(),
                         record.getArchive().getSubjectName(),
                         record.getArchive().getProfessorName(),
@@ -142,6 +179,18 @@ public class CompositeMyWrittenPostReader implements MyWrittenPostReader {
                         notice.getTitle(),
                         NOTICES,
                         notice.getCreatedAt()
+                ))
+                .toList();
+    }
+
+    private List<MyWrittenPostResponse> readPhotoPosts(Long userId) {
+        return photoPostRepository.findByAuthorId(userId)
+                .stream()
+                .map(post -> new MyWrittenPostResponse(
+                        post.getAlbumId(),
+                        post.getEventName(),
+                        PHOTO_POSTS,
+                        post.getCreatedAt()
                 ))
                 .toList();
     }
@@ -164,9 +213,33 @@ public class CompositeMyWrittenPostReader implements MyWrittenPostReader {
         return record;
     }
 
+    private PhotoPost findPhotoPost(Long userId, Long albumId) {
+        PhotoPost post = photoPostRepository.findById(albumId)
+                .orElseThrow(this::notFound);
+        if (post.getAuthor() == null || !post.getAuthor().getId().equals(userId)) {
+            throw notFound();
+        }
+        return post;
+    }
+
+    private Notice findNotice(Long userId, Long noticeId) {
+        Notice notice = noticeRepository.findById(noticeId)
+                .orElseThrow(this::notFound);
+        if (!userId.equals(notice.getAuthorId())) {
+            throw notFound();
+        }
+        return notice;
+    }
+
     private User findUser(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new MyPageApiException(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."));
+    }
+
+    private void validateAdmin(User user) {
+        if (!user.isAdmin()) {
+            throw new MyPageApiException(HttpStatus.FORBIDDEN, "삭제 권한이 없습니다.");
+        }
     }
 
     private String requireType(String type) {
