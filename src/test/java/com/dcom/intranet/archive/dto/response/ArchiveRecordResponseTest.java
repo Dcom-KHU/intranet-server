@@ -117,6 +117,23 @@ class ArchiveRecordResponseTest {
         assertThat(assignmentResponse.getExamType()).isEqualTo("ASSIGNMENT");
     }
 
+    @Test
+    @DisplayName("족보 본문의 줄 시작 공백과 탭은 화면 표시용 NBSP로 보존한다")
+    void preservesLineIndentationForDisplay() {
+        ArchiveRecord record = new ArchiveRecord(
+                user(),
+                2026,
+                Semester.FIRST,
+                ExamType.MIDTERM,
+                "int main() {\n    return 0;\n\t}"
+        );
+
+        ArchiveRecordResponse response = new ArchiveRecordResponse(record);
+
+        assertThat(response.getContent())
+                .isEqualTo("int main() {\n\u00A0\u00A0\u00A0\u00A0return 0;\n\u00A0\u00A0\u00A0\u00A0}");
+    }
+
     private ArchiveRecord archiveRecord() {
         return new ArchiveRecord(user(), null, null, null, "본문");
     }
