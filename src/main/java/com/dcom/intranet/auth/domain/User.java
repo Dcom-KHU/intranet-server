@@ -130,6 +130,23 @@ public class User {
         this.withdrawnAt = withdrawnAt;
     }
 
+    /// 논리 삭제된 회원의 재가입 요청 처리
+    public void reactivateForSignup(String password, String name,
+                                    String studentId, String email, String phoneNumber) {
+        this.password = password;
+        this.name = name;
+        this.studentId = studentId;
+        this.email = email;
+        this.phoneNumber = phoneNumber;
+        this.role = UserRole.USER;
+        this.status = UserStatus.PENDING;
+        this.withdrawnAt = null;
+        this.approvedAt = null;
+        this.approvedByAdminId = null;
+        this.lastLoginAt = null;
+        clearTempPassword();
+    }
+
     /// 탈퇴시각조회
     public LocalDateTime getWithdrawnAt() {
         return this.withdrawnAt;

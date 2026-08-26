@@ -169,4 +169,10 @@ public class PhotoPost {
             this.images.addAll(images);
         }
     }
+
+    public void addImageFiles(List<PhotoPostImage> images) {
+        if (images != null) {
+            this.images.addAll(images);
+        }
+    }
 }

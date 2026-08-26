@@ -27,19 +27,24 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final EmailService emailService;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final UserAccountLifecycleService userAccountLifecycleService;
 
 
     /// 회원가입
     @Transactional
     public SignupResponse signup(SignupRequest request){
-        /// 아이디, 학번, 이메일 중복체크
-        if (userRepository.existsByLoginId(request.getLoginId())){
+        /// 아이디 중복 체크. 논리 삭제된 회원은 같은 아이디로 재가입할 수 있도록 기존 row를 재사용한다.
+        User rejoiningUser = userRepository.findByLoginId(request.getLoginId())
+                .filter(user -> user.getStatus() == UserStatus.WITHDRAWN)
+                .orElse(null);
+
+        if (userRepository.existsByLoginIdAndStatusNot(request.getLoginId(), UserStatus.WITHDRAWN)){
             throw new ConflictException("이미 사용 중인 아이디입니다.");
         }
-        if (userRepository.existsByStudentId(request.getStudentId())){
+        if (isStudentIdDuplicated(request.getStudentId(), rejoiningUser)){
             throw new ConflictException("이미 가입된 학번입니다.");
         }
-        if (userRepository.existsByEmail(request.getEmail())){
+        if (isEmailDuplicated(request.getEmail(), rejoiningUser)){
             throw new ConflictException("이미 사용 중인 이메일입니다.");
         }
 
@@ -50,6 +55,23 @@ public class AuthService {
 
         /// 비밀번호 암호화
         String encodedPassword = passwordEncoder.encode(request.getPassword());
+
+        if (rejoiningUser != null && userAccountLifecycleService.hasRetainedActivity(rejoiningUser)) {
+            rejoiningUser.reactivateForSignup(
+                    encodedPassword,
+                    request.getName(),
+                    request.getStudentId(),
+                    request.getEmail(),
+                    request.getPhoneNumber()
+            );
+            return SignupResponse.from(userRepository.save(rejoiningUser));
+        }
+
+        if (rejoiningUser != null) {
+            userAccountLifecycleService.cleanupAccountAttachments(rejoiningUser);
+            userRepository.delete(rejoiningUser);
+            userRepository.flush();
+        }
 
         /// User 생성
         User user = new User(
@@ -70,7 +92,7 @@ public class AuthService {
     /// 아이디 중복 확인
     @Transactional
     public CheckLoginIdResponse checkLoginId(String loginId){
-        boolean exists = userRepository.existsByLoginId(loginId);
+        boolean exists = userRepository.existsByLoginIdAndStatusNot(loginId, UserStatus.WITHDRAWN);
         return CheckLoginIdResponse.of(!exists);
     }
 
@@ -232,6 +254,20 @@ public class AuthService {
             sb.append(chars.charAt(random.nextInt(chars.length())));
         }
         return sb.toString();
+    }
+
+    private boolean isStudentIdDuplicated(String studentId, User rejoiningUser) {
+        if (rejoiningUser == null) {
+            return userRepository.existsByStudentId(studentId);
+        }
+        return userRepository.existsByStudentIdAndIdNot(studentId, rejoiningUser.getId());
+    }
+
+    private boolean isEmailDuplicated(String email, User rejoiningUser) {
+        if (rejoiningUser == null) {
+            return userRepository.existsByEmail(email);
+        }
+        return userRepository.existsByEmailAndIdNot(email, rejoiningUser.getId());
     }
 
 

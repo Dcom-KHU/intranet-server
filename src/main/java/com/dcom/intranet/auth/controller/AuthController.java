@@ -179,7 +179,9 @@ public class AuthController {
             description = """
                     회원가입을 요청합니다. 인증이 필요없는 API입니다.
 
-                    - 아이디, 학번, 이메일은 각각 다른 회원과 중복될 수 없습니다. 중복 시 409를 반환합니다.
+                    - PENDING/APPROVED 회원의 아이디, 다른 회원의 학번/이메일은 중복될 수 없습니다. 중복 시 409를 반환합니다.
+                    - WITHDRAWN 회원이 같은 아이디로 다시 가입하면 활동 이력이 있는 기존 계정은 PENDING 상태로 복구하며, 승인 후 기존 활동 이력이 다시 연결됩니다.
+                    - 활동 이력이 없는 WITHDRAWN 계정은 부속 데이터를 정리하고 물리 삭제한 뒤 새 계정으로 가입 처리합니다.
                     - 이메일은 도메인 제한이 없으며, 가입 전 /api/auth/email/send, /api/auth/email/verify로 인증을 완료해야 합니다. 인증되지 않은 이메일로 가입을 시도하면 400을 반환합니다.
                     - 가입 직후 상태는 항상 PENDING(관리자 승인 대기)이며, 관리자가 승인해야 로그인할 수 있습니다.
                     """
@@ -223,7 +225,7 @@ public class AuthController {
 
     @Operation(
             summary = "아이디 중복 확인",
-            description = "입력한 로그인 아이디가 이미 사용 중인지 확인합니다. 인증이 필요없는 API이며, 중복되어도 에러가 아닌 200과 isAvailable=false로 응답합니다."
+            description = "입력한 로그인 아이디가 이미 사용 중인지 확인합니다. WITHDRAWN 회원의 아이디는 재가입을 위해 사용 가능으로 응답합니다. 인증이 필요없는 API이며, 중복되어도 에러가 아닌 200과 isAvailable=false로 응답합니다."
     )
     @ApiResponses({
             @ApiResponse(

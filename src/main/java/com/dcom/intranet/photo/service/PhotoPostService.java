@@ -22,6 +22,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -29,10 +30,25 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
 public class PhotoPostService {
+
+    private static final int MAX_IMAGE_COUNT_PER_ALBUM = 10;
+    private static final long MAX_PHOTO_FILE_SIZE = 10L * 1024 * 1024;
+    private static final String SVG_CONTENT_TYPE = "image/svg+xml";
+    private static final Set<String> ALLOWED_IMAGE_EXTENSIONS = Set.of(
+            ".jpg",
+            ".jpeg",
+            ".png",
+            ".gif",
+            ".webp",
+            ".heic",
+            ".heif"
+    );
 
     private final PhotoPostRepository photoPostRepository;
     private final PhotoCommentRepository photoCommentRepository;
@@ -109,7 +125,9 @@ public class PhotoPostService {
             String loginId
     ) {
         User author = findUser(loginId);
-        List<PhotoPostImage> images = storeImages(files);
+        List<MultipartFile> uploadedFiles = uploadedFiles(files);
+        validateImageCount(0, uploadedFiles.size());
+        List<PhotoPostImage> images = storeImages(uploadedFiles);
 
         PhotoPost photoPost = new PhotoPost(
                 author,
@@ -120,8 +138,16 @@ public class PhotoPostService {
                 images
         );
 
-        PhotoPost savedPhotoPost = photoPostRepository.save(photoPost);
-        return PhotoPostCreateResponse.from(savedPhotoPost);
+        try {
+            PhotoPost savedPhotoPost = photoPostRepository.save(photoPost);
+            photoPostRepository.flush();
+            return PhotoPostCreateResponse.from(savedPhotoPost);
+        } catch (RuntimeException e) {
+            images.stream()
+                    .map(PhotoPostImage::getFileUrl)
+                    .forEach(this::deleteStoredPhotoQuietly);
+            throw e;
+        }
     }
 
     @Transactional
@@ -144,11 +170,19 @@ public class PhotoPostService {
         );
 
         if (hasFiles(files)) {
-            List<String> oldImageUrls = new ArrayList<>(photoPost.getImageUrls());
-            List<PhotoPostImage> newImages = storeImages(files);
+            List<MultipartFile> uploadedFiles = uploadedFiles(files);
+            validateImageCount(photoPost.getImages().size(), uploadedFiles.size());
+            List<PhotoPostImage> newImages = storeImages(uploadedFiles);
 
-            photoPost.replaceImageFiles(newImages);
-            oldImageUrls.forEach(photoPostFileStorageService::delete);
+            try {
+                photoPost.addImageFiles(newImages);
+                photoPostRepository.flush();
+            } catch (RuntimeException e) {
+                newImages.stream()
+                        .map(PhotoPostImage::getFileUrl)
+                        .forEach(this::deleteStoredPhotoQuietly);
+                throw e;
+            }
         }
 
         return PhotoPostCreateResponse.from(photoPost);
@@ -270,15 +304,18 @@ public class PhotoPostService {
     }
 
     private List<PhotoPostImage> storeImages(List<MultipartFile> files) {
-        if (!hasFiles(files)) {
+        List<MultipartFile> uploadedFiles = uploadedFiles(files);
+
+        if (uploadedFiles.isEmpty()) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "사진은 최소 1개 이상 필요합니다."
             );
         }
 
-        List<PhotoPostImage> images = files.stream()
-                .filter(file -> file != null && !file.isEmpty())
+        validateImageFiles(uploadedFiles);
+
+        List<PhotoPostImage> images = uploadedFiles.stream()
                 .map(photoPostFileStorageService::store)
                 .map(file -> new PhotoPostImage(
                         file.getOriginalFileName(),
@@ -291,6 +328,82 @@ public class PhotoPostService {
                 .toList();
 
         return new ArrayList<>(images);
+    }
+
+    private List<MultipartFile> uploadedFiles(List<MultipartFile> files) {
+        if (files == null || files.isEmpty()) {
+            return List.of();
+        }
+
+        return files.stream()
+                .filter(file -> file != null && !file.isEmpty())
+                .toList();
+    }
+
+    private void validateImageCount(int existingImageCount, int newImageCount) {
+        if (existingImageCount + newImageCount > MAX_IMAGE_COUNT_PER_ALBUM) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "사진은 앨범당 최대 %d개까지 업로드할 수 있습니다.".formatted(MAX_IMAGE_COUNT_PER_ALBUM)
+            );
+        }
+    }
+
+    private void validateImageFiles(List<MultipartFile> files) {
+        files.forEach(this::validateImageFile);
+    }
+
+    private void validateImageFile(MultipartFile file) {
+        if (file.getSize() > MAX_PHOTO_FILE_SIZE) {
+            throw new ResponseStatusException(
+                    HttpStatus.PAYLOAD_TOO_LARGE,
+                    "사진 파일은 1개당 최대 %dMB까지 업로드할 수 있습니다.".formatted(
+                            MAX_PHOTO_FILE_SIZE / 1024 / 1024
+                    )
+            );
+        }
+
+        if (!isAllowedImageFile(file)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "사진 파일만 업로드할 수 있습니다."
+            );
+        }
+    }
+
+    private boolean isAllowedImageFile(MultipartFile file) {
+        String contentType = file.getContentType();
+        if (contentType != null && !contentType.isBlank()) {
+            String normalizedContentType = contentType.toLowerCase(Locale.ROOT);
+            if (normalizedContentType.startsWith("image/")) {
+                return !SVG_CONTENT_TYPE.equals(normalizedContentType);
+            }
+
+            if (!MediaType.APPLICATION_OCTET_STREAM_VALUE.equals(normalizedContentType)) {
+                return false;
+            }
+        }
+
+        return hasAllowedImageExtension(file);
+    }
+
+    private boolean hasAllowedImageExtension(MultipartFile file) {
+        String originalFileName = file.getOriginalFilename();
+        if (originalFileName == null || originalFileName.isBlank()) {
+            return false;
+        }
+
+        String normalizedFileName = originalFileName.toLowerCase(Locale.ROOT);
+        return ALLOWED_IMAGE_EXTENSIONS.stream()
+                .anyMatch(normalizedFileName::endsWith);
+    }
+
+    private void deleteStoredPhotoQuietly(String fileUrl) {
+        try {
+            photoPostFileStorageService.delete(fileUrl);
+        } catch (Exception ignored) {
+            // DB 반영 실패 후 보상 삭제가 실패해도 원래 예외를 유지한다.
+        }
     }
 
     private boolean hasFiles(List<MultipartFile> files) {

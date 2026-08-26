@@ -31,7 +31,7 @@ public record AuthorResponse(
 
         if (legacyAnonymous != null || hasText(legacyStudentNumber) || hasText(legacyName)) {
             return new AuthorResponse(
-                    null,
+                    normalizeLegacyStudentNumber(legacyStudentNumber),
                     hasText(legacyName) ? legacyName.trim() : "알 수 없음"
             );
         }
@@ -45,6 +45,15 @@ public record AuthorResponse(
 
     private static boolean hasText(String value) {
         return value != null && !value.isBlank();
+    }
+
+    private static String normalizeLegacyStudentNumber(String value) {
+        if (!hasText(value)) {
+            return null;
+        }
+
+        String trimmedValue = value.trim();
+        return trimmedValue.matches("\\d{2}") ? trimmedValue : null;
     }
 
 }
