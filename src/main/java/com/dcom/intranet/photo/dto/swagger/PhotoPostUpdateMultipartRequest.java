@@ -30,7 +30,7 @@ public class PhotoPostUpdateMultipartRequest {
 
     @ArraySchema(
             schema = @Schema(
-                    description = "새 사진 목록. 전달하면 기존 사진 전체를 교체하며 첫 번째 사진이 대표 사진으로 사용됩니다.",
+                    description = "추가할 사진 목록. 전달하면 기존 사진 뒤에 추가되며 대표 사진은 기존 첫 번째 사진으로 유지됩니다. 앨범당 최대 10개, 파일당 최대 10MB이며 SVG를 제외한 이미지 파일만 허용합니다.",
                     type = "string",
                     format = "binary"
             )
