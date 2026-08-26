@@ -8,6 +8,7 @@ import com.dcom.intranet.photo.dto.PhotoPostCreateRequest;
 import com.dcom.intranet.photo.dto.PhotoPostCreateResponse;
 import com.dcom.intranet.photo.dto.PhotoPostUpdateRequest;
 import com.dcom.intranet.photo.repository.PhotoCommentRepository;
+import com.dcom.intranet.photo.repository.PhotoPostImageRepository;
 import com.dcom.intranet.photo.repository.PhotoPostRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -32,6 +33,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -40,6 +42,9 @@ class PhotoPostServiceTest {
 
     @Mock
     private PhotoPostRepository photoPostRepository;
+
+    @Mock
+    private PhotoPostImageRepository photoPostImageRepository;
 
     @Mock
     private PhotoCommentRepository photoCommentRepository;
@@ -92,7 +97,9 @@ class PhotoPostServiceTest {
                 "image/jpeg"
         ));
         doAnswer(invocation -> {
-            ReflectionTestUtils.setField(photoPost.getImages().get(1), "id", 2L);
+            if (photoPost.getImages().size() > 1) {
+                ReflectionTestUtils.setField(photoPost.getImages().get(1), "id", 2L);
+            }
             return null;
         }).when(photoPostRepository).flush();
 
@@ -102,7 +109,8 @@ class PhotoPostServiceTest {
                         "수정 행사",
                         LocalDate.of(2026, 8, 2),
                         "수정 설명",
-                        "수정 장소"
+                        "수정 장소",
+                        List.of()
                 ),
                 List.of(newFile)
         );
@@ -116,7 +124,7 @@ class PhotoPostServiceTest {
                 "/api/photo-posts/14/images/2"
         );
 
-        verify(photoPostRepository).flush();
+        verify(photoPostRepository, times(2)).flush();
         verify(photoPostFileStorageService, never()).delete("/uploads/photo/2026/08/old.jpg");
     }
 
@@ -217,7 +225,8 @@ class PhotoPostServiceTest {
                         "수정 행사",
                         LocalDate.of(2026, 8, 2),
                         "수정 설명",
-                        "수정 장소"
+                        "수정 장소",
+                        List.of()
                 ),
                 List.of(newFile)
         )).isInstanceOf(ResponseStatusException.class)
@@ -225,6 +234,97 @@ class PhotoPostServiceTest {
                 .isEqualTo(HttpStatus.BAD_REQUEST);
 
         verify(photoPostFileStorageService, never()).store(any(MultipartFile.class));
+    }
+
+    @Test
+    @DisplayName("사진첩 수정 시 deleteFileIds에 포함된 기존 사진을 삭제하고 남은 사진 순서를 재정렬한다")
+    void updatePhotoPostDeletesExistingImagesByDeleteFileIds() {
+        PhotoPostService photoPostService = photoPostService();
+        PhotoPostImage firstImage = image(1L, "first.jpg");
+        PhotoPostImage secondImage = image(2L, "second.jpg");
+        PhotoPostImage thirdImage = image(3L, "third.jpg");
+        PhotoPost photoPost = new PhotoPost(
+                null,
+                "기존 행사",
+                LocalDate.of(2026, 8, 1),
+                "기존 설명",
+                "기존 장소",
+                List.of(firstImage, secondImage, thirdImage)
+        );
+        ReflectionTestUtils.setField(photoPost, "albumId", 14L);
+
+        PhotoPost reloadedPhotoPost = new PhotoPost(
+                null,
+                "수정 행사",
+                LocalDate.of(2026, 8, 2),
+                "수정 설명",
+                "수정 장소",
+                List.of(firstImage, thirdImage)
+        );
+        ReflectionTestUtils.setField(reloadedPhotoPost, "albumId", 14L);
+
+        when(photoPostRepository.findById(14L))
+                .thenReturn(Optional.of(photoPost))
+                .thenReturn(Optional.of(reloadedPhotoPost));
+        when(photoPostImageRepository.deleteByAlbumIdAndImageIds(14L, List.of(2L)))
+                .thenReturn(1);
+
+        PhotoPostCreateResponse response = photoPostService.updatePhotoPost(
+                14L,
+                new PhotoPostUpdateRequest(
+                        "수정 행사",
+                        LocalDate.of(2026, 8, 2),
+                        "수정 설명",
+                        "수정 장소",
+                        List.of(2L)
+                ),
+                List.of()
+        );
+
+        assertThat(response.imageUrls()).containsExactly(
+                "/api/photo-posts/14/images/1",
+                "/api/photo-posts/14/images/3"
+        );
+
+        verify(photoPostImageRepository).deleteByAlbumIdAndImageIds(14L, List.of(2L));
+        verify(photoPostImageRepository).shiftUploadOrderForReorder(14L);
+        verify(photoPostImageRepository).reorderUploadOrder(14L);
+        verify(photoPostFileStorageService).delete("/uploads/photo/2026/08/second.jpg");
+    }
+
+    @Test
+    @DisplayName("사진첩 수정 시 모든 기존 사진을 삭제하고 새 사진이 없으면 거절한다")
+    void updatePhotoPostRejectsDeletingEveryImageWithoutNewImages() {
+        PhotoPostService photoPostService = photoPostService();
+        PhotoPostImage existingImage = image(1L, "old.jpg");
+        PhotoPost photoPost = new PhotoPost(
+                null,
+                "기존 행사",
+                LocalDate.of(2026, 8, 1),
+                "기존 설명",
+                "기존 장소",
+                List.of(existingImage)
+        );
+        ReflectionTestUtils.setField(photoPost, "albumId", 14L);
+
+        when(photoPostRepository.findById(14L)).thenReturn(Optional.of(photoPost));
+
+        assertThatThrownBy(() -> photoPostService.updatePhotoPost(
+                14L,
+                new PhotoPostUpdateRequest(
+                        "수정 행사",
+                        LocalDate.of(2026, 8, 2),
+                        "수정 설명",
+                        "수정 장소",
+                        List.of(1L)
+                ),
+                List.of()
+        )).isInstanceOf(ResponseStatusException.class)
+                .extracting(exception -> ((ResponseStatusException) exception).getStatusCode())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
+
+        verify(photoPostImageRepository, never()).deleteByAlbumIdAndImageIds(any(), any());
+        verify(photoPostFileStorageService, never()).delete(any());
     }
 
     @Test
@@ -257,6 +357,7 @@ class PhotoPostServiceTest {
     private PhotoPostService photoPostService() {
         return new PhotoPostService(
                 photoPostRepository,
+                photoPostImageRepository,
                 photoCommentRepository,
                 userRepository,
                 photoPostFileStorageService
@@ -285,5 +386,18 @@ class PhotoPostServiceTest {
                         "image/jpeg"
                 ))
                 .toList();
+    }
+
+    private PhotoPostImage image(Long id, String fileName) {
+        PhotoPostImage image = new PhotoPostImage(
+                fileName,
+                fileName,
+                "2026/08/%s".formatted(fileName),
+                "/uploads/photo/2026/08/%s".formatted(fileName),
+                10L,
+                "image/jpeg"
+        );
+        ReflectionTestUtils.setField(image, "id", id);
+        return image;
     }
 }
