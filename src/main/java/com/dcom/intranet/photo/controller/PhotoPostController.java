@@ -136,8 +136,10 @@ public class PhotoPostController {
                 "eventName": "신입생 환영회 수정",
                 "activityDate": "2026-07-04",
                 "place": "Engineering Building 101",
-                "coverImageUrl": "/api/photo-posts/1/images/3",
+                "coverImageUrl": "/api/photo-posts/1/images/1",
                 "imageUrls": [
+                  "/api/photo-posts/1/images/1",
+                  "/api/photo-posts/1/images/2",
                   "/api/photo-posts/1/images/3"
                 ]
               }
@@ -313,7 +315,11 @@ public class PhotoPostController {
 
     @Operation(
             summary = "사진첩 등록",
-            description = "사진첩을 등록합니다. ADMIN만 등록할 수 있으며 요청 형식은 multipart/form-data입니다. 첫 번째 사진이 대표 사진으로 사용됩니다.",
+            description = """
+                    사진첩을 등록합니다. ADMIN만 등록할 수 있으며 요청 형식은 multipart/form-data입니다.
+                    첫 번째 사진이 대표 사진으로 사용됩니다.
+                    사진은 앨범당 최대 10개, 파일당 최대 10MB까지 업로드할 수 있으며 SVG를 제외한 이미지 파일만 허용합니다.
+                    """,
             requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     required = true,
                     content = @Content(
@@ -333,7 +339,7 @@ public class PhotoPostController {
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<CommonResponse<PhotoPostCreateResponse>> createPhotoPost(
             @RequestPart("request") String requestJson,
-            @Parameter(description = "사진 목록. 첫 번째 사진이 대표 사진으로 사용됩니다.")
+            @Parameter(description = "사진 목록. 첫 번째 사진이 대표 사진으로 사용됩니다. 최대 10개, 파일당 최대 10MB입니다.")
             @RequestPart("files") List<MultipartFile> files,
             Authentication authentication
     ) {
@@ -351,8 +357,9 @@ public class PhotoPostController {
             summary = "사진첩 수정",
             description = """
                     사진첩을 수정합니다. ADMIN만 수정할 수 있으며 요청 형식은 multipart/form-data입니다.
-                    files를 전달하면 기존 사진 전체를 교체하고, 첫 번째 사진이 대표 사진으로 사용됩니다.
-                    files를 생략하면 기존 사진을 유지하고 행사명, 활동일자, 설명만 수정합니다.
+                    files를 전달하면 기존 사진은 유지하고 새 사진을 뒤에 추가합니다. 대표 사진은 기존 첫 번째 사진으로 유지됩니다.
+                    files를 생략하면 기존 사진을 유지하고 행사명, 활동일자, 장소, 설명만 수정합니다.
+                    사진은 앨범당 최대 10개, 파일당 최대 10MB까지 업로드할 수 있으며 SVG를 제외한 이미지 파일만 허용합니다.
                     """,
             requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     required = true,
@@ -376,7 +383,7 @@ public class PhotoPostController {
             @Parameter(description = "사진첩 ID", example = "1")
             @PathVariable Long albumId,
             @RequestPart("request") String requestJson,
-            @Parameter(description = "새 사진 목록. 전달하면 기존 사진 전체를 교체합니다.")
+            @Parameter(description = "추가할 사진 목록. 전달하면 기존 사진 뒤에 추가합니다. 앨범당 최대 10개, 파일당 최대 10MB입니다.")
             @RequestPart(value = "files", required = false) List<MultipartFile> files
     ) {
         PhotoPostUpdateRequest request = parseUpdateRequest(requestJson);
