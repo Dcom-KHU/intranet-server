@@ -319,6 +319,7 @@ public class PhotoPostController {
                     사진첩을 등록합니다. ADMIN만 등록할 수 있으며 요청 형식은 multipart/form-data입니다.
                     첫 번째 사진이 대표 사진으로 사용됩니다.
                     사진은 앨범당 최대 10개, 파일당 최대 10MB까지 업로드할 수 있으며 SVG를 제외한 이미지 파일만 허용합니다.
+                    HEIC/HEIF 이미지는 업로드 시 JPEG로 변환 저장됩니다.
                     """,
             requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     required = true,
@@ -361,6 +362,7 @@ public class PhotoPostController {
                     files를 전달하면 기존 사진은 유지하고 새 사진을 뒤에 추가합니다. 대표 사진은 기존 첫 번째 사진으로 유지됩니다.
                     files를 생략하면 기존 사진을 유지하고 행사명, 활동일자, 장소, 설명만 수정합니다.
                     사진은 앨범당 최대 10개, 파일당 최대 10MB까지 업로드할 수 있으며 SVG를 제외한 이미지 파일만 허용합니다.
+                    HEIC/HEIF 이미지는 업로드 시 JPEG로 변환 저장됩니다.
                     """,
             requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     required = true,

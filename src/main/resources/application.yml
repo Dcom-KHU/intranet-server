@@ -51,3 +51,4 @@ jwt:
 
 file:
   upload-dir: ./uploads/info
+  heic-converter-command: heif-convert
