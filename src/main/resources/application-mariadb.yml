@@ -28,3 +28,4 @@ file:
   archive-upload-dir: /var/dcom/uploads/archive
   notice-upload-dir: /var/dcom/uploads/notice
   photo-upload-dir: /var/dcom/uploads/photo
+  heic-converter-command: heif-convert

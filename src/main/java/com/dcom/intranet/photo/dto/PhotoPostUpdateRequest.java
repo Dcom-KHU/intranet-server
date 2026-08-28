@@ -4,6 +4,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Objects;
 
 public record PhotoPostUpdateRequest(
         @NotBlank
@@ -14,6 +16,19 @@ public record PhotoPostUpdateRequest(
 
         String description,
 
-        String place
+        String place,
+
+        List<Long> deleteFileIds
 ) {
+
+    public List<Long> deleteImageIds() {
+        if (deleteFileIds == null || deleteFileIds.isEmpty()) {
+            return List.of();
+        }
+
+        return deleteFileIds.stream()
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+    }
 }

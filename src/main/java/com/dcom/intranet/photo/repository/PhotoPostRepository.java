@@ -7,11 +7,15 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
+
 public interface PhotoPostRepository extends JpaRepository<PhotoPost, Long> {
 
     Page<PhotoPost> findByEventNameContaining(String eventName, Pageable pageable);
 
     boolean existsByAuthorId(Long authorId);
+
+    List<PhotoPost> findByAuthorId(Long authorId);
 
     @Query("""
             SELECT p

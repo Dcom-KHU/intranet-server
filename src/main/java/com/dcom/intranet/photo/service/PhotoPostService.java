@@ -16,6 +16,7 @@ import com.dcom.intranet.photo.dto.PhotoPostDetailResponse;
 import com.dcom.intranet.photo.dto.PhotoPostListResponse;
 import com.dcom.intranet.photo.dto.PhotoPostUpdateRequest;
 import com.dcom.intranet.photo.repository.PhotoCommentRepository;
+import com.dcom.intranet.photo.repository.PhotoPostImageRepository;
 import com.dcom.intranet.photo.repository.PhotoPostRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
@@ -51,6 +52,7 @@ public class PhotoPostService {
     );
 
     private final PhotoPostRepository photoPostRepository;
+    private final PhotoPostImageRepository photoPostImageRepository;
     private final PhotoCommentRepository photoCommentRepository;
     private final UserRepository userRepository;
     private final PhotoPostFileStorageService photoPostFileStorageService;
@@ -156,11 +158,18 @@ public class PhotoPostService {
             PhotoPostUpdateRequest request,
             List<MultipartFile> files
     ) {
-        PhotoPost photoPost = photoPostRepository.findById(albumId)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "사진첩을 찾을 수 없습니다."
-                ));
+        PhotoPost photoPost = findPhotoPost(albumId);
+        List<MultipartFile> uploadedFiles = uploadedFiles(files);
+        List<Long> deleteImageIds = request.deleteImageIds();
+        List<PhotoPostImage> currentImages = photoPost.getImages();
+        List<PhotoPostImage> imagesToDelete = findImagesToDelete(currentImages, deleteImageIds);
+
+        validateDeleteImageIds(deleteImageIds, imagesToDelete);
+        validateImageCountAfterUpdate(
+                currentImages.size(),
+                imagesToDelete.size(),
+                uploadedFiles.size()
+        );
 
         photoPost.update(
                 request.eventName(),
@@ -168,10 +177,14 @@ public class PhotoPostService {
                 request.description(),
                 request.place()
         );
+        photoPostRepository.flush();
 
-        if (hasFiles(files)) {
-            List<MultipartFile> uploadedFiles = uploadedFiles(files);
-            validateImageCount(photoPost.getImages().size(), uploadedFiles.size());
+        if (!imagesToDelete.isEmpty()) {
+            deleteImages(albumId, deleteImageIds);
+            photoPost = findPhotoPost(albumId);
+        }
+
+        if (!uploadedFiles.isEmpty()) {
             List<PhotoPostImage> newImages = storeImages(uploadedFiles);
 
             try {
@@ -185,7 +198,19 @@ public class PhotoPostService {
             }
         }
 
+        imagesToDelete.stream()
+                .map(PhotoPostImage::getFileUrl)
+                .forEach(this::deleteStoredPhotoQuietly);
+
         return PhotoPostCreateResponse.from(photoPost);
+    }
+
+    private PhotoPost findPhotoPost(Long albumId) {
+        return photoPostRepository.findById(albumId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "사진첩을 찾을 수 없습니다."
+                ));
     }
 
     @Transactional
@@ -349,6 +374,65 @@ public class PhotoPostService {
         }
     }
 
+    private void validateImageCountAfterUpdate(
+            int currentImageCount,
+            int deleteImageCount,
+            int newImageCount
+    ) {
+        int remainingImageCount = currentImageCount - deleteImageCount + newImageCount;
+
+        if (remainingImageCount <= 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "사진은 최소 1개 이상 필요합니다."
+            );
+        }
+
+        validateImageCount(currentImageCount - deleteImageCount, newImageCount);
+    }
+
+    private List<PhotoPostImage> findImagesToDelete(
+            List<PhotoPostImage> currentImages,
+            List<Long> deleteImageIds
+    ) {
+        if (deleteImageIds.isEmpty()) {
+            return List.of();
+        }
+
+        return currentImages.stream()
+                .filter(image -> deleteImageIds.contains(image.getId()))
+                .toList();
+    }
+
+    private void validateDeleteImageIds(
+            List<Long> deleteImageIds,
+            List<PhotoPostImage> imagesToDelete
+    ) {
+        if (deleteImageIds.size() != imagesToDelete.size()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "삭제할 사진을 찾을 수 없습니다."
+            );
+        }
+    }
+
+    private void deleteImages(Long albumId, List<Long> deleteImageIds) {
+        int deletedCount = photoPostImageRepository.deleteByAlbumIdAndImageIds(
+                albumId,
+                deleteImageIds
+        );
+
+        if (deletedCount != deleteImageIds.size()) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "삭제할 사진을 찾을 수 없습니다."
+            );
+        }
+
+        photoPostImageRepository.shiftUploadOrderForReorder(albumId);
+        photoPostImageRepository.reorderUploadOrder(albumId);
+    }
+
     private void validateImageFiles(List<MultipartFile> files) {
         files.forEach(this::validateImageFile);
     }
@@ -404,15 +488,6 @@ public class PhotoPostService {
         } catch (Exception ignored) {
             // DB 반영 실패 후 보상 삭제가 실패해도 원래 예외를 유지한다.
         }
-    }
-
-    private boolean hasFiles(List<MultipartFile> files) {
-        if (files == null || files.isEmpty()) {
-            return false;
-        }
-
-        return files.stream()
-                .anyMatch(file -> file != null && !file.isEmpty());
     }
 
     public record DownloadFile(Resource resource, String fileName, String contentType) {

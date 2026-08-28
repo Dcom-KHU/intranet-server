@@ -12,6 +12,9 @@ import java.util.List;
 @Getter
 public class ArchiveRecordResponse {
 
+    private static final char NON_BREAKING_SPACE = '\u00A0';
+    private static final String TAB_INDENT = String.valueOf(NON_BREAKING_SPACE).repeat(4);
+
     private final Long recordId;
     private final Integer examYear;
     private final String semester;
@@ -27,7 +30,7 @@ public class ArchiveRecordResponse {
         this.examYear = record.getExamYear();
         this.semester = toResponseSemester(record.getSemester());
         this.examType = toResponseExamType(record.getExamType());
-        this.content = record.getContent();
+        this.content = preserveLineIndentation(record.getContent());
         this.createdAt = record.getCreatedAt();
         this.updatedAt = record.getUpdatedAt();
         this.author = AuthorResponse.fromLegacyOrUser(
@@ -55,5 +58,39 @@ public class ArchiveRecordResponse {
         }
 
         return examType.name();
+    }
+
+    private String preserveLineIndentation(String content) {
+        if (content == null || content.isEmpty()) {
+            return content;
+        }
+
+        StringBuilder preserved = new StringBuilder(content.length());
+        boolean lineStart = true;
+
+        for (int index = 0; index < content.length(); index++) {
+            char current = content.charAt(index);
+
+            if (current == '\n' || current == '\r') {
+                preserved.append(current);
+                lineStart = true;
+                continue;
+            }
+
+            if (lineStart && current == ' ') {
+                preserved.append(NON_BREAKING_SPACE);
+                continue;
+            }
+
+            if (lineStart && current == '\t') {
+                preserved.append(TAB_INDENT);
+                continue;
+            }
+
+            preserved.append(current);
+            lineStart = false;
+        }
+
+        return preserved.toString();
     }
 }

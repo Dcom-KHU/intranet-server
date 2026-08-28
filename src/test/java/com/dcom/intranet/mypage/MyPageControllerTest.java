@@ -979,22 +979,30 @@ class MyPageControllerTest {
     }
 
     @Test
-    @DisplayName("My written posts list with notices type returns 403 for user")
-    void myWrittenPostsListWithNoticesTypeReturns403ForUser() throws Exception {
+    @DisplayName("My written posts list passes notices type for user")
+    void myWrittenPostsListPassesNoticesTypeForUser() throws Exception {
         User user = saveUser("postsNoticeUser", UserStatus.APPROVED, UserRole.USER);
         String token = jwtTokenProvider.createAccessToken(user.getLoginId(), user.getRole().name());
+        myWrittenPostReader.givenResponse(new MyWrittenPostListResponse(
+                List.of(new MyWrittenPostResponse(
+                        42L,
+                        "Former admin notice",
+                        "notices",
+                        LocalDateTime.of(2026, 7, 10, 9, 0)
+                )),
+                new PageInfoResponse(0, 10, 1, 1L)
+        ));
 
         mockMvc.perform(get("/api/users/me/posts")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .param("type", "notices"))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.status").value(403))
-                .andExpect(jsonPath("$.message").value("공지사항은 관리자만 조회할 수 있습니다."))
-                .andExpect(jsonPath("$.data").value(nullValue()));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.posts[0].id").value(42))
+                .andExpect(jsonPath("$.data.posts[0].type").value("notices"));
 
-        assertThat(myWrittenPostReader.lastUserId()).isNull();
-        assertThat(myWrittenPostReader.lastType()).isNull();
+        assertThat(myWrittenPostReader.lastUserId()).isEqualTo(user.getId());
+        assertThat(myWrittenPostReader.lastType()).isEqualTo("notices");
     }
 
     @Test

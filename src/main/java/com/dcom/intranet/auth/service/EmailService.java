@@ -84,7 +84,7 @@ public class EmailService {
     public void sendApprovalEmail(String email, String name){
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(email);
-        message.setSubject("[D.COM Intranet] 회원가입 승인 안내");
+        message.setSubject("[D.COM] 인트라넷 회원가입 승인 안내");
         message.setText(name + "님, 회원가입이 승인되었습니다.\n\n"
                 + "로그인 후 서비스를 이용해주세요.");
 
