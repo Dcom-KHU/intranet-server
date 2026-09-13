@@ -2,6 +2,7 @@
 
 D.COM 인트라넷 리뉴얼 프로젝트의 Spring Boot 백엔드 레포지토리입니다.
 
+인트라넷 링크: https://intranet.dcom.club/
 
 ## Project Overview
 
